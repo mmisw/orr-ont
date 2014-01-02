@@ -23,9 +23,9 @@ object OrrOntBuild extends Build {
       resolvers += Classpaths.typesafeReleases,
       libraryDependencies ++= Seq(
         "org.scalatra"              %% "scalatra"             % ScalatraVersion,
-        "org.scalatra"              %% "scalatra-scalate"     % ScalatraVersion,
         "org.scalatra"              %% "scalatra-specs2"      % ScalatraVersion % "test",
         "com.typesafe"               % "config"               % "1.0.2",
+        "org.scalatra"              %% "scalatra-json"        % ScalatraVersion,
         "org.json4s"                %% "json4s-native"        % "3.2.4",
         "com.typesafe"              %% "scalalogging-slf4j"   % "1.0.1",
 
