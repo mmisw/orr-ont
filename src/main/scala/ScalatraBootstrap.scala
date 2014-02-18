@@ -18,9 +18,9 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       throw new ServiceConfigurationError("Could not retrieve configuration parameter: configFile.  Check web.xml")
     }
 
-    val setup = new Setup(configFilename)
+    implicit val setup = new Setup(configFilename)
 
-    context.mount(new OntServlet, "/*")
+    context.mount(new OntServlet, "/ont/*")
     setupOpt = Some(setup)
   }
 

@@ -3,6 +3,19 @@
 # Edit web.xml if you want to indicate a different location for the configuration file.
 #
 
-foo {
-  bar: baz
+##############################################################################
+# Mongo related parameters
+#
+mongo {
+  host = <mongo server host>
+  port = <mongo server port>
+  db   = <database name>
+  user = <user name>
+  pw   = <user password>
+
+  # password for special operations
+  special = somepassword
+
+  ontologies = <collection name>
+  users      = <collection name>
 }

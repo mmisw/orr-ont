@@ -2,11 +2,20 @@
 
 ## Build & Run ##
 
-```sh
+```shell
 $ cd orr-ont
 $ ./sbt
+> test
 > container:start
-> browse
 ```
 
-If `browse` doesn't launch your browser, manually open [http://localhost:8080/](http://localhost:8080/) in your browser.
+
+```shell
+$ http get localhost:8080/ont/
+
+$ http post localhost:8080/ont/ uri=uri1 name=name1
+
+$ http put localhost:8080/ont/ uri=uri1 name=name1-modified
+
+$ http post localhost:8080/ont/\!/deleteAll  pw=XXX
+```
