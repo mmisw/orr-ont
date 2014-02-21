@@ -9,7 +9,7 @@ class OntServletSpec extends MutableScalatraSpec {
   implicit val formats = org.json4s.DefaultFormats
   import org.json4s.JsonDSL._
 
-  implicit val setup = new Setup("/etc/orront.conf")
+  implicit val setup = new Setup("/etc/orront.conf", test = true)
   addServlet(new OntServlet, "/*")
 
   "GET /" should {

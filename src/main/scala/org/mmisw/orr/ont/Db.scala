@@ -13,21 +13,18 @@ class Db(mongoConfig: Config) extends AnyRef with Logging {
 
   private[this] var mcOpt: Option[MongoClient] = None
 
-  logger.info(s"mongoConfig = ${ConfigFactory.parseString("pw=\"*\"").withFallback(mongoConfig)}")
-
-  def cfgString(path: String, default: String = null): String = {
-    if (mongoConfig.hasPath(path)) mongoConfig.getString(path) else default
-  }
+  logger.info(s"mongoConfig = ${ConfigFactory.parseString(
+    "pw=\"*\"\npw_special=\"*\"").withFallback(mongoConfig)}")
 
   val host = mongoConfig.getString("host")
   val port = mongoConfig.getInt(   "port")
-  val user = cfgString("user")
-  private[this] val pw   = cfgString("pw")
   val db   = mongoConfig.getString("db")
 
   val serverAddress = new ServerAddress(host, port)
 
-  private[this] val mongoClient: MongoClient = if (user != null && pw != null) {
+  private[this] val mongoClient: MongoClient = if (mongoConfig.hasPath("user")) {
+    val user = mongoConfig.getString("user")
+    val pw   = mongoConfig.getString("pw")
     logger.info(s"connecting to $host:$port/$db using credentials ...")
     val credential = MongoCredential(user, db, pw.toCharArray)
     MongoClient(serverAddress, List(credential))
@@ -39,7 +36,7 @@ class Db(mongoConfig: Config) extends AnyRef with Logging {
 
   private[this] val mongoClientDb = mongoClient(db)
 
-  val ontologiesColl  = mongoClientDb(cfgString("ontologies", "ontologies"))
+  val ontologiesColl  = mongoClientDb(mongoConfig.getString("ontologies"))
 
   mcOpt = Some(mongoClient)
 

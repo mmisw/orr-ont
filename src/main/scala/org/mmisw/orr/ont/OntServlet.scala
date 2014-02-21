@@ -64,7 +64,7 @@ class OntServlet(implicit setup: Setup) extends OrrOntStack with SimpleMongoDbJs
     val json = parse(request.body)
     val map = json.extract[Map[String, String]]
     val pw: String = map.getOrElse("pw",  halt(400, "pw"))
-    val special = setup.mongoConfig.getString("special")
+    val special = setup.mongoConfig.getString("pw_special")
     if (special == pw) ontologies.remove(MongoDBObject()) else halt(401)
   }
 

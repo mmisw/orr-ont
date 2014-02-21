@@ -10,11 +10,12 @@ mongo {
   host = <mongo server host>
   port = <mongo server port>
   db   = <database name>
-  user = <user name>
-  pw   = <user password>
+
+  user = <user name>      # optional
+  pw   = <user password>  # required if user given
 
   # password for special operations
-  special = somepassword
+  pw_special = somepassword
 
   ontologies = <collection name>
   users      = <collection name>

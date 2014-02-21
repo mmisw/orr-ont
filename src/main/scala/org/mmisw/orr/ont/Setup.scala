@@ -9,7 +9,7 @@ import com.typesafe.config.ConfigFactory
 /**
  * Sets up the application according to configuration.
  */
-class Setup(configFilename: String) extends AnyRef with Logging {
+class Setup(configFilename: String, test: Boolean = false) extends AnyRef with Logging {
 
   private[this] var dbOpt: Option[Db] = None
 
@@ -23,9 +23,17 @@ class Setup(configFilename: String) extends AnyRef with Logging {
   // todo omit/obfuscate any passwords in output logging
   logger.debug(s"Loaded configuration: $config")
 
-  val mongoConfig = config.getConfig("mongo")
+  val mongoConfig = {
+    val mc = config.getConfig("mongo")
+    if (test) {
+      val coll = s"${mc.getString("ontologies")}-test"
+      logger.info(s"test mode: using ontologies collection: $coll")
+      ConfigFactory.parseString(s"ontologies=$coll").withFallback(mc)
+    }
+    else mc
+  }
 
-  implicit val db: Db = new Db(mongoConfig)
+  val db: Db = new Db(mongoConfig)
 
   dbOpt = Some(db)
 
