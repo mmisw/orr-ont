@@ -30,6 +30,8 @@ object build extends Build {
         "org.json4s"                 % "json4s-mongo_2.10"    % "3.2.5",
         "com.typesafe"              %% "scalalogging-slf4j"   % "1.0.1",
 
+        "org.jasypt"                 % "jasypt"               % "1.9.1",
+
         "ch.qos.logback"             % "logback-classic"      % "1.0.6" % "runtime",
 
         // if creating standalone, uncomment code in JettyLauncher and set "container;compile" here:

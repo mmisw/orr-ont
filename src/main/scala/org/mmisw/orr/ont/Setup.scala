@@ -4,12 +4,13 @@ import com.typesafe.scalalogging.slf4j.Logging
 import java.io.File
 import java.util.ServiceConfigurationError
 import com.typesafe.config.ConfigFactory
+import org.mmisw.orr.ont.db.Db
 
 
 /**
  * Sets up the application according to configuration.
  */
-class Setup(configFilename: String, test: Boolean = false) extends AnyRef with Logging {
+class Setup(configFilename: String, val testing: Boolean = false) extends AnyRef with Logging {
 
   private[this] var dbOpt: Option[Db] = None
 
@@ -25,10 +26,13 @@ class Setup(configFilename: String, test: Boolean = false) extends AnyRef with L
 
   val mongoConfig = {
     val mc = config.getConfig("mongo")
-    if (test) {
-      val coll = s"${mc.getString("ontologies")}-test"
-      logger.info(s"test mode: using ontologies collection: $coll")
-      ConfigFactory.parseString(s"ontologies=$coll").withFallback(mc)
+    if (testing) {
+      val string = List("ontologies", "users") map {collName =>
+        val testName = s"${mc.getString(collName)}-test"
+        s"$collName=$testName"
+      } mkString "\n"
+      logger.info(s"test mode: using:\n$string")
+      ConfigFactory.parseString(string).withFallback(mc)
     }
     else mc
   }

@@ -1,10 +1,9 @@
-package org.mmisw.orr.ont
+package org.mmisw.orr.ont.db
 
 import com.typesafe.scalalogging.slf4j.Logging
 import com.typesafe.config.{ConfigFactory, Config}
 import com.mongodb.casbah.Imports._
 import com.mongodb.ServerAddress
-
 
 /**
  *
@@ -37,6 +36,7 @@ class Db(mongoConfig: Config) extends AnyRef with Logging {
   private[this] val mongoClientDb = mongoClient(db)
 
   val ontologiesColl  = mongoClientDb(mongoConfig.getString("ontologies"))
+  val usersColl  = mongoClientDb(mongoConfig.getString("users"))
 
   mcOpt = Some(mongoClient)
 
