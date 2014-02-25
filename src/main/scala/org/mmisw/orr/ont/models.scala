@@ -9,9 +9,11 @@ case class Ontology(uri:         String,
 case class UserRef(userName:    String,
                    perms:       String)
 
-case class VersionInfo(version:  String,
+case class VersionInfo(uri:         String,
+                       name:        String,
+                       version:  String,
                        date:     String,
-                       metadata: Map[String,String])
+                       metadata: Map[String,AnyRef] = Map())
 
 case class User(userName:    String,
                 firstName:   String,

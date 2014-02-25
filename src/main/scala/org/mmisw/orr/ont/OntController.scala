@@ -17,8 +17,55 @@ with SimpleMongoDbJsonConversion with Logging {
     MongoDBObject("error" -> s"'$uri' already in collection")
   }
 
+  def getOnt(uri: String, versionOpt: Option[String]) = {
+    ontologies.findOne(MongoDBObject("uri" -> uri)) match {
+      case None => error(404, s"'$uri' is not registered")
+
+      case Some(ont) =>
+        val versions: MongoDBObject = ont.asDBObject("versions").asInstanceOf[BasicDBObject]
+        versionOpt match {
+          case None =>
+            ont.getAs[String]("latestVersion") match {
+              case None =>
+                // should not happen
+                error(500, s"'$uri': No latestVersion entry. Please notify this bug.")
+
+              case Some(version) =>
+                versions.get(version) match {
+                  case None =>
+                    // should not happen
+                    error(500, s"'$uri', latest version '$version' is not registered. Please notify this bug.")
+
+                  case Some(versionEntry) =>
+                    val mo: MongoDBObject = versionEntry.asInstanceOf[BasicDBObject]
+                    // todo get metadata
+                    VersionInfo(uri, mo.getAsOrElse("name", ""), version, mo.getAsOrElse("date", ""))
+                }
+            }
+
+          case Some(version) =>
+            // val versions = new MongoDBObject(ont.asDBObject("versions").asInstanceOf[BasicDBObject])
+            versions.get(version) match {
+              case None => error(404, s"'$uri', version '$version' is not registered")
+
+              case Some(versionEntry) =>
+                val mo: MongoDBObject = versionEntry.asInstanceOf[BasicDBObject]
+                // todo get metadata
+                VersionInfo(uri, mo.getAsOrElse("name", ""), version, mo.getAsOrElse("date", ""))
+            }
+        }
+    }
+  }
+
   get("/") {
-    ontologies.find()
+    params.get("uri") match {
+      case Some(uri) =>
+        getOnt(uri, params.get("version"))
+
+      case None =>
+        // TODO just list with basic info?
+        ontologies.find()
+    }
   }
 
   def verifyUser(userNameOpt: Option[String]): String = userNameOpt match {
@@ -58,7 +105,7 @@ with SimpleMongoDbJsonConversion with Logging {
 
         val obj = MongoDBObject(
           "uri" -> uri,
-          "name" -> name,
+          "latestVersion" -> version,
           "users" -> MongoDBObject(userName -> MongoDBObject("perms" -> "rw")),
           "versions" -> MongoDBObject(version -> newVersion)
         )
@@ -69,13 +116,16 @@ with SimpleMongoDbJsonConversion with Logging {
         val users = ont.getAs[BasicDBObject]("users").head
         users += userName -> MongoDBObject("perms" -> "rw")
         val versions = ont.getAs[BasicDBObject]("versions").head
+        if (map.contains("name")) {
+          newVersion += "name" -> map.get("name").head
+        }
         versions += version -> newVersion
         val update = MongoDBObject(
           "uri" -> uri,
+          "latestVersion" -> version,
           "users" -> users,
           "versions" -> versions
         )
-        if (map.contains("name")) update += "name" -> map.get("name").head
         logger.info(s"update: $update")
         val result = ontologies.update(q, update)
         OntologyResult(uri, Some(version), s"updated (${result.getN})")
