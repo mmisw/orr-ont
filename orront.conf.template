@@ -19,4 +19,10 @@ mongo {
 
   ontologies = <collection name>
   users      = <collection name>
+  groups      = <collection name>
+  authorities = <collection name>
+}
+
+files {
+    baseDirectory = /Users/carueda/orr-ont-base-directory
 }

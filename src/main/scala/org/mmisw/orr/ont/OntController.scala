@@ -2,11 +2,23 @@ package org.mmisw.orr.ont
 
 import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.slf4j.Logging
-import org.json4s.JsonAST.{JNothing, JValue}
 
+import org.scalatra.servlet.{FileItem, SizeConstraintExceededException, FileUploadSupport}
+import org.scalatra.{RequestEntityTooLarge, FlashMapSupport}
+import javax.servlet.annotation.MultipartConfig
+import java.io.File
 
+@MultipartConfig(maxFileSize = 5*1024*1024)
 class OntController(implicit setup: Setup) extends OrrOntStack
+with FileUploadSupport with FlashMapSupport
 with SimpleMongoDbJsonConversion with Logging {
+
+//  configureMultipartHandling(MultipartConfig(maxFileSize = Some(5 * 1024 * 1024)))
+
+  error {
+    case e: SizeConstraintExceededException =>
+      error(412, "The file you uploaded exceeded the 5MB limit.")
+  }
 
   val ontologies = setup.db.ontologiesColl
   val users = setup.db.usersColl
@@ -81,13 +93,20 @@ with SimpleMongoDbJsonConversion with Logging {
   }
 
   /**
-   * post a new ontology entry or a new version of an existing ontology entry
+   * post a new ontology entry or a new version of an existing ontology entry.
    */
   post("/") {
-    val map = body()
+    val uri = require(params, "uri")
+    val nameOpt = params.get("name")
+    val userName = verifyUser(params.get("userName"))
 
-    val uri = require(map, "uri")
-    val userName = verifyUser(map.get("userName"))
+    val file = fileParams.getOrElse("file", missing("file"))
+    val format = require(params, "format")
+
+    val fileContents = new String(file.get(), file.charset.getOrElse("utf8"))
+    //val contentType = file.contentType.getOrElse("application/octet-stream")
+
+    logger.info(s"uploaded file size ${fileContents.length} ='$fileContents'  format=$format")
 
     // for now, the version is always automatically assigned
     val now = new java.util.Date()
@@ -100,7 +119,7 @@ with SimpleMongoDbJsonConversion with Logging {
     ontologies.findOne(q) match {
 
       case None =>  // new ontology entry
-        val name = require(map, "name")
+        val name = nameOpt.getOrElse(missing("name"))
         newVersion += "name" -> name
 
         val obj = MongoDBObject(
@@ -109,6 +128,7 @@ with SimpleMongoDbJsonConversion with Logging {
           "users" -> MongoDBObject(userName -> MongoDBObject("perms" -> "rw")),
           "versions" -> MongoDBObject(version -> newVersion)
         )
+        writeOntology(uri, version, file, format)
         ontologies += obj
         Ontology(uri, name, Some(version))
 
@@ -116,9 +136,7 @@ with SimpleMongoDbJsonConversion with Logging {
         val users = ont.getAs[BasicDBObject]("users").head
         users += userName -> MongoDBObject("perms" -> "rw")
         val versions = ont.getAs[BasicDBObject]("versions").head
-        if (map.contains("name")) {
-          newVersion += "name" -> map.get("name").head
-        }
+        nameOpt foreach (name => newVersion += "name" -> name)
         versions += version -> newVersion
         val update = MongoDBObject(
           "uri" -> uri,
@@ -127,6 +145,7 @@ with SimpleMongoDbJsonConversion with Logging {
           "versions" -> versions
         )
         logger.info(s"update: $update")
+        writeOntology(uri, version, file, format)
         val result = ontologies.update(q, update)
         OntologyResult(uri, Some(version), s"updated (${result.getN})")
     }
@@ -167,6 +186,25 @@ with SimpleMongoDbJsonConversion with Logging {
     val pw = require(map, "pw")
     val special = setup.mongoConfig.getString("pw_special")
     if (special == pw) ontologies.remove(MongoDBObject()) else halt(401)
+  }
+
+  def writeOntology(uri: String, version: String,
+                    file: FileItem, format: String)(implicit setup: Setup) = {
+
+    val baseDir = setup.filesConfig.getString("baseDirectory")
+    val ontsDir = new File(baseDir, "onts")
+
+    val uriEnc = uri.replace('/', '|')
+
+    val uriDir = new File(ontsDir, uriEnc)
+
+    val versionDir = new File(uriDir, version)
+    versionDir.mkdirs() || error(500, s"could not create directory: $versionDir")
+
+    val destFilename = s"file.$format"
+    val dest = new File(versionDir, destFilename)
+
+    file.write(dest)
   }
 
 }

@@ -27,6 +27,11 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport {
     if (value.length > 0) value else error(400, s"'$paramName' param value missing")
   }
 
+  protected def require(map: Params, paramName: String) = {
+    val value = map.getOrElse(paramName, missing(paramName)).trim
+    if (value.length > 0) value else error(400, s"'$paramName' param value missing")
+  }
+
   before() {
     contentType = formats("json")
   }

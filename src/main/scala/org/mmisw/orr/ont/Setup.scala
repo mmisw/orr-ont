@@ -37,6 +37,19 @@ class Setup(configFilename: String, val testing: Boolean = false) extends AnyRef
     else mc
   }
 
+  val filesConfig = {
+    val fc = config.getConfig("files")
+    if (testing) {
+      val string = List("baseDirectory") map {name =>
+        val testName = s"${fc.getString(name)}-test"
+        s"$name=$testName"
+      } mkString "\n"
+      logger.info(s"test mode: using:\n$string")
+      ConfigFactory.parseString(string).withFallback(fc)
+    }
+    else fc
+  }
+
   val db: Db = new Db(mongoConfig)
 
   dbOpt = Some(db)
