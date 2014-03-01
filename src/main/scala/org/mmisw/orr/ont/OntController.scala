@@ -194,6 +194,8 @@ with SimpleMongoDbJsonConversion with Logging {
     val baseDir = setup.filesConfig.getString("baseDirectory")
     val ontsDir = new File(baseDir, "onts")
 
+    !uri.contains("|") || error(400, s"'$uri': invalid URI")
+
     val uriEnc = uri.replace('/', '|')
 
     val uriDir = new File(ontsDir, uriEnc)
