@@ -32,6 +32,13 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport {
     if (value.length > 0) value else error(400, s"'$paramName' param value missing")
   }
 
+  addMimeMapping("application/rdf+xml", "rdf")
+  addMimeMapping("application/rdf+xml", "owl")
+
+  addMimeMapping("text/plain", "n3")   // should actually be text/n3?
+
+  //addMimeMapping("application/ld+json", "json")  // TODO: JSON-LD
+
   before() {
     contentType = formats("json")
   }

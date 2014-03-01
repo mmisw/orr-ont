@@ -4,14 +4,14 @@ import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.slf4j.Logging
 
 import org.scalatra.servlet.{FileItem, SizeConstraintExceededException, FileUploadSupport}
-import org.scalatra.{RequestEntityTooLarge, FlashMapSupport}
+import org.scalatra.FlashMapSupport
 import javax.servlet.annotation.MultipartConfig
 import java.io.File
 
 @MultipartConfig(maxFileSize = 5*1024*1024)
 class OntController(implicit setup: Setup) extends OrrOntStack
-with FileUploadSupport with FlashMapSupport
-with SimpleMongoDbJsonConversion with Logging {
+      with FileUploadSupport with FlashMapSupport
+      with SimpleMongoDbJsonConversion with Logging {
 
 //  configureMultipartHandling(MultipartConfig(maxFileSize = Some(5 * 1024 * 1024)))
 
@@ -29,7 +29,7 @@ with SimpleMongoDbJsonConversion with Logging {
     MongoDBObject("error" -> s"'$uri' already in collection")
   }
 
-  def getOnt(uri: String, versionOpt: Option[String]) = {
+  def getOnt(uri: String, versionOpt: Option[String], formatOpt: Option[String]) = {
     ontologies.findOne(MongoDBObject("uri" -> uri)) match {
       case None => error(404, s"'$uri' is not registered")
 
@@ -50,8 +50,16 @@ with SimpleMongoDbJsonConversion with Logging {
 
                   case Some(versionEntry) =>
                     val mo: MongoDBObject = versionEntry.asInstanceOf[BasicDBObject]
-                    // todo get metadata
-                    VersionInfo(uri, mo.getAsOrElse("name", ""), version, mo.getAsOrElse("date", ""))
+
+                    // format is the one given, if any, or the one in the db:
+                    val format = formatOpt.getOrElse(mo.getAsOrElse[String]("format", error(500,
+                      s"'$uri' (version='$version'): no default format known, please notify this bug.")))
+
+                    // todo: determine whether the request is for file contents, or metadata
+                    //VersionInfo(uri, mo.getAsOrElse("name", ""), version, mo.getAsOrElse("date", ""))
+
+                    // assume file contents while we test this part
+                    getOntologyFile(uri, version, format)
                 }
             }
 
@@ -69,10 +77,13 @@ with SimpleMongoDbJsonConversion with Logging {
     }
   }
 
+  /**
+   * http localhost:8080/ont/\?uri=http://mmisw.org/ont/mmi/device\&format=rdf
+   */
   get("/") {
     params.get("uri") match {
       case Some(uri) =>
-        getOnt(uri, params.get("version"))
+        getOnt(uri, params.get("version"), params.get("format"))
 
       case None =>
         // TODO just list with basic info?
@@ -94,6 +105,8 @@ with SimpleMongoDbJsonConversion with Logging {
 
   /**
    * post a new ontology entry or a new version of an existing ontology entry.
+   *
+   * http -f  post localhost:8080/ont uri=http://mmisw.org/ont/mmi/device name="mmi device ont" userName=calvin file@fake-ontology.rdf format=rdf
    */
   post("/") {
     val uri = require(params, "uri")
@@ -113,7 +126,11 @@ with SimpleMongoDbJsonConversion with Logging {
     val version = versionFormatter.format(now)
     val date    = dateFormatter.format(now)
 
-    val newVersion = MongoDBObject("date" -> date, "submitter" -> userName)
+    val newVersion = MongoDBObject(
+      "date"        -> date,
+      "submitter"   -> userName,
+      "format"      -> format
+    )
 
     val q = MongoDBObject("uri" -> uri)
     ontologies.findOne(q) match {
@@ -128,7 +145,7 @@ with SimpleMongoDbJsonConversion with Logging {
           "users" -> MongoDBObject(userName -> MongoDBObject("perms" -> "rw")),
           "versions" -> MongoDBObject(version -> newVersion)
         )
-        writeOntology(uri, version, file, format)
+        writeOntologyFile(uri, version, file, format)
         ontologies += obj
         Ontology(uri, name, Some(version))
 
@@ -145,7 +162,7 @@ with SimpleMongoDbJsonConversion with Logging {
           "versions" -> versions
         )
         logger.info(s"update: $update")
-        writeOntology(uri, version, file, format)
+        writeOntologyFile(uri, version, file, format)
         val result = ontologies.update(q, update)
         OntologyResult(uri, Some(version), s"updated (${result.getN})")
     }
@@ -188,8 +205,8 @@ with SimpleMongoDbJsonConversion with Logging {
     if (special == pw) ontologies.remove(MongoDBObject()) else halt(401)
   }
 
-  def writeOntology(uri: String, version: String,
-                    file: FileItem, format: String)(implicit setup: Setup) = {
+  def writeOntologyFile(uri: String, version: String,
+                    file: FileItem, format: String) = {
 
     val baseDir = setup.filesConfig.getString("baseDirectory")
     val ontsDir = new File(baseDir, "onts")
@@ -207,6 +224,28 @@ with SimpleMongoDbJsonConversion with Logging {
     val dest = new File(versionDir, destFilename)
 
     file.write(dest)
+  }
+
+  def getOntologyFile(uri: String, version: String, format: String) = {
+
+    val baseDir = setup.filesConfig.getString("baseDirectory")
+    val ontsDir = new File(baseDir, "onts")
+
+    val uriEnc = uri.replace('/', '|')
+
+    val uriDir = new File(ontsDir, uriEnc)
+
+    val versionDir = new File(uriDir, version)
+
+    val filename = s"file.$format"
+
+    val file = new File(versionDir, filename)
+
+    if (file.canRead) {
+      contentType = formats(format)
+      file
+    }
+    else error(404, s"Ontology not found: uri='$uri' version='$version' format='$format'")
   }
 
 }
