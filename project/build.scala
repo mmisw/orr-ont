@@ -7,8 +7,9 @@ object build extends Build {
   val Organization = "org.mmisw"
   val Name = "ORR Ont"
   val Version = "0.1.0-SNAPSHOT"
-  val ScalaVersion = "2.10.2"
+  val ScalaVersion = "2.10.3"
   val ScalatraVersion = "2.2.2"
+  val json4Version = "3.2.7"
 
   lazy val project = Project (
     "orr-ont",
@@ -25,9 +26,9 @@ object build extends Build {
         "org.scalatra"              %% "scalatra-specs2"      % ScalatraVersion % "test",
         "com.typesafe"               % "config"               % "1.2.0",
         "org.scalatra"              %% "scalatra-json"        % ScalatraVersion,
-        "org.json4s"                %% "json4s-native"        % "3.2.5",
-        "org.json4s"                 % "json4s-jackson_2.10"  % "3.2.5",
-        "org.json4s"                 % "json4s-mongo_2.10"    % "3.2.5",
+        "org.json4s"                %% "json4s-native"        % json4Version,
+        "org.json4s"                 % "json4s-jackson_2.10"  % json4Version,
+        "org.json4s"                 % "json4s-mongo_2.10"    % json4Version,
         "com.typesafe"              %% "scalalogging-slf4j"   % "1.0.1",
 
         "org.jasypt"                 % "jasypt"               % "1.9.1",
