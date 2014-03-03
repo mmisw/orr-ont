@@ -17,6 +17,8 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport {
 
   protected def missing(paramName: String): Nothing = error(400, s"'$paramName' param missing")
 
+  protected def bug(msg: String): Nothing = error(500, s"$msg. Please notify this bug.")
+
   protected def body(): Map[String, String] = {
     val json = parse(request.body)
     if (json != JNothing) json.extract[Map[String, String]] else error(400, "missing json body")

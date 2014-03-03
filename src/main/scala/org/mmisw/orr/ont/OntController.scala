@@ -38,22 +38,18 @@ class OntController(implicit setup: Setup) extends OrrOntStack
         versionOpt match {
           case None =>
             ont.getAs[String]("latestVersion") match {
-              case None =>
-                // should not happen
-                error(500, s"'$uri': No latestVersion entry. Please notify this bug.")
+              case None => bug(s"'$uri': No latestVersion entry")
 
               case Some(version) =>
                 versions.get(version) match {
-                  case None =>
-                    // should not happen
-                    error(500, s"'$uri', latest version '$version' is not registered. Please notify this bug.")
+                  case None => bug(s"'$uri', latest version '$version' is not registered")
 
                   case Some(versionEntry) =>
                     val mo: MongoDBObject = versionEntry.asInstanceOf[BasicDBObject]
 
                     // format is the one given, if any, or the one in the db:
-                    val format = formatOpt.getOrElse(mo.getAsOrElse[String]("format", error(500,
-                      s"'$uri' (version='$version'): no default format known, please notify this bug.")))
+                    val format = formatOpt.getOrElse(mo.getAsOrElse[String]("format", bug(
+                      s"'$uri' (version='$version'): no default format known")))
 
                     // todo: determine whether the request is for file contents, or metadata
                     //VersionInfo(uri, mo.getAsOrElse("name", ""), version, mo.getAsOrElse("date", ""))
@@ -128,7 +124,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
 
     val newVersion = MongoDBObject(
       "date"        -> date,
-      "submitter"   -> userName,
+      "userName"    -> userName,
       "format"      -> format
     )
 
@@ -170,28 +166,66 @@ class OntController(implicit setup: Setup) extends OrrOntStack
 
   // updates a particular version
   put("/version") {
-    val map = body()
-
-    val uri     = require(map, "uri")
-    val version = require(map, "version")
+    val uri      = require(params, "uri")
+    val version  = require(params, "version")
+    verifyUser(params.get("userName"))
 
     val obj = MongoDBObject("uri" -> uri)
     ontologies.findOne(obj) match {
       case None =>
         error(404, s"'$uri' is not registered")
 
-      case Some(found) =>
-        // TODO verify version exists ...
-        // todo do the update
-        val update = found
-        update.put("TODO", "implement put")
-        val result = ontologies.update(obj, update)
+      case Some(ont) =>
+        ont.getAs[BasicDBObject]("versions") match {
+          case None => bug(s"'$uri': No versions entry")
+
+          case Some(versions) =>
+            versions.getAs[BasicDBObject](version) match {
+              case None => bug(s"'$uri', version '$version' is not registered")
+
+              case Some(versionEntry) =>
+                List("name", "userName") foreach { k =>
+                  params.get(k) foreach {v => versionEntry.put(k, v)}
+                }
+            }
+        }
+        val result = ontologies.update(obj, ont)
         OntologyResult(uri, Some(version), s"updated (${result.getN})")
     }
   }
 
+  // deletes a particular version
+  delete("/version") {
+    val uri      = require(params, "uri")
+    val version  = require(params, "version")
+    verifyUser(params.get("userName"))
+
+    val obj = MongoDBObject("uri" -> uri)
+    ontologies.findOne(obj) match {
+      case None =>
+        error(404, s"'$uri' is not registered")
+
+      case Some(ont) =>
+        ont.getAs[BasicDBObject]("versions") match {
+          case None => bug(s"'$uri': No versions entry")
+
+          case Some(versions) =>
+            versions.getAs[BasicDBObject](version) match {
+              case None => bug(s"'$uri', version '$version' is not registered")
+
+              case Some(versionEntry) =>
+                versions.removeField(version)
+            }
+        }
+        val result = ontologies.update(obj, ont)
+        OntologyResult(uri, Some(version), s"removed (${result.getN})")
+    }
+  }
+
+  // deletes a complete entry
   delete("/") {
-    val uri: String = params.getOrElse("uri", missing("uri"))
+    val uri = require(params, "uri")
+    val userName = verifyUser(params.get("userName"))
 
     val obj = MongoDBObject("uri" -> uri)
     val result = ontologies.remove(obj)
