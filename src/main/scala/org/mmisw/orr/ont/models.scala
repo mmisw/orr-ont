@@ -21,6 +21,15 @@ case class User(userName:    String,
                 registered:  Option[String] = None,
                 password:    Option[String] = None)
 
+case class Authority(
+                      shortName:   String,
+                      ontUri:      Option[String] = None,
+                      registered:  Option[String] = None)
+
+case class AuthorityResult(
+                            shortName:  String,
+                            comment:   String)
+
 case class OntologyResult(
                   uri:      String,
                   version:  Option[String] = None,

@@ -27,7 +27,7 @@ class Setup(configFilename: String, val testing: Boolean = false) extends AnyRef
   val mongoConfig = {
     val mc = config.getConfig("mongo")
     if (testing) {
-      val string = List("ontologies", "users") map {collName =>
+      val string = List("ontologies", "users", "authorities") map {collName =>
         val testName = s"${mc.getString(collName)}-test"
         s"$collName=$testName"
       } mkString "\n"
