@@ -3,8 +3,6 @@ package org.mmisw.orr.ont
 import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.slf4j.Logging
 
-import org.jasypt.util.password.StrongPasswordEncryptor
-
 
 class AuthorityController(implicit setup: Setup) extends OrrOntStack
     with SimpleMongoDbJsonConversion with Logging {
@@ -18,8 +16,11 @@ class AuthorityController(implicit setup: Setup) extends OrrOntStack
   post("/") {
     val map = body()
 
+    logger.info(s"POST body = $map")
     val shortName  = require(map, "shortName")
-    val ontUri     = map get "ontUri"
+    val name       = require(map, "name")
+    val ontUri     = getString(map, "ontUri")
+    val members    = getSeq(map, "members")
 
     val now = new java.util.Date()
     val date = dateFormatter.format(now)
@@ -29,7 +30,9 @@ class AuthorityController(implicit setup: Setup) extends OrrOntStack
       case None =>
         val obj = MongoDBObject(
           "shortName"    -> shortName,
+          "name"         -> name,
           "ontUri"       -> ontUri,
+          "members"      -> members,
           "registered"   -> date
         )
         authorities += obj

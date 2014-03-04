@@ -13,9 +13,12 @@ class AuthorityControllerSpec extends MutableScalatraSpec {
   addServlet(new AuthorityController, "/*")
 
   val shortName = s"random.${java.util.UUID.randomUUID().toString}"
-  val map = Map(
-    "shortName"  -> shortName,
-    "ontUri"     -> "ontUri")
+  val map =
+    ("shortName"  -> shortName) ~
+    ("name"       -> "some authority") ~
+    ("ontUri"     -> "ontUri") ~
+    ("members"    -> Seq("member1", "member2")
+  )
 
   "GET /" should {
     "return status 200" in {
@@ -44,7 +47,7 @@ class AuthorityControllerSpec extends MutableScalatraSpec {
 
   "PUT update authority" should {
     "return status 200" in {
-      put("/", body = pretty(render(Map("shortName" -> shortName, "ontUri" -> "updated.ontUri"))),
+      put("/", body = pretty(render(("shortName" -> shortName) ~ ("ontUri" -> "updated.ontUri"))),
         headers = Map("content-type" -> "application/json")) {
         status must_== 200
       }

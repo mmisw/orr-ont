@@ -20,8 +20,9 @@ class ScalatraBootstrap extends LifeCycle with Logging {
 
     implicit val setup = new Setup(configFilename)
 
-    context.mount(new OntController,  "/ont/*")
-    context.mount(new UserController, "/user/*")
+    context.mount(new AuthorityController,  "/authority/*")
+    context.mount(new UserController,       "/user/*")
+    context.mount(new OntController,        "/ont/*")
 
     setupOpt = Some(setup)
   }
