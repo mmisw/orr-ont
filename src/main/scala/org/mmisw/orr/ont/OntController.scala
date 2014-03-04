@@ -8,20 +8,22 @@ import org.scalatra.FlashMapSupport
 import javax.servlet.annotation.MultipartConfig
 import java.io.File
 
+
 @MultipartConfig(maxFileSize = 5*1024*1024)
 class OntController(implicit setup: Setup) extends OrrOntStack
       with FileUploadSupport with FlashMapSupport
       with SimpleMongoDbJsonConversion with Logging {
 
-//  configureMultipartHandling(MultipartConfig(maxFileSize = Some(5 * 1024 * 1024)))
+  //configureMultipartHandling(MultipartConfig(maxFileSize = Some(5 * 1024 * 1024)))
 
   error {
     case e: SizeConstraintExceededException =>
       error(412, "The file you uploaded exceeded the 5MB limit.")
   }
 
-  val ontologies = setup.db.ontologiesColl
-  val users = setup.db.usersColl
+  val ontologies  = setup.db.ontologiesColl
+  val authorities = setup.db.authoritiesColl
+  val users       = setup.db.usersColl
 
   val versionFormatter = new java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss")
 
@@ -100,13 +102,36 @@ class OntController(implicit setup: Setup) extends OrrOntStack
   }
 
   /**
+   * Verifies the authority and the userName
+   */
+  def verifyAuthority(authorityOpt: Option[String], userName: String): String = authorityOpt match {
+    case None => missing("authority")
+    case Some(authority) =>
+      if (setup.testing) authority
+      else {
+        authorities.findOne(MongoDBObject("shortName" -> authority)) match {
+          case None => error(400, s"'$authority' invalid authority")
+          case Some(auth) =>
+            // verify userName is a member of the authority
+            auth.getAs[MongoDBList]("members") match {
+              case None => bug(s"No members in authority entry '$auth'")
+              case Some(members) =>
+                if (members.contains(userName)) authority
+                else error(401, s"user '$userName' is not a member of authority '$authority'")
+            }
+        }
+      }
+  }
+
+  /**
    * post a new ontology entry or a new version of an existing ontology entry.
    *
-   * http -f  post localhost:8080/ont uri=http://mmisw.org/ont/mmi/device name="mmi device ont" userName=calvin file@fake-ontology.rdf format=rdf
+   * http -f post localhost:8080/ont uri=http://example.org/ont1 name="example ont" authority=mmi userName=carueda file@src/test/resources/test.rdf format=rdf
    */
   post("/") {
     val uri = require(params, "uri")
     val nameOpt = params.get("name")
+    val authorityOpt = params.get("authority")
     val userName = verifyUser(params.get("userName"))
 
     val file = fileParams.getOrElse("file", missing("file"))
@@ -115,7 +140,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
     val fileContents = new String(file.get(), file.charset.getOrElse("utf8"))
     //val contentType = file.contentType.getOrElse("application/octet-stream")
 
-    logger.info(s"uploaded file size ${fileContents.length} ='$fileContents'  format=$format")
+    logger.info(s"uploaded file=${file.getName} size=${fileContents.length} format=$format")
 
     // for now, the version is always automatically assigned
     val now = new java.util.Date()
@@ -132,12 +157,14 @@ class OntController(implicit setup: Setup) extends OrrOntStack
     ontologies.findOne(q) match {
 
       case None =>  // new ontology entry
+        val authority = verifyAuthority(authorityOpt, userName)
         val name = nameOpt.getOrElse(missing("name"))
         newVersion += "name" -> name
 
         val obj = MongoDBObject(
           "uri" -> uri,
           "latestVersion" -> version,
+          "authority" -> authority,
           "users" -> MongoDBObject(userName -> MongoDBObject("perms" -> "rw")),
           "versions" -> MongoDBObject(version -> newVersion)
         )

@@ -13,6 +13,7 @@ class AuthorityController(implicit setup: Setup) extends OrrOntStack
     authorities.find()
   }
 
+  // http post localhost:8080/authority shortName=mmi name="mmi project" ontUri=http://mmisw.org/ont/mmi members:='["carueda"]'
   post("/") {
     val map = body()
 
