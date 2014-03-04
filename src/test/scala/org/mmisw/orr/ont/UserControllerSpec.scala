@@ -12,6 +12,14 @@ class UserControllerSpec extends MutableScalatraSpec {
   implicit val setup = new Setup("/etc/orront.conf", testing = true)
   addServlet(new UserController, "/*")
 
+  val userName = s"random:${java.util.UUID.randomUUID().toString}"
+  val password = "mypassword"
+  val map = Map(
+    "userName"  -> userName,
+    "firstName" -> "myFirstName",
+    "lastName"  -> "myLastName",
+    "password"  -> password)
+
   "GET /" should {
     "return status 200" in {
       get("/") {
@@ -20,19 +28,12 @@ class UserControllerSpec extends MutableScalatraSpec {
     }
   }
 
-  "POST/PUT/DELETE" should {
-    "work" in {
+  sequential
 
-      val userName = s"random:${java.util.UUID.randomUUID().toString}"
-      val password = "mypassword"
+  "POST new user" should {
+    "return status 200" in {
 
-      val map = Map(
-        "userName"  -> userName,
-        "firstName" -> "myFirstName",
-        "lastName"  -> "myLastName",
-        "password"  -> password)
-
-      post("/", body=pretty(render(map)),
+      post("/", body = pretty(render(map)),
            headers=Map("content-type" -> "application/json")) {
 
         status must_== 200
@@ -41,27 +42,39 @@ class UserControllerSpec extends MutableScalatraSpec {
         val map = json.extract[Map[String, String]]
         map.get("userName") must_== Some(userName)
       }
+    }
+  }
 
-      // check correct password
-      post("/chkpw", body=pretty(render(Map("userName" -> userName, "password" -> password))),
+  "POST check correct password" should {
+    "return status 200" in {
+      post("/chkpw", body = pretty(render(Map("userName" -> userName, "password" -> password))),
         headers=Map("content-type" -> "application/json")) {
         status must_== 200
       }
+    }
+  }
 
-      // check wrong password
-      post("/chkpw", body=pretty(render(Map("userName" -> userName, "password" -> "wrong"))),
+  "POST check wrong password" should {
+    "return status 401" in {
+      post("/chkpw", body = pretty(render(Map("userName" -> userName, "password" -> "wrong"))),
         headers=Map("content-type" -> "application/json")) {
         status must_== 401
       }
+    }
+  }
 
-      // update:
-      put("/", body=pretty(render(Map("userName" -> userName, "firstName" -> "updated.firstName"))),
+  "PUT update user" should {
+    "return status 200" in {
+      put("/", body = pretty(render(Map("userName" -> userName, "firstName" -> "updated.firstName"))),
         headers=Map("content-type" -> "application/json")) {
         status must_== 200
       }
+    }
+  }
 
-      // delete:
-      submit("DELETE", s"/?userName=$userName") {
+  "DELETE user" should {
+    "return status 200" in {
+      delete("/", Map("userName" -> userName)) {
         status must_== 200
       }
     }
