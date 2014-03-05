@@ -69,7 +69,11 @@ class OntControllerSpec extends MutableScalatraSpec with Logging {
 
   "PUT to update existing version" should {
     "work" in {
-      val map3 = map2 + ("version" -> version.get, "name" -> "modified name again")
+      val map3 = Map("uri" -> uri,
+        "version" -> version.get,
+        "name" -> "modified name again",
+        "userName" -> "tester"
+      )
       logger.info(s"put: $map3")
       put("/version", map3) {
         logger.info(s"put reply: $body")

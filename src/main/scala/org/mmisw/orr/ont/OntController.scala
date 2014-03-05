@@ -226,6 +226,9 @@ class OntController(implicit setup: Setup) extends OrrOntStack
     val version  = require(params, "version")
     verifyUser(params.get("userName"))
 
+    val unrecognized = params.keySet -- Set("uri", "version", "userName", "name")
+    if (unrecognized.size > 0) error(400, s"unrecognized parameters: $unrecognized")
+
     val obj = MongoDBObject("uri" -> uri)
     ontologies.findOne(obj) match {
       case None =>
