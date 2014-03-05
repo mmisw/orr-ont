@@ -102,37 +102,50 @@ class OntController(implicit setup: Setup) extends OrrOntStack
   }
 
   /**
-   * Verifies the authority and the userName
+   * Verifies the given authority and the userName against that authority,
    */
-  def verifyAuthority(authorityOpt: Option[String], userName: String): String = authorityOpt match {
-    case None => missing("authority")
-    case Some(authority) =>
-      if (setup.testing) authority
-      else {
-        authorities.findOne(MongoDBObject("shortName" -> authority)) match {
-          case None => error(400, s"'$authority' invalid authority")
-          case Some(auth) =>
-            // verify userName is a member of the authority
-            auth.getAs[MongoDBList]("members") match {
-              case None => bug(s"No members in authority entry '$auth'")
-              case Some(members) =>
-                if (members.contains(userName)) authority
-                else error(401, s"user '$userName' is not a member of authority '$authority'")
-            }
-        }
+  def verifyAuthorityAndUser(authority: String, userName: String, authorityMustExist: Boolean = false): String = {
+    if (setup.testing) authority
+    else {
+      authorities.findOne(MongoDBObject("shortName" -> authority)) match {
+        case None => 
+          if (authorityMustExist) bug(s"'$authority' authority must exist")
+          else error(400, s"'$authority' invalid authority")
+        case Some(auth) =>
+          // verify userName is a member of the authority
+          auth.getAs[MongoDBList]("members") match {
+            case None => bug(s"No members in authority entry '$auth'")
+            case Some(members) =>
+              if (members.contains(userName)) authority
+              else error(401, s"user '$userName' is not a member of authority '$authority'")
+          }
       }
+    }
+  }
+
+  /**
+   * Verifies the authority and the userName against that authority.
+   */
+  def verifyAuthorityAndUser(authorityOpt: Option[String], userName: String): String = authorityOpt match {
+    case None => missing("authority")
+    case Some(authority) => verifyAuthorityAndUser(authority, userName)
   }
 
   /**
    * post a new ontology entry or a new version of an existing ontology entry.
    *
-   * http -f post localhost:8080/ont uri=http://example.org/ont1 name="example ont" authority=mmi userName=carueda file@src/test/resources/test.rdf format=rdf
+   * http -f post localhost:8080/ont uri=http://ont1 name=example authority=mmi userName=carueda file@src/test/resources/test.rdf format=rdf
    */
   post("/") {
     val uri = require(params, "uri")
     val nameOpt = params.get("name")
     val authorityOpt = params.get("authority")
     val userName = verifyUser(params.get("userName"))
+
+    // if owners is given, verify them in general (for either new entry or new version)
+    val owners = multiParams("owners").filter(_.trim.length > 0).toSet
+    owners foreach (userName => verifyUser(Some(userName)))
+    logger.debug(s"owners=$owners")
 
     val file = fileParams.getOrElse("file", missing("file"))
     val format = require(params, "format")
@@ -157,7 +170,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
     ontologies.findOne(q) match {
 
       case None =>  // new ontology entry
-        val authority = verifyAuthority(authorityOpt, userName)
+        val authority = verifyAuthorityAndUser(authorityOpt, userName)
         val name = nameOpt.getOrElse(missing("name"))
         newVersion += "name" -> name
 
@@ -165,7 +178,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
           "uri" -> uri,
           "latestVersion" -> version,
           "authority" -> authority,
-          "users" -> MongoDBObject(userName -> MongoDBObject("perms" -> "rw")),
+          "owners" -> owners,
           "versions" -> MongoDBObject(version -> newVersion)
         )
         writeOntologyFile(uri, version, file, format)
@@ -173,17 +186,33 @@ class OntController(implicit setup: Setup) extends OrrOntStack
         Ontology(uri, name, Some(version))
 
       case Some(ont) =>   // existing ontology entry.
-        val users = ont.getAs[BasicDBObject]("users").head
-        users += userName -> MongoDBObject("perms" -> "rw")
+        val authority = ont.getAs[String]("authority").getOrElse(
+          bug(s"No authority in ontology entry"))
+
+        val dbOwners = ont.getAs[MongoDBList]("owners").getOrElse(
+          bug(s"No owners in ontology entry"))
+
+        if (dbOwners.length > 0) {
+          if (!dbOwners.contains(userName)) error(410, s"'$userName' is not an owner of '$uri'")
+        }
+        else {
+          // verify against authority members:
+          verifyAuthorityAndUser(authority, userName, authorityMustExist = true)
+        }
+
+        val update = ont
+
+        // if owners explicitly given, use it:
+        if (params.contains("owners")) {
+          update.put("owners", owners)
+        }
+
         val versions = ont.getAs[BasicDBObject]("versions").head
         nameOpt foreach (name => newVersion += "name" -> name)
         versions += version -> newVersion
-        val update = MongoDBObject(
-          "uri" -> uri,
-          "latestVersion" -> version,
-          "users" -> users,
-          "versions" -> versions
-        )
+        update.put("latestVersion", version)
+        update.put("versions", versions)
+
         logger.info(s"update: $update")
         writeOntologyFile(uri, version, file, format)
         val result = ontologies.update(q, update)
