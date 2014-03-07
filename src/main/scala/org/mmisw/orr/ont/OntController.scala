@@ -139,34 +139,93 @@ class OntController(implicit setup: Setup) extends OrrOntStack
     }
   }
 
+  def getOwners = {
+    // if owners is given, verify them in general (for either new entry or new version)
+    val owners = multiParams("owners").filter(_.trim.length > 0).toSet
+    owners foreach (userName => verifyUser(Some(userName)))
+    logger.debug(s"owners=$owners")
+    owners
+  }
+  
+  def getFileAndFormat = {
+    val fileItem = fileParams.getOrElse("file", missing("file"))
+    
+    // todo make format param optional
+    val format = require(params, "format")
+
+    logger.info(s"uploaded file=${fileItem.getName} size=${fileItem.getSize} format=$format")
+    //val fileContents = new String(fileItem.get(), fileItem.charset.getOrElse("utf8"))
+    //val contentType = file.contentType.getOrElse("application/octet-stream")
+
+    (fileItem, format)
+  }
+
+  def getVersion = {
+    // for now, the version is always automatically assigned
+    val now = new java.util.Date()
+    val version = versionFormatter.format(now)
+    val date    = dateFormatter.format(now)
+    (version, date)
+  }
+
   /**
-   * post a new ontology entry or a new version of an existing ontology entry.
+   * posts a new ontology entry.
    *
    * http -f post localhost:8080/ont uri=http://ont1 name=example authority=mmi userName=carueda file@src/test/resources/test.rdf format=rdf
    */
   post("/") {
     val uri = require(params, "uri")
-    val nameOpt = params.get("name")
+    val name = require(params, "name")
     val authorityOpt = params.get("authority")
     val userName = verifyUser(params.get("userName"))
 
-    // if owners is given, verify them in general (for either new entry or new version)
-    val owners = multiParams("owners").filter(_.trim.length > 0).toSet
-    owners foreach (userName => verifyUser(Some(userName)))
-    logger.debug(s"owners=$owners")
+    val authority = verifyAuthorityAndUser(authorityOpt, userName)
 
-    val file = fileParams.getOrElse("file", missing("file"))
-    val format = require(params, "format")
+    val owners = getOwners
+    val (fileItem, format) = getFileAndFormat
+    val (version, date) = getVersion
 
-    val fileContents = new String(file.get(), file.charset.getOrElse("utf8"))
-    //val contentType = file.contentType.getOrElse("application/octet-stream")
+    val newVersion = MongoDBObject(
+      "name"        -> name,
+      "date"        -> date,
+      "userName"    -> userName,
+      "format"      -> format
+    )
 
-    logger.info(s"uploaded file=${file.getName} size=${fileContents.length} format=$format")
+    val q = MongoDBObject("uri" -> uri)
+    ontologies.findOne(q) match {
+      case None =>
+        validateUri(uri)
 
-    // for now, the version is always automatically assigned
-    val now = new java.util.Date()
-    val version = versionFormatter.format(now)
-    val date    = dateFormatter.format(now)
+        val obj = MongoDBObject(
+          "uri" -> uri,
+          "latestVersion" -> version,
+          "authority" -> authority,
+          "owners" -> owners,
+          "versions" -> MongoDBObject(version -> newVersion)
+        )
+        writeOntologyFile(uri, version, fileItem, format)
+        ontologies += obj
+        Ontology(uri, name, Some(version))
+
+      case Some(ont) =>   // bad request: existing ontology entry.
+        error(409, s"'$uri' is already registered")
+    }
+  }
+
+  /**
+   * posts a new version of an existing ontology entry.
+   *
+   * http -f post localhost:8080/ont/version uri=http://ont1 userName=carueda file@src/test/resources/test.rdf format=rdf
+   */
+  post("/version") {
+    val uri = require(params, "uri")
+    val nameOpt = params.get("name")
+    val userName = verifyUser(params.get("userName"))
+
+    val owners = getOwners
+    val (fileItem, format) = getFileAndFormat
+    val (version, date) = getVersion
 
     val newVersion = MongoDBObject(
       "date"        -> date,
@@ -177,24 +236,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
     val q = MongoDBObject("uri" -> uri)
     ontologies.findOne(q) match {
 
-      case None =>  // new ontology entry
-        val authority = verifyAuthorityAndUser(authorityOpt, userName)
-        validateUri(uri)
-        val name = nameOpt.getOrElse(missing("name"))
-        newVersion += "name" -> name
-
-        val obj = MongoDBObject(
-          "uri" -> uri,
-          "latestVersion" -> version,
-          "authority" -> authority,
-          "owners" -> owners,
-          "versions" -> MongoDBObject(version -> newVersion)
-        )
-        writeOntologyFile(uri, version, file, format)
-        ontologies += obj
-        Ontology(uri, name, Some(version))
-
-      case Some(ont) =>   // existing ontology entry.
+      case Some(ont) =>
         val authority = ont.getAs[String]("authority").getOrElse(
           bug(s"No authority in ontology entry"))
 
@@ -223,9 +265,12 @@ class OntController(implicit setup: Setup) extends OrrOntStack
         update.put("versions", versions)
 
         logger.info(s"update: $update")
-        writeOntologyFile(uri, version, file, format)
+        writeOntologyFile(uri, version, fileItem, format)
         val result = ontologies.update(q, update)
         OntologyResult(uri, Some(version), s"updated (${result.getN})")
+
+      case None =>
+        error(404, s"'$uri' is not registered")
     }
   }
 

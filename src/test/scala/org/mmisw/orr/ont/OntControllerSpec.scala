@@ -55,7 +55,7 @@ class OntControllerSpec extends MutableScalatraSpec with Logging {
     "work" in {
       Thread.sleep(1500) // so the new version is diff.
       logger.info(s"post: $map2")
-      post("/", params = map2, files = Map("file" -> file)) {
+      post("/version", params = map2, files = Map("file" -> file)) {
         logger.info(s"post new version reply: $body")
         status must_== 200
 
