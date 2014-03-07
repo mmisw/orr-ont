@@ -7,6 +7,7 @@ import org.scalatra.servlet.{FileItem, SizeConstraintExceededException, FileUplo
 import org.scalatra.FlashMapSupport
 import javax.servlet.annotation.MultipartConfig
 import java.io.File
+import java.net.{URI, URISyntaxException}
 
 
 @MultipartConfig(maxFileSize = 5*1024*1024)
@@ -131,6 +132,13 @@ class OntController(implicit setup: Setup) extends OrrOntStack
     case Some(authority) => verifyAuthorityAndUser(authority, userName)
   }
 
+  def validateUri(uri: String) {
+    try new URI(uri)
+    catch {
+      case e: URISyntaxException => error(400, s"invalid URI '$uri': ${e.getMessage}")
+    }
+  }
+
   /**
    * post a new ontology entry or a new version of an existing ontology entry.
    *
@@ -171,6 +179,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
 
       case None =>  // new ontology entry
         val authority = verifyAuthorityAndUser(authorityOpt, userName)
+        validateUri(uri)
         val name = nameOpt.getOrElse(missing("name"))
         newVersion += "name" -> name
 
