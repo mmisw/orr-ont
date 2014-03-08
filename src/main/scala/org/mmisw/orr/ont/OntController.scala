@@ -8,6 +8,11 @@ import org.scalatra.FlashMapSupport
 import javax.servlet.annotation.MultipartConfig
 import java.io.File
 import java.net.{URI, URISyntaxException}
+import org.mmisw.orr.ont.db.{OntologyVersion, Ontology}
+import org.joda.time.DateTime
+import scala.util.{Failure, Success, Try}
+import com.novus.salat._
+import com.novus.salat.global._
 
 
 @MultipartConfig(maxFileSize = 5*1024*1024)
@@ -19,12 +24,13 @@ class OntController(implicit setup: Setup) extends OrrOntStack
 
   error {
     case e: SizeConstraintExceededException =>
-      error(412, "The file you uploaded exceeded the 5MB limit.")
+      error(413, "The file you uploaded exceeded the 5MB limit.")
   }
 
-  val ontologies  = setup.db.ontologiesColl
   val authorities = setup.db.authoritiesColl
   val users       = setup.db.usersColl
+
+  val ontDAO       = setup.db.ontDAO
 
   val versionFormatter = new java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss")
 
@@ -33,46 +39,29 @@ class OntController(implicit setup: Setup) extends OrrOntStack
   }
 
   def getOnt(uri: String, versionOpt: Option[String], formatOpt: Option[String]) = {
-    ontologies.findOne(MongoDBObject("uri" -> uri)) match {
+
+    ontDAO.findOneById(uri) match {
       case None => error(404, s"'$uri' is not registered")
 
       case Some(ont) =>
-        val versions: MongoDBObject = ont.asDBObject("versions").asInstanceOf[BasicDBObject]
-        versionOpt match {
+        val (ontologyVersion, version) = versionOpt match {
+          case Some(v) =>
+            val ov = ont.versions.getOrElse(v, error(404, s"'$uri', version '$v' is not registered"))
+            (ov, v)
+
           case None =>
-            ont.getAs[String]("latestVersion") match {
-              case None => bug(s"'$uri': No latestVersion entry")
-
-              case Some(version) =>
-                versions.get(version) match {
-                  case None => bug(s"'$uri', latest version '$version' is not registered")
-
-                  case Some(versionEntry) =>
-                    val mo: MongoDBObject = versionEntry.asInstanceOf[BasicDBObject]
-
-                    // format is the one given, if any, or the one in the db:
-                    val format = formatOpt.getOrElse(mo.getAsOrElse[String]("format", bug(
-                      s"'$uri' (version='$version'): no default format known")))
-
-                    // todo: determine whether the request is for file contents, or metadata
-                    //VersionInfo(uri, mo.getAsOrElse("name", ""), version, mo.getAsOrElse("date", ""))
-
-                    // assume file contents while we test this part
-                    getOntologyFile(uri, version, format)
-                }
-            }
-
-          case Some(version) =>
-            // val versions = new MongoDBObject(ont.asDBObject("versions").asInstanceOf[BasicDBObject])
-            versions.get(version) match {
-              case None => error(404, s"'$uri', version '$version' is not registered")
-
-              case Some(versionEntry) =>
-                val mo: MongoDBObject = versionEntry.asInstanceOf[BasicDBObject]
-                // todo get metadata
-                VersionInfo(uri, mo.getAsOrElse("name", ""), version, mo.getAsOrElse("date", ""))
-            }
+            val ov = ont.versions.getOrElse(ont.latestVersion,
+              bug(s"'$uri', version '${ont.latestVersion}' is not registered"))
+            (ov, ont.latestVersion)
         }
+
+        // format is the one given, if any, or the one in the db:
+        val format = formatOpt.getOrElse(ontologyVersion.format)
+
+        // todo: determine whether the request is for file contents, or metadata.
+
+        // assume file contents while we test this part
+        getOntologyFile(uri, version, format)
     }
   }
 
@@ -86,7 +75,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
 
       case None =>
         // TODO just list with basic info?
-        ontologies.find()
+        ontDAO.find(MongoDBObject()) map grater[Ontology].toCompactJSON
     }
   }
 
@@ -141,7 +130,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
 
   def getOwners = {
     // if owners is given, verify them in general (for either new entry or new version)
-    val owners = multiParams("owners").filter(_.trim.length > 0).toSet
+    val owners = multiParams("owners").filter(_.trim.length > 0).toSet.toList
     owners foreach (userName => verifyUser(Some(userName)))
     logger.debug(s"owners=$owners")
     owners
@@ -179,40 +168,50 @@ class OntController(implicit setup: Setup) extends OrrOntStack
     val authorityOpt = params.get("authority")
     val userName = verifyUser(params.get("userName"))
 
+    // TODO handle case where there is no explicit authority to verify
+    // the user can submit on her own behalf.
     val authority = verifyAuthorityAndUser(authorityOpt, userName)
 
     val owners = getOwners
     val (fileItem, format) = getFileAndFormat
     val (version, date) = getVersion
 
-    val newVersion = MongoDBObject(
-      "name"        -> name,
-      "date"        -> date,
-      "userName"    -> userName,
-      "format"      -> format
-    )
-
-    val q = MongoDBObject("uri" -> uri)
-    ontologies.findOne(q) match {
+    ontDAO.findOneById(uri) match {
       case None =>
         validateUri(uri)
 
-        val obj = MongoDBObject(
-          "uri" -> uri,
-          "latestVersion" -> version,
-          "authority" -> authority,
-          "owners" -> owners,
-          "versions" -> MongoDBObject(version -> newVersion)
-        )
         writeOntologyFile(uri, version, fileItem, format)
-        ontologies += obj
-        Ontology(uri, name, Some(version))
+
+        val ont = Ontology(uri, version, Some(authority),
+          owners = owners,
+          versions = Map(version -> OntologyVersion(name, userName, format, new DateTime(date))))
+
+        Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
+          case Success(uriR) => logger.debug(s"insert result = '$uriR'")
+
+          case Failure(exc)  => error(500, s"insert failure = $exc")
+              // TODO note that it might be a duplicate key in concurrent registration
+        }
+
+        OntologyResult("registered", uri, Some(name), Some(version))
 
       case Some(ont) =>   // bad request: existing ontology entry.
         error(409, s"'$uri' is already registered")
     }
   }
 
+  def verifyOwner(userName: String, ont: Ontology) = {
+    if (ont.owners.length > 0) {
+      if (!ont.owners.contains(userName)) error(401, s"'$userName' is not an owner of '${ont.uri}'")
+    }
+    else ont.authority match {
+      case Some(authority) =>
+        verifyAuthorityAndUser(authority, userName, authorityMustExist = true)
+
+      case None => // TODO handle no-authority case
+    }
+
+  }
   /**
    * posts a new version of an existing ontology entry.
    *
@@ -227,129 +226,127 @@ class OntController(implicit setup: Setup) extends OrrOntStack
     val (fileItem, format) = getFileAndFormat
     val (version, date) = getVersion
 
-    val newVersion = MongoDBObject(
-      "date"        -> date,
-      "userName"    -> userName,
-      "format"      -> format
-    )
+    val q = MongoDBObject("_id" -> uri)
 
-    val q = MongoDBObject("uri" -> uri)
-    ontologies.findOne(q) match {
+    var newVersion = OntologyVersion("", userName, format, new DateTime(date))
+
+    ontDAO.findOneById(uri) match {
+      case None => error(404, s"'$uri' is not registered")
 
       case Some(ont) =>
-        val authority = ont.getAs[String]("authority").getOrElse(
-          bug(s"No authority in ontology entry"))
+        verifyOwner(userName, ont)
 
-        val dbOwners = ont.getAs[MongoDBList]("owners").getOrElse(
-          bug(s"No owners in ontology entry"))
-
-        if (dbOwners.length > 0) {
-          if (!dbOwners.contains(userName)) error(410, s"'$userName' is not an owner of '$uri'")
-        }
-        else {
-          // verify against authority members:
-          verifyAuthorityAndUser(authority, userName, authorityMustExist = true)
-        }
-
-        val update = ont
+        var update = ont
 
         // if owners explicitly given, use it:
         if (params.contains("owners")) {
-          update.put("owners", owners)
+          update = update.copy(owners = owners.toSet.toList)
         }
 
-        val versions = ont.getAs[BasicDBObject]("versions").head
-        nameOpt foreach (name => newVersion += "name" -> name)
-        versions += version -> newVersion
-        update.put("latestVersion", version)
-        update.put("versions", versions)
+        nameOpt foreach (name => newVersion = newVersion.copy(name = name))
+        update = update.copy(latestVersion = version,
+          versions = ont.versions ++ Map(version -> newVersion))
 
         logger.info(s"update: $update")
         writeOntologyFile(uri, version, fileItem, format)
-        val result = ontologies.update(q, update)
-        OntologyResult(uri, Some(version), s"updated (${result.getN})")
 
-      case None =>
-        error(404, s"'$uri' is not registered")
+        Try(ontDAO.update(q, update, false, false, WriteConcern.Safe)) match {
+          case Success(result) =>
+            OntologyResult(s"updated ($result)", uri, version = Some(version))
+
+          case Failure(exc)  => error(500, s"update failure = $exc")
+        }
     }
   }
 
-  // updates a particular version
+  /**
+   * updates a particular version.
+   * Note, only the name in the particular version can be updated.
+   */
   put("/version") {
+    acceptOnly("uri", "version", "userName", "name")
     val uri      = require(params, "uri")
     val version  = require(params, "version")
-    verifyUser(params.get("userName"))
+    val userName = verifyUser(params.get("userName"))
+    val name     = require(params, "name")
 
-    val unrecognized = params.keySet -- Set("uri", "version", "userName", "name")
-    if (unrecognized.size > 0) error(400, s"unrecognized parameters: $unrecognized")
-
-    val obj = MongoDBObject("uri" -> uri)
-    ontologies.findOne(obj) match {
-      case None =>
-        error(404, s"'$uri' is not registered")
+    ontDAO.findOneById(uri) match {
+      case None => error(404, s"'$uri' is not registered")
 
       case Some(ont) =>
-        ont.getAs[BasicDBObject]("versions") match {
-          case None => bug(s"'$uri': No versions entry")
+        verifyOwner(userName, ont)
 
-          case Some(versions) =>
-            versions.getAs[BasicDBObject](version) match {
-              case None => bug(s"'$uri', version '$version' is not registered")
+        var ontologyVersion = ont.versions.getOrElse(version,
+          error(404, s"'$uri', version '$version' is not registered"))
 
-              case Some(versionEntry) =>
-                List("name", "userName") foreach { k =>
-                  params.get(k) foreach {v => versionEntry.put(k, v)}
-                }
-            }
+        ontologyVersion = ontologyVersion.copy(name = name)
+
+        val newVersions = ont.versions.updated(version, ontologyVersion)
+        val update = ont.copy(versions = newVersions)
+        logger.info(s"update: $update")
+
+        Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
+          case Success(result) =>
+            OntologyResult(s"updated ($result)", uri, version = Some(version))
+
+          case Failure(exc)  => error(500, s"update failure = $exc")
         }
-        val result = ontologies.update(obj, ont)
-        OntologyResult(uri, Some(version), s"updated (${result.getN})")
     }
   }
 
   // deletes a particular version
   delete("/version") {
+    acceptOnly("uri", "version", "userName")
     val uri      = require(params, "uri")
     val version  = require(params, "version")
-    verifyUser(params.get("userName"))
+    val userName = verifyUser(params.get("userName"))
 
-    val obj = MongoDBObject("uri" -> uri)
-    ontologies.findOne(obj) match {
-      case None =>
-        error(404, s"'$uri' is not registered")
+    ontDAO.findOneById(uri) match {
+      case None => error(404, s"'$uri' is not registered")
 
       case Some(ont) =>
-        ont.getAs[BasicDBObject]("versions") match {
-          case None => bug(s"'$uri': No versions entry")
+        verifyOwner(userName, ont)
 
-          case Some(versions) =>
-            versions.getAs[BasicDBObject](version) match {
-              case None => bug(s"'$uri', version '$version' is not registered")
+        ont.versions.getOrElse(version, error(404, s"'$uri', version '$version' is not registered"))
 
-              case Some(versionEntry) =>
-                versions.removeField(version)
-            }
+        val update = ont.copy(versions = ont.versions - version)
+        logger.info(s"update: $update")
+
+        Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
+          case Success(result) =>
+            OntologyResult(s"removed ($result)", uri, version = Some(version))
+
+          case Failure(exc)  => error(500, s"update failure = $exc")
         }
-        val result = ontologies.update(obj, ont)
-        OntologyResult(uri, Some(version), s"removed (${result.getN})")
     }
   }
 
   // deletes a complete entry
   delete("/") {
-    val uri = require(params, "uri")
+    acceptOnly("uri", "userName")
+    val uri      = require(params, "uri")
     val userName = verifyUser(params.get("userName"))
 
-    val obj = MongoDBObject("uri" -> uri)
-    val result = ontologies.remove(obj)
-    OntologyResult(uri, comment = s"removed (${result.getN})")
+    ontDAO.findOneById(uri) match {
+      case None => error(404, s"'$uri' is not registered")
+
+      case Some(ont) =>
+        verifyOwner(userName, ont)
+
+        Try(ontDAO.remove(ont, WriteConcern.Safe)) match {
+          case Success(result) =>
+            OntologyResult(s"removed ($result)", uri)
+
+          case Failure(exc)  => error(500, s"update failure = $exc")
+        }
+    }
   }
 
   post("/!/deleteAll") {
     val map = body()
     val pw = require(map, "pw")
     val special = setup.mongoConfig.getString("pw_special")
-    if (special == pw) ontologies.remove(MongoDBObject()) else halt(401)
+    if (special == pw) ontDAO.remove(MongoDBObject()) else halt(401)
   }
 
   def writeOntologyFile(uri: String, version: String,

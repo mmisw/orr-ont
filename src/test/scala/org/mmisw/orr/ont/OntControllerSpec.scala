@@ -9,6 +9,7 @@ import java.io.File
 
 class OntControllerSpec extends MutableScalatraSpec with Logging {
   implicit val formats = org.json4s.DefaultFormats
+  com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers()
 
   implicit val setup = new Setup("/etc/orront.conf", testing = true)
   addServlet(new OntController, "/*")
@@ -84,9 +85,12 @@ class OntControllerSpec extends MutableScalatraSpec with Logging {
 
   "DELETE version" should {
     "work" in {
-      val map3 = map2 + ("version" -> version.get)
-      logger.info(s"delete version: $map3")
-      delete("/version", map3) {
+      val map = Map("uri" -> uri,
+        "version" -> version.get,
+        "userName" -> "tester"
+      )
+      logger.info(s"delete version: $map")
+      delete("/version", map) {
         status must_== 200
       }
     }
@@ -94,8 +98,11 @@ class OntControllerSpec extends MutableScalatraSpec with Logging {
 
   "DELETE entry" should {
     "work" in {
-      logger.info(s"delete entry: $map2")
-      delete("/", map2) {
+      val map = Map("uri" -> uri,
+        "userName" -> "tester"
+      )
+      logger.info(s"delete entry: $map")
+      delete("/", map) {
         status must_== 200
       }
     }

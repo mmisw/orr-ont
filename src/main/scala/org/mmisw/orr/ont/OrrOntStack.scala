@@ -24,6 +24,11 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport {
     if (value.length > 0) value else error(400, s"'$paramName' param value missing")
   }
 
+  protected def acceptOnly(paramNames: String*) {
+    val unrecognized = params.keySet -- Set(paramNames: _*)
+    if (unrecognized.size > 0) error(400, s"unrecognized parameters: $unrecognized")
+  }
+
   protected def body(): Map[String, JValue] = {
     val json = parse(request.body)
     if (json != JNothing) json.extract[Map[String, JValue]] else error(400, "missing json body")
