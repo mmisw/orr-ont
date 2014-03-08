@@ -28,7 +28,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
   }
 
   val authorities = setup.db.authoritiesColl
-  val users       = setup.db.usersColl
+  val usersDAO       = setup.db.usersDAO
 
   val ontDAO       = setup.db.ontDAO
 
@@ -84,7 +84,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
     case Some(userName) =>
       if (setup.testing) userName
       else {
-        users.findOne(MongoDBObject("userName" -> userName)) match {
+        usersDAO.findOneById(userName) match {
           case None => error(400, s"'$userName' invalid user")
           case _ => userName
         }

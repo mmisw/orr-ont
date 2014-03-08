@@ -7,6 +7,7 @@ import org.scalatra.test.specs2._
 
 class UserControllerSpec extends MutableScalatraSpec {
   implicit val formats = org.json4s.DefaultFormats
+  com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers()
   import org.json4s.JsonDSL._
 
   implicit val setup = new Setup("/etc/orront.conf", testing = true)
@@ -36,6 +37,7 @@ class UserControllerSpec extends MutableScalatraSpec {
       post("/", body = pretty(render(map)),
            headers=Map("content-type" -> "application/json")) {
 
+        println(s"body = $body")
         status must_== 200
 
         val json = parse(body)

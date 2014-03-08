@@ -7,13 +7,6 @@ case class VersionInfo(
            date:        String,
            metadata:    Map[String,AnyRef] = Map())
 
-case class User(
-           userName:    String,
-           firstName:   String,
-           lastName:    String,
-           registered:  Option[String] = None,
-           password:    Option[String] = None)
-
 case class Authority(
            shortName:   String,
            ontUri:      Option[String] = None,
