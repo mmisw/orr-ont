@@ -22,6 +22,12 @@ case class OntologyResult(
             updated:     Option[DateTime] = None,
             removed:     Option[DateTime] = None)
 
+case class PendOntologyResult(
+            uri:            String,
+            name:           String,
+            latestVersion:  String,
+            versions:       List[String])
+
 case class VersionInfo(
            uri:         String,
            name:        String,

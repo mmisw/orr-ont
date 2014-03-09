@@ -33,31 +33,31 @@ class OntController(implicit setup: Setup) extends OrrOntStack
 
   val versionFormatter = new java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss")
 
-  def getOnt(uri: String, versionOpt: Option[String], formatOpt: Option[String]) = {
 
-    ontDAO.findOneById(uri) match {
-      case None => error(404, s"'$uri' is not registered")
+  def getOntVersion(uri: String, versionOpt: Option[String]) = {
+    val ont = ontDAO.findOneById(uri).getOrElse(error(404, s"'$uri' is not registered"))
+    versionOpt match {
+      case Some(v) =>
+        val ov = ont.versions.getOrElse(v, error(404, s"'$uri', version '$v' is not registered"))
+        (ov, v)
 
-      case Some(ont) =>
-        val (ontVersion, version) = versionOpt match {
-          case Some(v) =>
-            val ov = ont.versions.getOrElse(v, error(404, s"'$uri', version '$v' is not registered"))
-            (ov, v)
-
-          case None =>
-            val ov = ont.versions.getOrElse(ont.latestVersion,
-              bug(s"'$uri', version '${ont.latestVersion}' is not registered"))
-            (ov, ont.latestVersion)
-        }
-
-        // format is the one given, if any, or the one in the db:
-        val format = formatOpt.getOrElse(ontVersion.format)
-
-        // todo: determine whether the request is for file contents, or metadata.
-
-        // assume file contents while we test this part
-        getOntologyFile(uri, version, format)
+      case None =>
+        val ov = ont.versions.getOrElse(ont.latestVersion,
+          bug(s"'$uri', version '${ont.latestVersion}' is not registered"))
+        (ov, ont.latestVersion)
     }
+  }
+
+  def resolveUri(uri: String) = {
+    val (ontVersion, version) = getOntVersion(uri, params.get("version"))
+
+    // format is the one given, if any, or the one in the db:
+    val format = params.get("format").getOrElse(ontVersion.format)
+
+    // todo: determine whether the request is for file contents, or metadata.
+
+    // assume file contents while we test this part
+    getOntologyFile(uri, version, format)
   }
 
   /**
@@ -65,12 +65,16 @@ class OntController(implicit setup: Setup) extends OrrOntStack
    */
   get("/") {
     params.get("uri") match {
-      case Some(uri) =>
-        getOnt(uri, params.get("version"), params.get("format"))
+      case Some(uri) => resolveUri(uri)
 
       case None =>
-        // TODO just list with basic info?
-        ontDAO.find(MongoDBObject()) map grater[Ontology].toCompactJSON
+        // TODO what exactly to report?
+        ontDAO.find(MongoDBObject()) map { ont =>
+          val name = ont.versions.get(ont.latestVersion).get.name
+          val ores = PendOntologyResult(ont.uri, name, ont.latestVersion, ont.versions.keys.toList)
+          grater[PendOntologyResult].toCompactJSON(ores)
+        }
+
     }
   }
 
