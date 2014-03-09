@@ -14,8 +14,24 @@ class AuthorityController(implicit setup: Setup) extends OrrOntStack
 
   val authoritiesDAO = setup.db.authoritiesDAO
 
+
+  def getAuthorityJson(authority: Authority) = {
+    // TODO what exactly to report?
+    val res = PendAuthorityResult(authority.authName, authority.ontUri,
+      registered = Some(authority.registered))
+    grater[PendAuthorityResult].toCompactJSON(res)
+  }
+
   get("/") {
-    authoritiesDAO.find(MongoDBObject()) map grater[Authority].toCompactJSON
+    authoritiesDAO.find(MongoDBObject()) map getAuthorityJson
+  }
+
+  get("/:authName") {
+    val authName = require(params, "authName")
+    authoritiesDAO.findOneById(authName) match {
+      case Some(authority) => getAuthorityJson(authority)
+      case None => error(404, s"'$authName' is not registered")
+    }
   }
 
   // http post localhost:8080/authority authName=mmi name="mmi project" ontUri=http://mmisw.org/ont/mmi members:='["carueda"]'
@@ -60,6 +76,7 @@ class AuthorityController(implicit setup: Setup) extends OrrOntStack
         if (map.contains("ontUri")) {
           update = update.copy(ontUri = Some(require(map, "ontUri")))
         }
+        update = update.copy(updated = Some(DateTime.now()))
         logger.info(s"updating authority with: $update")
         Try(authoritiesDAO.update(MongoDBObject("_id" -> authName), update, false, false, WriteConcern.Safe)) match {
           case Success(result) => AuthorityResult(authName, updated = Some(DateTime.now())) //TODO

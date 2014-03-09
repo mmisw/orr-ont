@@ -23,11 +23,14 @@ case class User(
             firstName:             String,
             lastName:              String,
             password:              String,
-            registered:            DateTime = DateTime.now())
+            ontUri:                Option[String] = None,
+            registered:            DateTime = DateTime.now(),
+            updated:               Option[DateTime] = None)
 
 case class Authority(
             @Key("_id") authName:  String,
             name:                  String,
             ontUri:                Option[String] = None,
             members:               List[String] = List.empty,
-            registered:            DateTime = DateTime.now())
+            registered:            DateTime = DateTime.now(),
+            updated:               Option[DateTime] = None)

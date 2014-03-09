@@ -9,11 +9,21 @@ case class UserResult(
             updated:     Option[DateTime] = None,
             removed:     Option[DateTime] = None)
 
+case class PendUserResult(
+            userName:    String,
+            ontUri:      Option[String] = None,
+            registered:  Option[DateTime] = None)
+
 case class AuthorityResult(
             authName:    String,
             registered:  Option[DateTime] = None,
             updated:     Option[DateTime] = None,
             removed:     Option[DateTime] = None)
+
+case class PendAuthorityResult(
+            authName:    String,
+            ontUri:      Option[String] = None,
+            registered:  Option[DateTime] = None)
 
 case class OntologyResult(
             uri:         String,

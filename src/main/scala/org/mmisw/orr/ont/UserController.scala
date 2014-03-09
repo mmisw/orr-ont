@@ -18,8 +18,23 @@ class UserController(implicit setup: Setup) extends OrrOntStack
 
   val passwordEnc = new StrongPasswordEncryptor
 
+
+  def getUserJson(user: User) = {
+    // TODO what exactly to report?
+    val res = PendUserResult(user.userName, user.ontUri, registered = Some(user.registered))
+    grater[PendUserResult].toCompactJSON(res)
+  }
+
   get("/") {
-    usersDAO.find(MongoDBObject()) map grater[User].toCompactJSON
+    usersDAO.find(MongoDBObject()) map getUserJson
+  }
+
+  get("/:userName") {
+    val userName = require(params, "userName")
+    usersDAO.findOneById(userName) match {
+      case Some(user) => getUserJson(user)
+      case None => error(404, s"'$userName' is not registered")
+    }
   }
 
   post("/") {
@@ -29,12 +44,13 @@ class UserController(implicit setup: Setup) extends OrrOntStack
     val firstName = require(map, "firstName")
     val lastName  = require(map, "lastName")
     val password  = require(map, "password")
+    val ontUri    = getString(map, "ontUri")
 
     val encPassword = passwordEnc.encryptPassword(password)
 
     usersDAO.findOneById(userName) match {
       case None =>
-        val obj = User(userName, firstName, lastName, encPassword)
+        val obj = User(userName, firstName, lastName, encPassword, ontUri)
 
         Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
           case Success(r) => UserResult(userName, registered = Some(obj.registered))
@@ -91,6 +107,10 @@ class UserController(implicit setup: Setup) extends OrrOntStack
           val encPassword = passwordEnc.encryptPassword(password)
           update = update.copy(password = encPassword)
         }
+        if (map.contains("ontUri")) {
+          update = update.copy(ontUri = Some(require(map, "ontUri")))
+        }
+        update = update.copy(updated = Some(DateTime.now()))
         logger.info(s"updating user with: $update")
 
         Try(usersDAO.update(MongoDBObject("_id" -> userName), update, false, false, WriteConcern.Safe)) match {
