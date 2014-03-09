@@ -26,7 +26,7 @@ class OntControllerSpec extends MutableScalatraSpec with Logging {
   val map2 = map1 + ("name" -> "modified name")
   val body2 = pretty(render(Extraction.decompose(map2)))
 
-  var version: Option[String] = None
+  var registeredVersion: Option[String] = None
 
   "GET /" should {
     "return status 200" in {
@@ -44,10 +44,23 @@ class OntControllerSpec extends MutableScalatraSpec with Logging {
       post("/", map1, Map("file" -> file)) {
         logger.info(s"post new entry reply: $body")
         status must_== 200
+        val res = parse(body).extract[OntologyResult]
+        res.uri must_== uri
+        registeredVersion = res.version
+      }
+    }
+  }
 
-        val json = parse(body)
-        val map = json.extract[Map[String, String]]
-        map.get("uri") must_== Some(uri)
+  "GET with only uri" should {
+    "return the latest version" in {
+      val map = Map("uri" -> uri, "format" -> "!md")
+      logger.info(s"get: $map")
+      get("/", map) {
+        logger.info(s"get new entry reply: $body")
+        status must_== 200
+        val res = parse(body).extract[PendOntologyResult]
+        res.uri must_== uri
+        res.latestVersion must_== registeredVersion.get
       }
     }
   }
@@ -59,11 +72,23 @@ class OntControllerSpec extends MutableScalatraSpec with Logging {
       post("/version", params = map2, files = Map("file" -> file)) {
         logger.info(s"post new version reply: $body")
         status must_== 200
+        val res = parse(body).extract[OntologyResult]
+        res.uri must_== uri
+        registeredVersion = res.version
+      }
+    }
+  }
 
-        val json = parse(body)
-        val map = json.extract[Map[String, String]]
-        map.get("uri") must_== Some(uri)
-        version = map.get("version")
+  "GET with only uri" should {
+    "return the latest version" in {
+      val map = Map("uri" -> uri, "format" -> "!md")
+      logger.info(s"get: $map")
+      get("/", map) {
+        logger.info(s"get new entry reply: $body")
+        status must_== 200
+        val res = parse(body).extract[PendOntologyResult]
+        res.uri must_== uri
+        res.latestVersion must_== registeredVersion.get
       }
     }
   }
@@ -71,7 +96,7 @@ class OntControllerSpec extends MutableScalatraSpec with Logging {
   "PUT to update existing version" should {
     "work" in {
       val map3 = Map("uri" -> uri,
-        "version" -> version.get,
+        "version" -> registeredVersion.get,
         "name" -> "modified name again",
         "userName" -> "tester"
       )
@@ -79,6 +104,9 @@ class OntControllerSpec extends MutableScalatraSpec with Logging {
       put("/version", map3) {
         logger.info(s"put reply: $body")
         status must_== 200
+        val res = parse(body).extract[OntologyResult]
+        res.uri must_== uri
+        registeredVersion = res.version
       }
     }
   }
@@ -86,12 +114,15 @@ class OntControllerSpec extends MutableScalatraSpec with Logging {
   "DELETE version" should {
     "work" in {
       val map = Map("uri" -> uri,
-        "version" -> version.get,
+        "version" -> registeredVersion.get,
         "userName" -> "tester"
       )
       logger.info(s"delete version: $map")
       delete("/version", map) {
         status must_== 200
+        val res = parse(body).extract[OntologyResult]
+        res.uri must_== uri
+        registeredVersion = res.version
       }
     }
   }
@@ -104,6 +135,8 @@ class OntControllerSpec extends MutableScalatraSpec with Logging {
       logger.info(s"delete entry: $map")
       delete("/", map) {
         status must_== 200
+        val res = parse(body).extract[OntologyResult]
+        res.uri must_== uri
       }
     }
   }

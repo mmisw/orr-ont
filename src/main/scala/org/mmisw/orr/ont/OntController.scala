@@ -38,43 +38,58 @@ class OntController(implicit setup: Setup) extends OrrOntStack
     val ont = ontDAO.findOneById(uri).getOrElse(error(404, s"'$uri' is not registered"))
     versionOpt match {
       case Some(v) =>
-        val ov = ont.versions.getOrElse(v, error(404, s"'$uri', version '$v' is not registered"))
-        (ov, v)
+        val ontVersion = ont.versions.getOrElse(v, error(404, s"'$uri', version '$v' is not registered"))
+        (ont, ontVersion, v)
 
       case None =>
-        val ov = ont.versions.getOrElse(ont.latestVersion,
+        val ontVersion = ont.versions.getOrElse(ont.latestVersion,
           bug(s"'$uri', version '${ont.latestVersion}' is not registered"))
-        (ov, ont.latestVersion)
+        (ont, ontVersion, ont.latestVersion)
     }
   }
 
   def resolveUri(uri: String) = {
-    val (ontVersion, version) = getOntVersion(uri, params.get("version"))
+    val (ont, ontVersion, version) = getOntVersion(uri, params.get("version"))
 
     // format is the one given, if any, or the one in the db:
     val format = params.get("format").getOrElse(ontVersion.format)
 
     // todo: determine whether the request is for file contents, or metadata.
 
-    // assume file contents while we test this part
-    getOntologyFile(uri, version, format)
+    if (format == "!md") {
+      val ores = PendOntologyResult(ont.uri, ontVersion.name, version, ont.versions.keys.toList)
+      grater[PendOntologyResult].toCompactJSON(ores)
+    }
+    else getOntologyFile(uri, version, format)
+  }
+
+  def selfResolve = {
+    val uri = request.getRequestURL.toString
+    logger.debug(s"self-resolving $uri")
+    resolveUri(uri)
   }
 
   /**
-   * http localhost:8080/ont/\?uri=http://mmisw.org/ont/mmi/device\&format=rdf
+   * General:
+   *   http localhost:8080/ont/\?uri=http://mmisw.org/ont/mmi/device\&format=rdf
+   * Self-resolvability:
+   *   http localhost:8080/ont/myauth/myont\?format=rdf
    */
-  get("/") {
+  get("/(.*)".r) {
     params.get("uri") match {
       case Some(uri) => resolveUri(uri)
 
       case None =>
-        // TODO what exactly to report?
-        ontDAO.find(MongoDBObject()) map { ont =>
-          val name = ont.versions.get(ont.latestVersion).get.name
-          val ores = PendOntologyResult(ont.uri, name, ont.latestVersion, ont.versions.keys.toList)
-          grater[PendOntologyResult].toCompactJSON(ores)
+        val someSuffix = multiParams("captures").toList(0).length > 0
+        if (someSuffix) selfResolve
+        else {
+          // TODO what exactly to report?
+          ontDAO.find(MongoDBObject()) map { ont =>
+            val name = ont.versions.get(ont.latestVersion).get.name
+            val ores = PendOntologyResult(ont.uri, name, ont.latestVersion, ont.versions.keys.toList)
+            grater[PendOntologyResult].toCompactJSON(ores)
+          }
         }
-
     }
   }
 
