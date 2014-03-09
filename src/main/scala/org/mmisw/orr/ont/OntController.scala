@@ -33,10 +33,6 @@ class OntController(implicit setup: Setup) extends OrrOntStack
 
   val versionFormatter = new java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss")
 
-  def dupUriError(uri: String) = {
-    MongoDBObject("error" -> s"'$uri' already in collection")
-  }
-
   def getOnt(uri: String, versionOpt: Option[String], formatOpt: Option[String]) = {
 
     ontDAO.findOneById(uri) match {
