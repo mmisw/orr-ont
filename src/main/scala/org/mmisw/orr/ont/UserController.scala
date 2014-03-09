@@ -96,7 +96,7 @@ class UserController(implicit setup: Setup) extends OrrOntStack
         logger.info(s"updating user with: $update")
 
         Try(usersDAO.update(MongoDBObject("userName" -> userName), update, false, false, WriteConcern.Safe)) match {
-          case Success(result) => UserResult(userName, s"updated ($result)")
+          case Success(result) => UserResult(userName, s"updated (${result.getN})")
           case Failure(exc)    => error(500, s"update failure = $exc")
         }
     }

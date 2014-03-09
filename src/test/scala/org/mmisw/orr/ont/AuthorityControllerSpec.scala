@@ -7,6 +7,7 @@ import org.scalatra.test.specs2._
 
 class AuthorityControllerSpec extends MutableScalatraSpec {
   implicit val formats = org.json4s.DefaultFormats
+  com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers()
   import org.json4s.JsonDSL._
 
   implicit val setup = new Setup("/etc/orront.conf", testing = true)

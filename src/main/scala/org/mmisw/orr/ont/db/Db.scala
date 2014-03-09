@@ -40,10 +40,11 @@ class Db(mongoConfig: Config) extends AnyRef with Logging {
 
   private[this] val ontologiesColl  = mongoClientDb(mongoConfig.getString("ontologies"))
   private[this] val usersColl       = mongoClientDb(mongoConfig.getString("users"))
-  val authoritiesColl = mongoClientDb(mongoConfig.getString("authorities"))
+  private[this] val authoritiesColl = mongoClientDb(mongoConfig.getString("authorities"))
 
-  val ontDAO = new SalatDAO[Ontology, String](ontologiesColl) {}
-  val usersDAO = new SalatDAO[User, String](usersColl) {}
+  val ontDAO         = new SalatDAO[Ontology,  String](ontologiesColl) {}
+  val usersDAO       = new SalatDAO[User,      String](usersColl) {}
+  val authoritiesDAO = new SalatDAO[Authority, String](authoritiesColl) {}
 
   mcOpt = Some(mongoClient)
 

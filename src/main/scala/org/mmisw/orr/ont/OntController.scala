@@ -27,10 +27,9 @@ class OntController(implicit setup: Setup) extends OrrOntStack
       error(413, "The file you uploaded exceeded the 5MB limit.")
   }
 
-  val authorities = setup.db.authoritiesColl
+  val authoritiesDAO = setup.db.authoritiesDAO
   val usersDAO       = setup.db.usersDAO
-
-  val ontDAO       = setup.db.ontDAO
+  val ontDAO         = setup.db.ontDAO
 
   val versionFormatter = new java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss")
 
@@ -92,23 +91,18 @@ class OntController(implicit setup: Setup) extends OrrOntStack
   }
 
   /**
-   * Verifies the given authority and the userName against that authority,
+   * Verifies the given authority and the userName against that authority.
    */
-  def verifyAuthorityAndUser(authority: String, userName: String, authorityMustExist: Boolean = false): String = {
-    if (setup.testing) authority
+  def verifyAuthorityAndUser(authShortName: String, userName: String, authorityMustExist: Boolean = false): String = {
+    if (setup.testing) authShortName
     else {
-      authorities.findOne(MongoDBObject("shortName" -> authority)) match {
+      authoritiesDAO.findOneById(authShortName) match {
         case None => 
-          if (authorityMustExist) bug(s"'$authority' authority must exist")
-          else error(400, s"'$authority' invalid authority")
-        case Some(auth) =>
-          // verify userName is a member of the authority
-          auth.getAs[MongoDBList]("members") match {
-            case None => bug(s"No members in authority entry '$auth'")
-            case Some(members) =>
-              if (members.contains(userName)) authority
-              else error(401, s"user '$userName' is not a member of authority '$authority'")
-          }
+          if (authorityMustExist) bug(s"'$authShortName' authority must exist")
+          else error(400, s"'$authShortName' invalid authority")
+        case Some(authority) =>
+          if (authority.members.contains(userName)) authShortName
+          else error(401, s"user '$userName' is not a member of authority '$authShortName'")
       }
     }
   }

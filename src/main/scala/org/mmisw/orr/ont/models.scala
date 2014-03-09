@@ -7,14 +7,9 @@ case class VersionInfo(
            date:        String,
            metadata:    Map[String,AnyRef] = Map())
 
-case class Authority(
-           shortName:   String,
-           ontUri:      Option[String] = None,
-           registered:  Option[String] = None)
-
 case class AuthorityResult(
-           shortName:   String,
-           comment:     String)
+           comment:     String,
+           shortName:   String)
 
 case class OntologyResult(
            comment:     String,
