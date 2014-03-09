@@ -176,18 +176,19 @@ class OntController(implicit setup: Setup) extends OrrOntStack
 
         writeOntologyFile(uri, version, fileItem, format)
 
+        val ontVersion = OntologyVersion(name, userName, format, new DateTime(date))
         val ont = Ontology(uri, version, Some(authority),
           owners = owners,
-          versions = Map(version -> OntologyVersion(name, userName, format, new DateTime(date))))
+          versions = Map(version -> ontVersion))
 
         Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
-          case Success(uriR) => logger.debug(s"insert result = '$uriR'")
+          case Success(uriR) =>
+            OntologyResult(uri, version = Some(version), registered = Some(ontVersion.date))
 
           case Failure(exc)  => error(500, s"insert failure = $exc")
               // TODO note that it might be a duplicate key in concurrent registration
         }
 
-        OntologyResult("registered", uri, Some(name), Some(version))
 
       case Some(ont) =>   // bad request: existing ontology entry.
         error(409, s"'$uri' is already registered")
@@ -220,7 +221,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
     val (fileItem, format) = getFileAndFormat
     val (version, date) = getVersion
 
-    var newVersion = OntologyVersion("", userName, format, new DateTime(date))
+    var ontVersion = OntologyVersion("", userName, format, new DateTime(date))
 
     ontDAO.findOneById(uri) match {
       case None => error(404, s"'$uri' is not registered")
@@ -235,16 +236,16 @@ class OntController(implicit setup: Setup) extends OrrOntStack
           update = update.copy(owners = owners.toSet.toList)
         }
 
-        nameOpt foreach (name => newVersion = newVersion.copy(name = name))
+        nameOpt foreach (name => ontVersion = ontVersion.copy(name = name))
         update = update.copy(latestVersion = version,
-          versions = ont.versions ++ Map(version -> newVersion))
+          versions = ont.versions ++ Map(version -> ontVersion))
 
         logger.info(s"update: $update")
         writeOntologyFile(uri, version, fileItem, format)
 
         Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
           case Success(result) =>
-            OntologyResult(s"updated ($result)", uri, version = Some(version))
+            OntologyResult(uri, version = Some(version), updated = Some(ontVersion.date))
 
           case Failure(exc)  => error(500, s"update failure = $exc")
         }
@@ -268,18 +269,18 @@ class OntController(implicit setup: Setup) extends OrrOntStack
       case Some(ont) =>
         verifyOwner(userName, ont)
 
-        var ontologyVersion = ont.versions.getOrElse(version,
+        var ontVersion = ont.versions.getOrElse(version,
           error(404, s"'$uri', version '$version' is not registered"))
 
-        ontologyVersion = ontologyVersion.copy(name = name)
+        ontVersion = ontVersion.copy(name = name)
 
-        val newVersions = ont.versions.updated(version, ontologyVersion)
+        val newVersions = ont.versions.updated(version, ontVersion)
         val update = ont.copy(versions = newVersions)
         logger.info(s"update: $update")
 
         Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
           case Success(result) =>
-            OntologyResult(s"updated ($result)", uri, version = Some(version))
+            OntologyResult(uri, version = Some(version), updated = Some(ontVersion.date))
 
           case Failure(exc)  => error(500, s"update failure = $exc")
         }
@@ -306,7 +307,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
 
         Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
           case Success(result) =>
-            OntologyResult(s"removed ($result)", uri, version = Some(version))
+            OntologyResult(uri, version = Some(version), removed = Some(DateTime.now())) //TODO
 
           case Failure(exc)  => error(500, s"update failure = $exc")
         }
@@ -327,7 +328,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
 
         Try(ontDAO.remove(ont, WriteConcern.Safe)) match {
           case Success(result) =>
-            OntologyResult(s"removed ($result)", uri)
+            OntologyResult(uri, removed = Some(DateTime.now())) //TODO
 
           case Failure(exc)  => error(500, s"update failure = $exc")
         }

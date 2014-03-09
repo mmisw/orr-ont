@@ -15,15 +15,16 @@ case class AuthorityResult(
             updated:     Option[DateTime] = None,
             removed:     Option[DateTime] = None)
 
+case class OntologyResult(
+            uri:         String,
+            version:     Option[String] = None,
+            registered:  Option[DateTime] = None,
+            updated:     Option[DateTime] = None,
+            removed:     Option[DateTime] = None)
+
 case class VersionInfo(
            uri:         String,
            name:        String,
            version:     String,
            date:        String,
            metadata:    Map[String,AnyRef] = Map())
-
-case class OntologyResult(
-           comment:     String,
-           uri:         String,
-           name:        Option[String] = None,
-           version:     Option[String] = None)
