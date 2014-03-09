@@ -110,9 +110,9 @@ class OntController(implicit setup: Setup) extends OrrOntStack
   /**
    * Verifies the authority and the userName against that authority.
    */
-  def verifyAuthorityAndUser(authorityOpt: Option[String], userName: String): String = authorityOpt match {
+  def verifyAuthorityAndUser(authNameOpt: Option[String], userName: String): String = authNameOpt match {
     case None => missing("authority")
-    case Some(authority) => verifyAuthorityAndUser(authority, userName)
+    case Some(authName) => verifyAuthorityAndUser(authName, userName)
   }
 
   def validateUri(uri: String) {
@@ -159,12 +159,12 @@ class OntController(implicit setup: Setup) extends OrrOntStack
   post("/") {
     val uri = require(params, "uri")
     val name = require(params, "name")
-    val authorityOpt = params.get("authority")
+    val authNameOpt = params.get("authName")
     val userName = verifyUser(params.get("userName"))
 
     // TODO handle case where there is no explicit authority to verify
     // the user can submit on her own behalf.
-    val authority = verifyAuthorityAndUser(authorityOpt, userName)
+    val authName = verifyAuthorityAndUser(authNameOpt, userName)
 
     val owners = getOwners
     val (fileItem, format) = getFileAndFormat
@@ -177,7 +177,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
         writeOntologyFile(uri, version, fileItem, format)
 
         val ontVersion = OntologyVersion(name, userName, format, new DateTime(date))
-        val ont = Ontology(uri, version, Some(authority),
+        val ont = Ontology(uri, version, Some(authName),
           owners = owners,
           versions = Map(version -> ontVersion))
 
@@ -199,9 +199,9 @@ class OntController(implicit setup: Setup) extends OrrOntStack
     if (ont.owners.length > 0) {
       if (!ont.owners.contains(userName)) error(401, s"'$userName' is not an owner of '${ont.uri}'")
     }
-    else ont.authority match {
-      case Some(authority) =>
-        verifyAuthorityAndUser(authority, userName, authorityMustExist = true)
+    else ont.authName match {
+      case Some(authName) =>
+        verifyAuthorityAndUser(authName, userName, authorityMustExist = true)
 
       case None => // TODO handle no-authority case
     }
