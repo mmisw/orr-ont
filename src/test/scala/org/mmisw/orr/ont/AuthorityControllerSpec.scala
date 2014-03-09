@@ -38,10 +38,8 @@ class AuthorityControllerSpec extends MutableScalatraSpec {
            headers = Map("content-type" -> "application/json")) {
 
         status must_== 200
-
-        val json = parse(body)
-        val map = json.extract[Map[String, String]]
-        map.get("authName") must_== Some(authName)
+        val res = parse(body).extract[AuthorityResult]
+        res.authName must_== authName
       }
     }
   }
@@ -51,6 +49,8 @@ class AuthorityControllerSpec extends MutableScalatraSpec {
       put("/", body = pretty(render(("authName" -> authName) ~ ("ontUri" -> "updated.ontUri"))),
         headers = Map("content-type" -> "application/json")) {
         status must_== 200
+        val res = parse(body).extract[AuthorityResult]
+        res.authName must_== authName
       }
     }
   }
@@ -59,6 +59,8 @@ class AuthorityControllerSpec extends MutableScalatraSpec {
     "return status 200" in {
       delete("/", Map("authName" -> authName)) {
         status must_== 200
+        val res = parse(body).extract[AuthorityResult]
+        res.authName must_== authName
       }
     }
   }

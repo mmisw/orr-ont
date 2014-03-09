@@ -39,10 +39,8 @@ class UserControllerSpec extends MutableScalatraSpec {
 
         println(s"body = $body")
         status must_== 200
-
-        val json = parse(body)
-        val map = json.extract[Map[String, String]]
-        map.get("userName") must_== Some(userName)
+        val res = parse(body).extract[UserResult]
+        res.userName must_== userName
       }
     }
   }
@@ -70,6 +68,8 @@ class UserControllerSpec extends MutableScalatraSpec {
       put("/", body = pretty(render(Map("userName" -> userName, "firstName" -> "updated.firstName"))),
         headers=Map("content-type" -> "application/json")) {
         status must_== 200
+        val res = parse(body).extract[UserResult]
+        res.userName must_== userName
       }
     }
   }
@@ -78,6 +78,8 @@ class UserControllerSpec extends MutableScalatraSpec {
     "return status 200" in {
       delete("/", Map("userName" -> userName)) {
         status must_== 200
+        val res = parse(body).extract[UserResult]
+        res.userName must_== userName
       }
     }
   }
