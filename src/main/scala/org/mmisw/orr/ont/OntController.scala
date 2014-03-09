@@ -43,7 +43,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
       case None => error(404, s"'$uri' is not registered")
 
       case Some(ont) =>
-        val (ontologyVersion, version) = versionOpt match {
+        val (ontVersion, version) = versionOpt match {
           case Some(v) =>
             val ov = ont.versions.getOrElse(v, error(404, s"'$uri', version '$v' is not registered"))
             (ov, v)
@@ -55,7 +55,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
         }
 
         // format is the one given, if any, or the one in the db:
-        val format = formatOpt.getOrElse(ontologyVersion.format)
+        val format = formatOpt.getOrElse(ontVersion.format)
 
         // todo: determine whether the request is for file contents, or metadata.
 
@@ -382,7 +382,8 @@ class OntController(implicit setup: Setup) extends OrrOntStack
       contentType = formats(format)
       file
     }
-    else error(404, s"Ontology not found: uri='$uri' version='$version' format='$format'")
+    else error(406, s"Format '$format' not available for uri='$uri' version='$version'")
+         // TODO include accepted formats
   }
 
 }
