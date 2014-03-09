@@ -111,7 +111,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
    * Verifies the authority and the userName against that authority.
    */
   def verifyAuthorityAndUser(authNameOpt: Option[String], userName: String): String = authNameOpt match {
-    case None => missing("authority")
+    case None => missing("authName")
     case Some(authName) => verifyAuthorityAndUser(authName, userName)
   }
 
@@ -154,7 +154,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
   /**
    * posts a new ontology entry.
    *
-   * http -f post localhost:8080/ont uri=http://ont1 name=example authority=mmi userName=carueda file@src/test/resources/test.rdf format=rdf
+   * http -f post localhost:8080/ont uri=http://ont1 name=example authName=mmi userName=carueda file@src/test/resources/test.rdf format=rdf
    */
   post("/") {
     val uri = require(params, "uri")
