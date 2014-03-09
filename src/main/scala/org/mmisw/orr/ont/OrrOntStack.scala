@@ -3,13 +3,14 @@ package org.mmisw.orr.ont
 import org.scalatra._
 import org.scalatra.json.NativeJsonSupport
 import org.json4s.{DefaultFormats, Formats}
-import com.mongodb.casbah.Imports._
 import org.json4s.JsonAST.{JArray, JString, JValue, JNothing}
+import org.json4s.ext.JodaTimeSerializers
+import com.mongodb.casbah.Imports._
 
 
 trait OrrOntStack extends ScalatraServlet with NativeJsonSupport {
 
-  protected implicit val jsonFormats: Formats = DefaultFormats
+  protected implicit val jsonFormats: Formats = DefaultFormats ++ JodaTimeSerializers.all
 
   protected val dateFormatter = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
 

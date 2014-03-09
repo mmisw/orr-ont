@@ -6,9 +6,9 @@ import com.typesafe.scalalogging.slf4j.Logging
 import org.jasypt.util.password.StrongPasswordEncryptor
 import org.mmisw.orr.ont.db.User
 import scala.util.{Failure, Success, Try}
-import org.joda.time.DateTime
 import com.novus.salat._
 import com.novus.salat.global._
+import org.joda.time.DateTime
 
 
 class UserController(implicit setup: Setup) extends OrrOntStack
@@ -34,16 +34,14 @@ class UserController(implicit setup: Setup) extends OrrOntStack
 
     usersDAO.findOneById(userName) match {
       case None =>
-        val obj = User(userName, firstName, lastName, DateTime.now(), encPassword)
+        val obj = User(userName, firstName, lastName, encPassword)
 
         Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
-          case Success(r) => logger.debug(s"insert result = '$r'")
+          case Success(r) => UserResult(userName, registered = Some(obj.registered))
 
           case Failure(exc)  => error(500, s"insert failure = $exc")
           // TODO note that it might be a duplicate key in concurrent registration
         }
-
-        UserResult(userName, "registered")
 
       case Some(ont) => error(400, s"'$userName' already registered")
     }
@@ -64,7 +62,7 @@ class UserController(implicit setup: Setup) extends OrrOntStack
         if (!passwordEnc.checkPassword(password, encPassword))
           error(401, "bad password")
 
-        UserResult(userName, "password ok")
+        UserResult(userName)
     }
   }
 
@@ -95,8 +93,8 @@ class UserController(implicit setup: Setup) extends OrrOntStack
         }
         logger.info(s"updating user with: $update")
 
-        Try(usersDAO.update(MongoDBObject("userName" -> userName), update, false, false, WriteConcern.Safe)) match {
-          case Success(result) => UserResult(userName, s"updated (${result.getN})")
+        Try(usersDAO.update(MongoDBObject("_id" -> userName), update, false, false, WriteConcern.Safe)) match {
+          case Success(result) => UserResult(userName, updated = Some(DateTime.now()))
           case Failure(exc)    => error(500, s"update failure = $exc")
         }
     }
@@ -110,7 +108,7 @@ class UserController(implicit setup: Setup) extends OrrOntStack
       case Some(user) =>
         Try(usersDAO.remove(user, WriteConcern.Safe)) match {
           case Success(result) =>
-            UserResult(userName, s"removed (${result.getN})")
+            UserResult(userName, removed = Some(DateTime.now()))
 
           case Failure(exc)  => error(500, s"update failure = $exc")
         }

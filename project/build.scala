@@ -28,11 +28,12 @@ object build extends Build {
         "com.novus"                 %% "salat"                % salatVersion,
         "org.scalatra"              %% "scalatra"             % ScalatraVersion,
         "org.scalatra"              %% "scalatra-specs2"      % ScalatraVersion % "test",
-        "com.typesafe"               % "config"               % "1.2.0",
         "org.scalatra"              %% "scalatra-json"        % ScalatraVersion,
         "org.json4s"                %% "json4s-native"        % json4Version,
+        "org.json4s"                %% "json4s-ext"           % json4Version,
         "org.json4s"                 % "json4s-jackson_2.10"  % json4Version,
         "org.json4s"                 % "json4s-mongo_2.10"    % json4Version,
+        "com.typesafe"               % "config"               % "1.2.0",
         "com.typesafe"              %% "scalalogging-slf4j"   % "1.0.1",
 
         "org.jasypt"                 % "jasypt"               % "1.9.1",

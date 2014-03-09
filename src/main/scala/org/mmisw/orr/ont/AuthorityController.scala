@@ -6,7 +6,7 @@ import org.mmisw.orr.ont.db.Authority
 import scala.util.{Failure, Success, Try}
 import com.novus.salat._
 import com.novus.salat.global._
-
+import org.joda.time.DateTime
 
 
 class AuthorityController(implicit setup: Setup) extends OrrOntStack
@@ -18,39 +18,37 @@ class AuthorityController(implicit setup: Setup) extends OrrOntStack
     authoritiesDAO.find(MongoDBObject()) map grater[Authority].toCompactJSON
   }
 
-  // http post localhost:8080/authority shortName=mmi name="mmi project" ontUri=http://mmisw.org/ont/mmi members:='["carueda"]'
+  // http post localhost:8080/authority authName=mmi name="mmi project" ontUri=http://mmisw.org/ont/mmi members:='["carueda"]'
   post("/") {
     val map = body()
 
     logger.info(s"POST body = $map")
-    val shortName  = require(map, "shortName")
+    val authName   = require(map, "authName")
     val name       = require(map, "name")
     val ontUri     = getString(map, "ontUri")
     val members    = getSeq(map, "members")
 
-    authoritiesDAO.findOneById(shortName) match {
+    authoritiesDAO.findOneById(authName) match {
       case None =>
-        val obj = Authority(shortName, name, ontUri, members)
+        val obj = Authority(authName, name, ontUri, members)
 
         Try(authoritiesDAO.insert(obj, WriteConcern.Safe)) match {
-          case Success(r) =>
-            logger.debug(s"insert result = '$r'")
-            AuthorityResult("authority registered", shortName)
+          case Success(r) => AuthorityResult(authName, registered = Some(obj.registered))
 
           case Failure(exc)  => error(500, s"insert failure = $exc")
           // TODO note that it might be a duplicate key in concurrent registration
         }
 
-      case Some(ont) => error(400, s"'$shortName' already registered")
+      case Some(ont) => error(400, s"'$authName' already registered")
     }
   }
 
   put("/") {
     val map = body()
-    val shortName = require(map, "shortName")
-    authoritiesDAO.findOneById(shortName) match {
+    val authName = require(map, "authName")
+    authoritiesDAO.findOneById(authName) match {
       case None =>
-        error(404, s"'$shortName' is not registered")
+        error(404, s"'$authName' is not registered")
 
       case Some(found) =>
         logger.info(s"found authority: $found")
@@ -63,21 +61,21 @@ class AuthorityController(implicit setup: Setup) extends OrrOntStack
           update = update.copy(ontUri = Some(require(map, "ontUri")))
         }
         logger.info(s"updating authority with: $update")
-        Try(authoritiesDAO.update(MongoDBObject("shortName" -> shortName), update, false, false, WriteConcern.Safe)) match {
-          case Success(result) => AuthorityResult(shortName, s"updated (${result.getN})")
+        Try(authoritiesDAO.update(MongoDBObject("_id" -> authName), update, false, false, WriteConcern.Safe)) match {
+          case Success(result) => AuthorityResult(authName, updated = Some(DateTime.now())) //TODO
           case Failure(exc)    => error(500, s"update failure = $exc")
         }
     }
   }
 
   delete("/") {
-    val shortName = require(params, "shortName")
-    authoritiesDAO.findOneById(shortName) match {
-      case None => error(404, s"'$shortName' is not registered")
+    val authName = require(params, "authName")
+    authoritiesDAO.findOneById(authName) match {
+      case None => error(404, s"'$authName' is not registered")
 
       case Some(authority) =>
         Try(authoritiesDAO.remove(authority, WriteConcern.Safe)) match {
-          case Success(result) => AuthorityResult(shortName, s"removed (${result.getN})")
+          case Success(result) => AuthorityResult(authName, removed = Some(DateTime.now())) //TODO
 
           case Failure(exc)  => error(500, s"update failure = $exc")
         }

@@ -13,9 +13,9 @@ class AuthorityControllerSpec extends MutableScalatraSpec {
   implicit val setup = new Setup("/etc/orront.conf", testing = true)
   addServlet(new AuthorityController, "/*")
 
-  val shortName = s"random.${java.util.UUID.randomUUID().toString}"
+  val authName = s"random.${java.util.UUID.randomUUID().toString}"
   val map =
-    ("shortName"  -> shortName) ~
+    ("authName"   -> authName) ~
     ("name"       -> "some authority") ~
     ("ontUri"     -> "ontUri") ~
     ("members"    -> Seq("member1", "member2")
@@ -41,14 +41,14 @@ class AuthorityControllerSpec extends MutableScalatraSpec {
 
         val json = parse(body)
         val map = json.extract[Map[String, String]]
-        map.get("shortName") must_== Some(shortName)
+        map.get("authName") must_== Some(authName)
       }
     }
   }
 
   "PUT update authority" should {
     "return status 200" in {
-      put("/", body = pretty(render(("shortName" -> shortName) ~ ("ontUri" -> "updated.ontUri"))),
+      put("/", body = pretty(render(("authName" -> authName) ~ ("ontUri" -> "updated.ontUri"))),
         headers = Map("content-type" -> "application/json")) {
         status must_== 200
       }
@@ -57,7 +57,7 @@ class AuthorityControllerSpec extends MutableScalatraSpec {
 
   "DELETE authority" should {
     "return status 200" in {
-      delete("/", Map("shortName" -> shortName)) {
+      delete("/", Map("authName" -> authName)) {
         status must_== 200
       }
     }

@@ -93,16 +93,16 @@ class OntController(implicit setup: Setup) extends OrrOntStack
   /**
    * Verifies the given authority and the userName against that authority.
    */
-  def verifyAuthorityAndUser(authShortName: String, userName: String, authorityMustExist: Boolean = false): String = {
-    if (setup.testing) authShortName
+  def verifyAuthorityAndUser(authName: String, userName: String, authorityMustExist: Boolean = false): String = {
+    if (setup.testing) authName
     else {
-      authoritiesDAO.findOneById(authShortName) match {
+      authoritiesDAO.findOneById(authName) match {
         case None => 
-          if (authorityMustExist) bug(s"'$authShortName' authority must exist")
-          else error(400, s"'$authShortName' invalid authority")
+          if (authorityMustExist) bug(s"'$authName' authority must exist")
+          else error(400, s"'$authName' invalid authority")
         case Some(authority) =>
-          if (authority.members.contains(userName)) authShortName
-          else error(401, s"user '$userName' is not a member of authority '$authShortName'")
+          if (authority.members.contains(userName)) authName
+          else error(401, s"user '$userName' is not a member of authority '$authName'")
       }
     }
   }
@@ -220,8 +220,6 @@ class OntController(implicit setup: Setup) extends OrrOntStack
     val (fileItem, format) = getFileAndFormat
     val (version, date) = getVersion
 
-    val q = MongoDBObject("_id" -> uri)
-
     var newVersion = OntologyVersion("", userName, format, new DateTime(date))
 
     ontDAO.findOneById(uri) match {
@@ -244,7 +242,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
         logger.info(s"update: $update")
         writeOntologyFile(uri, version, fileItem, format)
 
-        Try(ontDAO.update(q, update, false, false, WriteConcern.Safe)) match {
+        Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
           case Success(result) =>
             OntologyResult(s"updated ($result)", uri, version = Some(version))
 
