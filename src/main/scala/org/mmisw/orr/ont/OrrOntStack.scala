@@ -49,10 +49,12 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport {
     }
   }
 
-  protected def getSeq(map: Map[String, JValue], paramName: String): List[String] = {
+  protected def getSeq(map: Map[String, JValue], paramName: String, canBeEmpty: Boolean = false): List[String] = {
     val value = map.getOrElse(paramName, missing(paramName))
     if (!value.isInstanceOf[JArray]) error(400, s"'$paramName' param value is not an array")
-    value.asInstanceOf[JArray].arr map (_.asInstanceOf[JString].values)
+    val arr = value.asInstanceOf[JArray].arr
+    if (!canBeEmpty && arr.length == 0) error(400, s"'$paramName' array param cannot be empty")
+    arr map (_.asInstanceOf[JString].values)
   }
 
   addMimeMapping("application/rdf+xml", "rdf")

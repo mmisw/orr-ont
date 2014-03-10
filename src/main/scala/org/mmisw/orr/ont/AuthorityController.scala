@@ -9,11 +9,8 @@ import com.novus.salat.global._
 import org.joda.time.DateTime
 
 
-class AuthorityController(implicit setup: Setup) extends OrrOntStack
-    with SimpleMongoDbJsonConversion with Logging {
-
-  val authoritiesDAO = setup.db.authoritiesDAO
-
+class AuthorityController(implicit setup: Setup) extends BaseController
+    with Logging {
 
   def getAuthorityJson(authority: Authority) = {
     // TODO what exactly to report?
@@ -46,6 +43,7 @@ class AuthorityController(implicit setup: Setup) extends OrrOntStack
 
     authoritiesDAO.findOneById(authName) match {
       case None =>
+        members foreach verifyUser
         val obj = Authority(authName, name, ontUri, members)
 
         Try(authoritiesDAO.insert(obj, WriteConcern.Safe)) match {
@@ -75,6 +73,11 @@ class AuthorityController(implicit setup: Setup) extends OrrOntStack
         }
         if (map.contains("ontUri")) {
           update = update.copy(ontUri = Some(require(map, "ontUri")))
+        }
+        if (map.contains("members")) {
+          val members = getSeq(map, "members")
+          members foreach verifyUser
+          update = update.copy(members = members)
         }
         update = update.copy(updated = Some(DateTime.now()))
         logger.info(s"updating authority with: $update")

@@ -11,10 +11,8 @@ import com.novus.salat.global._
 import org.joda.time.DateTime
 
 
-class UserController(implicit setup: Setup) extends OrrOntStack
-      with SimpleMongoDbJsonConversion with Logging {
-
-  val usersDAO = setup.db.usersDAO
+class UserController(implicit setup: Setup) extends BaseController
+      with Logging {
 
   val passwordEnc = new StrongPasswordEncryptor
 

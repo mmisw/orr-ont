@@ -16,9 +16,8 @@ import com.novus.salat.global._
 
 
 @MultipartConfig(maxFileSize = 5*1024*1024)
-class OntController(implicit setup: Setup) extends OrrOntStack
-      with FileUploadSupport with FlashMapSupport
-      with SimpleMongoDbJsonConversion with Logging {
+class OntController(implicit setup: Setup) extends BaseController
+      with FileUploadSupport with FlashMapSupport with Logging {
 
   //configureMultipartHandling(MultipartConfig(maxFileSize = Some(5 * 1024 * 1024)))
 
@@ -26,10 +25,6 @@ class OntController(implicit setup: Setup) extends OrrOntStack
     case e: SizeConstraintExceededException =>
       error(413, "The file you uploaded exceeded the 5MB limit.")
   }
-
-  val authoritiesDAO = setup.db.authoritiesDAO
-  val usersDAO       = setup.db.usersDAO
-  val ontDAO         = setup.db.ontDAO
 
   val versionFormatter = new java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss")
 
@@ -93,16 +88,35 @@ class OntController(implicit setup: Setup) extends OrrOntStack
     }
   }
 
-  def verifyUser(userNameOpt: Option[String]): String = userNameOpt match {
-    case None => missing("userName")
-    case Some(userName) =>
-      if (setup.testing) userName
-      else {
-        usersDAO.findOneById(userName) match {
-          case None => error(400, s"'$userName' invalid user")
-          case _ => userName
+  /**
+   * dispatches authority OR user ontology request (.../ont/xyz)
+   */
+  get("/:xyz") {
+    val xyz = require(params, "xyz")
+
+    authoritiesDAO.findOneById(xyz) match {
+      case Some(authority) =>
+        authority.ontUri match {
+          case Some(ontUri) => resolveUri(ontUri)
+          case None =>
+            try selfResolve
+            catch {
+              case exc: AnyRef =>
+                logger.info(s"EXC in selfResolve: $exc")
+                // TODO dispatch some synthetic response as in previous Ont
+                error(500, s"TODO: generate summary for authority '$xyz'")
+            }
         }
-      }
+      case None =>
+        usersDAO.findOneById(xyz) match {
+          case Some(user) =>
+            user.ontUri match {
+              case Some(ontUri) => resolveUri(ontUri)
+              case None => error(404, s"No ontology found for: '$xyz'")
+            }
+          case None => error(404, s"No authority or user by given name: '$xyz'")
+        }
+    }
   }
 
   /**
@@ -140,7 +154,7 @@ class OntController(implicit setup: Setup) extends OrrOntStack
   def getOwners = {
     // if owners is given, verify them in general (for either new entry or new version)
     val owners = multiParams("owners").filter(_.trim.length > 0).toSet.toList
-    owners foreach (userName => verifyUser(Some(userName)))
+    owners foreach verifyUser
     logger.debug(s"owners=$owners")
     owners
   }
