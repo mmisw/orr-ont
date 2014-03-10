@@ -19,7 +19,7 @@ class OntControllerSpec extends MutableScalatraSpec with Logging {
   val format = "rdf"
   val map1 = Map("uri" -> uri,
     "name" -> "some.name",
-    "authName" -> "fakeAuthority",
+    "orgName" -> "fakeOrg",
     "userName" -> "tester",
     "format" -> format
   )

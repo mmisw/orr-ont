@@ -4,9 +4,9 @@ package org.mmisw.orr.ont
 abstract class BaseController(implicit setup: Setup) extends OrrOntStack
     with SimpleMongoDbJsonConversion {
 
-  protected val authoritiesDAO = setup.db.authoritiesDAO
-  protected val usersDAO       = setup.db.usersDAO
-  protected val ontDAO         = setup.db.ontDAO
+  protected val orgsDAO     = setup.db.orgsDAO
+  protected val usersDAO    = setup.db.usersDAO
+  protected val ontDAO      = setup.db.ontDAO
 
 
   protected def getUser(userName: String): db.User = {
@@ -24,8 +24,8 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
     case Some(userName) => verifyUser(userName)
   }
 
-  protected def getAuthority(authName: String): db.Authority = {
-    authoritiesDAO.findOneById(authName).getOrElse(
-      error(404, s"'$authName' authority is not registered"))
+  protected def getOrg(orgName: String): db.Organization = {
+    orgsDAO.findOneById(orgName).getOrElse(
+      error(404, s"'$orgName' organization is not registered"))
   }
 }

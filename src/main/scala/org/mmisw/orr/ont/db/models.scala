@@ -8,7 +8,7 @@ import scala.util.{Success, Failure, Try}
 case class Ontology(
             @Key("_id") uri: String,
             latestVersion:   String,
-            authName:        Option[String],
+            orgName:         Option[String],
             owners:          List[String] = List.empty,
             versions:        Map[String, OntologyVersion] = Map.empty)
 
@@ -27,8 +27,8 @@ case class User(
             registered:            DateTime = DateTime.now(),
             updated:               Option[DateTime] = None)
 
-case class Authority(
-            @Key("_id") authName:  String,
+case class Organization(
+            @Key("_id") orgName:   String,
             name:                  String,
             ontUri:                Option[String] = None,
             members:               List[String] = List.empty,

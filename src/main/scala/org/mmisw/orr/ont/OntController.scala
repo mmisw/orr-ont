@@ -89,14 +89,14 @@ class OntController(implicit setup: Setup) extends BaseController
   }
 
   /**
-   * dispatches authority OR user ontology request (.../ont/xyz)
+   * dispatches organization OR user ontology request (.../ont/xyz)
    */
   get("/:xyz") {
     val xyz = require(params, "xyz")
 
-    authoritiesDAO.findOneById(xyz) match {
-      case Some(authority) =>
-        authority.ontUri match {
+    orgsDAO.findOneById(xyz) match {
+      case Some(org) =>
+        org.ontUri match {
           case Some(ontUri) => resolveUri(ontUri)
           case None =>
             try selfResolve
@@ -104,7 +104,7 @@ class OntController(implicit setup: Setup) extends BaseController
               case exc: AnyRef =>
                 logger.info(s"EXC in selfResolve: $exc")
                 // TODO dispatch some synthetic response as in previous Ont
-                error(500, s"TODO: generate summary for authority '$xyz'")
+                error(500, s"TODO: generate summary for organization '$xyz'")
             }
         }
       case None =>
@@ -114,34 +114,34 @@ class OntController(implicit setup: Setup) extends BaseController
               case Some(ontUri) => resolveUri(ontUri)
               case None => error(404, s"No ontology found for: '$xyz'")
             }
-          case None => error(404, s"No authority or user by given name: '$xyz'")
+          case None => error(404, s"No organization or user by given name: '$xyz'")
         }
     }
   }
 
   /**
-   * Verifies the given authority and the userName against that authority.
+   * Verifies the given organization and the userName against that organization.
    */
-  def verifyAuthorityAndUser(authName: String, userName: String, authorityMustExist: Boolean = false): String = {
-    if (setup.testing) authName
+  def verifyOrgAndUser(orgName: String, userName: String, orgMustExist: Boolean = false): String = {
+    if (setup.testing) orgName
     else {
-      authoritiesDAO.findOneById(authName) match {
+      orgsDAO.findOneById(orgName) match {
         case None => 
-          if (authorityMustExist) bug(s"'$authName' authority must exist")
-          else error(400, s"'$authName' invalid authority")
-        case Some(authority) =>
-          if (authority.members.contains(userName)) authName
-          else error(401, s"user '$userName' is not a member of authority '$authName'")
+          if (orgMustExist) bug(s"'$orgName' organization must exist")
+          else error(400, s"'$orgName' invalid organization")
+        case Some(org) =>
+          if (org.members.contains(userName)) orgName
+          else error(401, s"user '$userName' is not a member of organization '$orgName'")
       }
     }
   }
 
   /**
-   * Verifies the authority and the userName against that authority.
+   * Verifies the organization and the userName against that organization.
    */
-  def verifyAuthorityAndUser(authNameOpt: Option[String], userName: String): String = authNameOpt match {
-    case None => missing("authName")
-    case Some(authName) => verifyAuthorityAndUser(authName, userName)
+  def verifyOrgAndUser(authNameOpt: Option[String], userName: String): String = authNameOpt match {
+    case None => missing("orgName")
+    case Some(orgName) => verifyOrgAndUser(orgName, userName)
   }
 
   def validateUri(uri: String) {
@@ -183,17 +183,17 @@ class OntController(implicit setup: Setup) extends BaseController
   /**
    * posts a new ontology entry.
    *
-   * http -f post localhost:8080/ont uri=http://ont1 name=example authName=mmi userName=carueda file@src/test/resources/test.rdf format=rdf
+   * http -f post localhost:8080/ont uri=http://ont1 name=example orgName=mmi userName=carueda file@src/test/resources/test.rdf format=rdf
    */
   post("/") {
     val uri = require(params, "uri")
     val name = require(params, "name")
-    val authNameOpt = params.get("authName")
+    val authNameOpt = params.get("orgName")
     val user = verifyUser(params.get("userName"))
 
-    // TODO handle case where there is no explicit authority to verify
+    // TODO handle case where there is no explicit organization to verify
     // the user can submit on her own behalf.
-    val authName = verifyAuthorityAndUser(authNameOpt, user.userName)
+    val orgName = verifyOrgAndUser(authNameOpt, user.userName)
 
     val owners = getOwners
     val (fileItem, format) = getFileAndFormat
@@ -206,7 +206,7 @@ class OntController(implicit setup: Setup) extends BaseController
         writeOntologyFile(uri, version, fileItem, format)
 
         val ontVersion = OntologyVersion(name, user.userName, format, new DateTime(date))
-        val ont = Ontology(uri, version, Some(authName),
+        val ont = Ontology(uri, version, Some(orgName),
           owners = owners,
           versions = Map(version -> ontVersion))
 
@@ -228,11 +228,11 @@ class OntController(implicit setup: Setup) extends BaseController
     if (ont.owners.length > 0) {
       if (!ont.owners.contains(userName)) error(401, s"'$userName' is not an owner of '${ont.uri}'")
     }
-    else ont.authName match {
-      case Some(authName) =>
-        verifyAuthorityAndUser(authName, userName, authorityMustExist = true)
+    else ont.orgName match {
+      case Some(orgName) =>
+        verifyOrgAndUser(orgName, userName, orgMustExist = true)
 
-      case None => // TODO handle no-authority case
+      case None => // TODO handle no-organization case
     }
 
   }

@@ -14,14 +14,14 @@ case class PendUserResult(
             ontUri:      Option[String] = None,
             registered:  Option[DateTime] = None)
 
-case class AuthorityResult(
-            authName:    String,
+case class OrgResult(
+            orgName:     String,
             registered:  Option[DateTime] = None,
             updated:     Option[DateTime] = None,
             removed:     Option[DateTime] = None)
 
-case class PendAuthorityResult(
-            authName:    String,
+case class PendOrgResult(
+            orgName:     String,
             ontUri:      Option[String] = None,
             registered:  Option[DateTime] = None)
 

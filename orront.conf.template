@@ -17,10 +17,9 @@ mongo {
   # password for special operations
   pw_special = somepassword
 
-  ontologies = <collection name>
-  users      = <collection name>
-  groups      = <collection name>
-  authorities = <collection name>
+  ontologies    = <collection name>
+  users         = <collection name>
+  organizations = <collection name>
 }
 
 files {
