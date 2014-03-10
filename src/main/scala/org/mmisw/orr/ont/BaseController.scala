@@ -8,17 +8,17 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
   protected val usersDAO       = setup.db.usersDAO
   protected val ontDAO         = setup.db.ontDAO
 
-  protected def verifyUser(userName: String): String = {
-    if (setup.testing) userName
-    else {
-      usersDAO.findOneById(userName) match {
-        case None => error(400, s"'$userName' invalid user")
-        case _ => userName
-      }
-    }
+
+  protected def getUser(userName: String): db.User = {
+    usersDAO.findOneById(userName).getOrElse(error(400, s"'$userName' invalid user"))
   }
 
-  protected def verifyUser(userNameOpt: Option[String]): String = userNameOpt match {
+  protected def verifyUser(userName: String): db.User = {
+    if (setup.testing) db.User(userName, "tFirstName", "tlastName", "tPassword")
+    else getUser(userName)
+  }
+
+  protected def verifyUser(userNameOpt: Option[String]): db.User = userNameOpt match {
     case None => missing("userName")
     case Some(userName) => verifyUser(userName)
   }

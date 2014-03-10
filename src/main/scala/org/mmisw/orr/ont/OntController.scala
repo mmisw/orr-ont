@@ -189,11 +189,11 @@ class OntController(implicit setup: Setup) extends BaseController
     val uri = require(params, "uri")
     val name = require(params, "name")
     val authNameOpt = params.get("authName")
-    val userName = verifyUser(params.get("userName"))
+    val user = verifyUser(params.get("userName"))
 
     // TODO handle case where there is no explicit authority to verify
     // the user can submit on her own behalf.
-    val authName = verifyAuthorityAndUser(authNameOpt, userName)
+    val authName = verifyAuthorityAndUser(authNameOpt, user.userName)
 
     val owners = getOwners
     val (fileItem, format) = getFileAndFormat
@@ -205,7 +205,7 @@ class OntController(implicit setup: Setup) extends BaseController
 
         writeOntologyFile(uri, version, fileItem, format)
 
-        val ontVersion = OntologyVersion(name, userName, format, new DateTime(date))
+        val ontVersion = OntologyVersion(name, user.userName, format, new DateTime(date))
         val ont = Ontology(uri, version, Some(authName),
           owners = owners,
           versions = Map(version -> ontVersion))
@@ -244,19 +244,19 @@ class OntController(implicit setup: Setup) extends BaseController
   post("/version") {
     val uri = require(params, "uri")
     val nameOpt = params.get("name")
-    val userName = verifyUser(params.get("userName"))
+    val user = verifyUser(params.get("userName"))
 
     val owners = getOwners
     val (fileItem, format) = getFileAndFormat
     val (version, date) = getVersion
 
-    var ontVersion = OntologyVersion("", userName, format, new DateTime(date))
+    var ontVersion = OntologyVersion("", user.userName, format, new DateTime(date))
 
     ontDAO.findOneById(uri) match {
       case None => error(404, s"'$uri' is not registered")
 
       case Some(ont) =>
-        verifyOwner(userName, ont)
+        verifyOwner(user.userName, ont)
 
         var update = ont
 
@@ -289,14 +289,14 @@ class OntController(implicit setup: Setup) extends BaseController
     acceptOnly("uri", "version", "userName", "name")
     val uri      = require(params, "uri")
     val version  = require(params, "version")
-    val userName = verifyUser(params.get("userName"))
+    val user     = verifyUser(params.get("userName"))
     val name     = require(params, "name")
 
     ontDAO.findOneById(uri) match {
       case None => error(404, s"'$uri' is not registered")
 
       case Some(ont) =>
-        verifyOwner(userName, ont)
+        verifyOwner(user.userName, ont)
 
         var ontVersion = ont.versions.getOrElse(version,
           error(404, s"'$uri', version '$version' is not registered"))
@@ -321,13 +321,13 @@ class OntController(implicit setup: Setup) extends BaseController
     acceptOnly("uri", "version", "userName")
     val uri      = require(params, "uri")
     val version  = require(params, "version")
-    val userName = verifyUser(params.get("userName"))
+    val user     = verifyUser(params.get("userName"))
 
     ontDAO.findOneById(uri) match {
       case None => error(404, s"'$uri' is not registered")
 
       case Some(ont) =>
-        verifyOwner(userName, ont)
+        verifyOwner(user.userName, ont)
 
         ont.versions.getOrElse(version, error(404, s"'$uri', version '$version' is not registered"))
 
@@ -346,14 +346,14 @@ class OntController(implicit setup: Setup) extends BaseController
   // deletes a complete entry
   delete("/") {
     acceptOnly("uri", "userName")
-    val uri      = require(params, "uri")
-    val userName = verifyUser(params.get("userName"))
+    val uri   = require(params, "uri")
+    val user  = verifyUser(params.get("userName"))
 
     ontDAO.findOneById(uri) match {
       case None => error(404, s"'$uri' is not registered")
 
       case Some(ont) =>
-        verifyOwner(userName, ont)
+        verifyOwner(user.userName, ont)
 
         Try(ontDAO.remove(ont, WriteConcern.Safe)) match {
           case Success(result) =>
