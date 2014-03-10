@@ -66,9 +66,9 @@ class OntController(implicit setup: Setup) extends BaseController
 
   /**
    * General:
-   *   http localhost:8080/ont/\?uri=http://mmisw.org/ont/mmi/device\&format=rdf
+   *   http get localhost:8080/ont/\?uri=http://mmisw.org/ont/mmi/device\&format=rdf
    * Self-resolvability:
-   *   http localhost:8080/ont/myauth/myont\?format=rdf
+   *   http get localhost:8080/ont/myorg/myont\?format=rdf
    */
   get("/(.*)".r) {
     params.get("uri") match {
@@ -139,7 +139,7 @@ class OntController(implicit setup: Setup) extends BaseController
   /**
    * Verifies the organization and the userName against that organization.
    */
-  def verifyOrgAndUser(authNameOpt: Option[String], userName: String): String = authNameOpt match {
+  def verifyOrgAndUser(orgNameOpt: Option[String], userName: String): String = orgNameOpt match {
     case None => missing("orgName")
     case Some(orgName) => verifyOrgAndUser(orgName, userName)
   }
@@ -188,12 +188,12 @@ class OntController(implicit setup: Setup) extends BaseController
   post("/") {
     val uri = require(params, "uri")
     val name = require(params, "name")
-    val authNameOpt = params.get("orgName")
+    val orgNameOpt = params.get("orgName")
     val user = verifyUser(params.get("userName"))
 
     // TODO handle case where there is no explicit organization to verify
     // the user can submit on her own behalf.
-    val orgName = verifyOrgAndUser(authNameOpt, user.userName)
+    val orgName = verifyOrgAndUser(orgNameOpt, user.userName)
 
     val owners = getOwners
     val (fileItem, format) = getFileAndFormat
