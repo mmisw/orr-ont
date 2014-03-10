@@ -25,10 +25,7 @@ class AuthorityController(implicit setup: Setup) extends BaseController
 
   get("/:authName") {
     val authName = require(params, "authName")
-    authoritiesDAO.findOneById(authName) match {
-      case Some(authority) => getAuthorityJson(authority)
-      case None => error(404, s"'$authName' is not registered")
-    }
+    getAuthorityJson(getAuthority(authName))
   }
 
   // http post localhost:8080/authority authName=mmi name="mmi project" ontUri=http://mmisw.org/ont/mmi members:='["carueda"]'
@@ -60,45 +57,36 @@ class AuthorityController(implicit setup: Setup) extends BaseController
   put("/") {
     val map = body()
     val authName = require(map, "authName")
-    authoritiesDAO.findOneById(authName) match {
-      case None =>
-        error(404, s"'$authName' is not registered")
+    val authority = getAuthority(authName)
+    var update = authority
 
-      case Some(found) =>
-        logger.info(s"found authority: $found")
-        var update = found
-
-        if (map.contains("name")) {
-          update = update.copy(name = require(map, "name"))
-        }
-        if (map.contains("ontUri")) {
-          update = update.copy(ontUri = Some(require(map, "ontUri")))
-        }
-        if (map.contains("members")) {
-          val members = getSeq(map, "members")
-          members foreach verifyUser
-          update = update.copy(members = members)
-        }
-        update = update.copy(updated = Some(DateTime.now()))
-        logger.info(s"updating authority with: $update")
-        Try(authoritiesDAO.update(MongoDBObject("_id" -> authName), update, false, false, WriteConcern.Safe)) match {
-          case Success(result) => AuthorityResult(authName, updated = Some(DateTime.now())) //TODO
-          case Failure(exc)    => error(500, s"update failure = $exc")
-        }
+    if (map.contains("name")) {
+      update = update.copy(name = require(map, "name"))
+    }
+    if (map.contains("ontUri")) {
+      update = update.copy(ontUri = Some(require(map, "ontUri")))
+    }
+    if (map.contains("members")) {
+      val members = getSeq(map, "members")
+      members foreach verifyUser
+      update = update.copy(members = members)
+    }
+    val updated = Some(DateTime.now())
+    update = update.copy(updated = updated)
+    logger.info(s"updating authority with: $update")
+    Try(authoritiesDAO.update(MongoDBObject("_id" -> authName), update, false, false, WriteConcern.Safe)) match {
+      case Success(result) => AuthorityResult(authName, updated = update.updated)
+      case Failure(exc)    => error(500, s"update failure = $exc")
     }
   }
 
   delete("/") {
     val authName = require(params, "authName")
-    authoritiesDAO.findOneById(authName) match {
-      case None => error(404, s"'$authName' is not registered")
+    val authority = getAuthority(authName)
+    Try(authoritiesDAO.remove(authority, WriteConcern.Safe)) match {
+      case Success(result) => AuthorityResult(authName, removed = Some(DateTime.now())) //TODO
 
-      case Some(authority) =>
-        Try(authoritiesDAO.remove(authority, WriteConcern.Safe)) match {
-          case Success(result) => AuthorityResult(authName, removed = Some(DateTime.now())) //TODO
-
-          case Failure(exc)  => error(500, s"update failure = $exc")
-        }
+      case Failure(exc)  => error(500, s"update failure = $exc")
     }
   }
 

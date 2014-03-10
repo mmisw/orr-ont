@@ -29,10 +29,7 @@ class UserController(implicit setup: Setup) extends BaseController
 
   get("/:userName") {
     val userName = require(params, "userName")
-    usersDAO.findOneById(userName) match {
-      case Some(user) => getUserJson(user)
-      case None => error(404, s"'$userName' is not registered")
-    }
+    getUserJson(getUser(userName))
   }
 
   post("/") {
@@ -63,73 +60,56 @@ class UserController(implicit setup: Setup) extends BaseController
 
   post("/chkpw") {
     val map = body()
-
     val userName  = require(map, "userName")
     val password  = require(map, "password")
+    val user = getUser(userName)
 
-    usersDAO.findOneById(userName) match {
-      case None =>
-        error(404, s"'$userName' not registered")
-
-      case Some(user) =>
-        val encPassword = user.password
-        if (!passwordEnc.checkPassword(password, encPassword))
-          error(401, "bad password")
-
-        UserResult(userName)
-    }
+    val encPassword = user.password
+    if (passwordEnc.checkPassword(password, encPassword))
+      UserResult(userName)
+    else
+      error(401, "bad password")
   }
 
   put("/") {
     val map = body()
 
     val userName = require(map, "userName")
+    val user = getUser(userName)
+    var update = user
 
-    usersDAO.findOneById(userName) match {
-      case None =>
-        error(404, s"'$userName' is not registered")
+    if (map.contains("firstName")) {
+      update = update.copy(firstName = require(map, "firstName"))
+    }
+    if (map.contains("lastName")) {
+      update = update.copy(lastName = require(map, "lastName"))
+    }
+    if (map.contains("password")) {
+      val password = require(map, "password")
+      val encPassword = passwordEnc.encryptPassword(password)
+      update = update.copy(password = encPassword)
+    }
+    if (map.contains("ontUri")) {
+      update = update.copy(ontUri = Some(require(map, "ontUri")))
+    }
+    val updated = Some(DateTime.now())
+    update = update.copy(updated = updated)
+    logger.info(s"updating user with: $update")
 
-      case Some(found) =>
-        logger.info(s"found user: $found")
-
-        var update = found
-
-        if (map.contains("firstName")) {
-          update = update.copy(firstName = require(map, "firstName"))
-        }
-        if (map.contains("lastName")) {
-          update = update.copy(lastName = require(map, "lastName"))
-        }
-        if (map.contains("password")) {
-          val password = require(map, "password")
-          val encPassword = passwordEnc.encryptPassword(password)
-          update = update.copy(password = encPassword)
-        }
-        if (map.contains("ontUri")) {
-          update = update.copy(ontUri = Some(require(map, "ontUri")))
-        }
-        update = update.copy(updated = Some(DateTime.now()))
-        logger.info(s"updating user with: $update")
-
-        Try(usersDAO.update(MongoDBObject("_id" -> userName), update, false, false, WriteConcern.Safe)) match {
-          case Success(result) => UserResult(userName, updated = Some(DateTime.now()))
-          case Failure(exc)    => error(500, s"update failure = $exc")
-        }
+    Try(usersDAO.update(MongoDBObject("_id" -> userName), update, false, false, WriteConcern.Safe)) match {
+      case Success(result) => UserResult(userName, updated = update.updated)
+      case Failure(exc)    => error(500, s"update failure = $exc")
     }
   }
 
   delete("/") {
     val userName = require(params, "userName")
-    usersDAO.findOneById(userName) match {
-      case None => error(404, s"'$userName' is not registered")
+    val user = getUser(userName)
+    Try(usersDAO.remove(user, WriteConcern.Safe)) match {
+      case Success(result) =>
+        UserResult(userName, removed = Some(DateTime.now()))
 
-      case Some(user) =>
-        Try(usersDAO.remove(user, WriteConcern.Safe)) match {
-          case Success(result) =>
-            UserResult(userName, removed = Some(DateTime.now()))
-
-          case Failure(exc)  => error(500, s"update failure = $exc")
-        }
+      case Failure(exc)  => error(500, s"update failure = $exc")
     }
   }
 
