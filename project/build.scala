@@ -29,6 +29,7 @@ object build extends Build {
         "org.scalatra"              %% "scalatra"             % ScalatraVersion,
         "org.scalatra"              %% "scalatra-specs2"      % ScalatraVersion % "test",
         "org.scalatra"              %% "scalatra-json"        % ScalatraVersion,
+        "org.scalatra"              %% "scalatra-auth"        % ScalatraVersion,
         "org.json4s"                %% "json4s-native"        % json4Version,
         "org.json4s"                %% "json4s-ext"           % json4Version,
         "org.json4s"                 % "json4s-jackson_2.10"  % json4Version,

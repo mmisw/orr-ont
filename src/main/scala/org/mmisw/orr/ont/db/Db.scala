@@ -6,6 +6,7 @@ import com.mongodb.casbah.Imports._
 import com.mongodb.ServerAddress
 import com.novus.salat.dao.SalatDAO
 import com.novus.salat.global._
+import org.mmisw.orr.ont.auth.userAuth
 
 
 /**
@@ -45,6 +46,8 @@ class Db(mongoConfig: Config) extends AnyRef with Logging {
   val ontDAO      = new SalatDAO[Ontology,     String](ontologiesColl) {}
   val usersDAO    = new SalatDAO[User,         String](usersColl) {}
   val orgsDAO     = new SalatDAO[Organization, String](orgsColl) {}
+
+  val authenticator = userAuth(usersDAO)
 
   mcOpt = Some(mongoClient)
 

@@ -7,10 +7,11 @@ import scala.util.{Failure, Success, Try}
 import com.novus.salat._
 import com.novus.salat.global._
 import org.joda.time.DateTime
+import org.mmisw.orr.ont.auth.AuthenticationSupport
 
 
 class OrgController(implicit setup: Setup) extends BaseController
-    with Logging {
+    with AuthenticationSupport with Logging {
 
   def getOrgJson(org: Organization) = {
     // TODO what exactly to report?
@@ -29,7 +30,9 @@ class OrgController(implicit setup: Setup) extends BaseController
   }
 
   // http post localhost:8080/org orgName=mmi name="mmi project" ontUri=http://mmisw.org/ont/mmi members:='["carueda"]'
+  // basic authentication: http -a username:password post ...
   post("/") {
+    if (!setup.testing) basicAuth
     val map = body()
 
     logger.info(s"POST body = $map")

@@ -3,7 +3,6 @@ package org.mmisw.orr.ont
 import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.slf4j.Logging
 
-import org.jasypt.util.password.StrongPasswordEncryptor
 import org.mmisw.orr.ont.db.User
 import scala.util.{Failure, Success, Try}
 import com.novus.salat._
@@ -13,9 +12,6 @@ import org.joda.time.DateTime
 
 class UserController(implicit setup: Setup) extends BaseController
       with Logging {
-
-  val passwordEnc = new StrongPasswordEncryptor
-
 
   def getUserJson(user: User) = {
     // TODO what exactly to report?
@@ -41,7 +37,7 @@ class UserController(implicit setup: Setup) extends BaseController
     val password  = require(map, "password")
     val ontUri    = getString(map, "ontUri")
 
-    val encPassword = passwordEnc.encryptPassword(password)
+    val encPassword = userAuth.encryptPassword(password)
 
     usersDAO.findOneById(userName) match {
       case None =>
@@ -64,11 +60,8 @@ class UserController(implicit setup: Setup) extends BaseController
     val password  = require(map, "password")
     val user = getUser(userName)
 
-    val encPassword = user.password
-    if (passwordEnc.checkPassword(password, encPassword))
-      UserResult(userName)
-    else
-      error(401, "bad password")
+    if (userAuth.checkPassword(password, user)) UserResult(userName)
+    else error(401, "bad password")
   }
 
   put("/") {
@@ -86,7 +79,7 @@ class UserController(implicit setup: Setup) extends BaseController
     }
     if (map.contains("password")) {
       val password = require(map, "password")
-      val encPassword = passwordEnc.encryptPassword(password)
+      val encPassword = userAuth.encryptPassword(password)
       update = update.copy(password = encPassword)
     }
     if (map.contains("ontUri")) {

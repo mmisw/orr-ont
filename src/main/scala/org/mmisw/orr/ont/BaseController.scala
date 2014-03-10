@@ -7,6 +7,7 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
   protected val orgsDAO     = setup.db.orgsDAO
   protected val usersDAO    = setup.db.usersDAO
   protected val ontDAO      = setup.db.ontDAO
+  protected val userAuth    = setup.db.authenticator
 
 
   protected def getUser(userName: String): db.User = {
