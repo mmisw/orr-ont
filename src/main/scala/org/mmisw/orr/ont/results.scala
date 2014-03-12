@@ -22,6 +22,7 @@ case class OrgResult(
 
 case class PendOrgResult(
             orgName:     String,
+            name:        String,
             ontUri:      Option[String] = None,
             registered:  Option[DateTime] = None)
 

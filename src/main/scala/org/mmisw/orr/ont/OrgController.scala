@@ -15,7 +15,7 @@ class OrgController(implicit setup: Setup) extends BaseController
 
   def getOrgJson(org: Organization) = {
     // TODO what exactly to report?
-    val res = PendOrgResult(org.orgName, org.ontUri,
+    val res = PendOrgResult(org.orgName, org.name, org.ontUri,
       registered = Some(org.registered))
     grater[PendOrgResult].toCompactJSON(res)
   }
@@ -57,10 +57,10 @@ class OrgController(implicit setup: Setup) extends BaseController
     }
   }
 
-  put("/") {
-    val map = body()
-    val orgName = require(map, "orgName")
+  put("/:orgName") {
+    val orgName = require(params, "orgName")
     val org = getOrg(orgName)
+    val map = body()
     var update = org
 
     if (map.contains("name")) {
@@ -83,7 +83,7 @@ class OrgController(implicit setup: Setup) extends BaseController
     }
   }
 
-  delete("/") {
+  delete("/:orgName") {
     val orgName = require(params, "orgName")
     val org = getOrg(orgName)
     Try(orgsDAO.remove(org, WriteConcern.Safe)) match {

@@ -46,7 +46,7 @@ class OrgControllerSpec extends MutableScalatraSpec {
 
   "PUT update organization" should {
     "return status 200" in {
-      put("/", body = pretty(render(("orgName" -> orgName) ~ ("ontUri" -> "updated.ontUri"))),
+      put(s"/$orgName", body = pretty(render("ontUri" -> "updated.ontUri")),
         headers = Map("content-type" -> "application/json")) {
         status must_== 200
         val res = parse(body).extract[OrgResult]
@@ -57,7 +57,7 @@ class OrgControllerSpec extends MutableScalatraSpec {
 
   "DELETE organization" should {
     "return status 200" in {
-      delete("/", Map("orgName" -> orgName)) {
+      delete(s"/$orgName", Map.empty) {
         status must_== 200
         val res = parse(body).extract[OrgResult]
         res.orgName must_== orgName
