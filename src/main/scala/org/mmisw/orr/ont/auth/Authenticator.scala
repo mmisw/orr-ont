@@ -51,7 +51,6 @@ class OurBasicAuthStrategy(protected override val app: ScalatraBase, realm: Stri
   protected def validate(userName: String, password: String)
                         (implicit req: HttpServletRequest, res: HttpServletResponse) = {
 
-    //if(userName == "scalatra" && password == "scalatra") Some(SUser("scalatra"))
     if (authenticator.authenticateUser(userName, password).isDefined) Some(AuthUser(userName))
     else None
   }
