@@ -13,6 +13,7 @@ object build extends Build {
   val json4Version      = "3.2.7"
   val casbahVersion     = "2.6.5"
   val salatVersion      = "1.9.5"
+  val jenaVersion       = "2.11.1"
 
   lazy val project = Project (
     "orr-ont",
@@ -34,6 +35,8 @@ object build extends Build {
         "org.json4s"                %% "json4s-ext"           % json4Version,
         "org.json4s"                 % "json4s-jackson_2.10"  % json4Version,
         "org.json4s"                 % "json4s-mongo_2.10"    % json4Version,
+        "org.apache.jena"            % "jena-core"            % jenaVersion,
+        "com.github.jsonld-java"     % "jsonld-java-jena"     % "0.3",
         "com.typesafe"               % "config"               % "1.2.0",
         "com.typesafe"              %% "scalalogging-slf4j"   % "1.0.1",
 

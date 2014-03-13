@@ -6,6 +6,7 @@ import org.json4s.{DefaultFormats, Formats}
 import org.json4s.JsonAST.{JArray, JString, JValue, JNothing}
 import org.json4s.ext.JodaTimeSerializers
 import com.mongodb.casbah.Imports._
+import org.mmisw.orr.ont.swld.ontUtil
 
 
 trait OrrOntStack extends ScalatraServlet with NativeJsonSupport {
@@ -57,12 +58,10 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport {
     arr map (_.asInstanceOf[JString].values)
   }
 
-  addMimeMapping("application/rdf+xml", "rdf")
-  addMimeMapping("application/rdf+xml", "owl")
+  ontUtil.mimeMappings foreach { xm => addMimeMapping(xm._2, xm._1) }
 
-  addMimeMapping("text/plain", "n3")   // should actually be text/n3?
-
-  //addMimeMapping("application/ld+json", "json")  // TODO: JSON-LD
+  // todo why we seem to need to re-set this default one? otherwise tests break!
+  addMimeMapping("application/json", "json")
 
   before() {
     contentType = formats("json")

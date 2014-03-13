@@ -14,6 +14,8 @@ import scala.util.{Failure, Success, Try}
 import com.novus.salat._
 import com.novus.salat.global._
 
+import org.mmisw.orr.ont.swld.ontUtil
+
 
 @MultipartConfig(maxFileSize = 5*1024*1024)
 class OntController(implicit setup: Setup) extends BaseController
@@ -392,7 +394,7 @@ class OntController(implicit setup: Setup) extends BaseController
     file.write(dest)
   }
 
-  def getOntologyFile(uri: String, version: String, format: String) = {
+  def getOntologyFile(uri: String, version: String, reqFormat: String) = {
 
     val baseDir = setup.filesConfig.getString("baseDirectory")
     val ontsDir = new File(baseDir, "onts")
@@ -403,16 +405,32 @@ class OntController(implicit setup: Setup) extends BaseController
 
     val versionDir = new File(uriDir, version)
 
-    val filename = s"file.$format"
+    val format = ontUtil.storedFormat(reqFormat)
 
-    val file = new File(versionDir, filename)
+    val file = new File(versionDir, s"file.$format")
 
     if (file.canRead) {
+      // already exists, just return it
       contentType = formats(format)
       file
     }
-    else error(406, s"Format '$format' not available for uri='$uri' version='$version'")
-         // TODO include accepted formats
+    else try {
+      // TODO determine base format for conversions
+      val fromFile = new File(versionDir, "file.rdf")
+      ontUtil.convert(uri, fromFile, fromFormat = "rdf", file, toFormat = format) match {
+        case Some(resFile) =>
+          contentType = formats(format)
+          resFile
+        case _ =>
+          error(406, s"Format '$format' not available for uri='$uri' version='$version'")
+           // TODO include accepted formats
+      }
+    }
+    catch {
+      case exc: Exception => // likely com.hp.hpl.jena.shared.NoWriterForLangException
+        val exm = s"${exc.getClass.getName}: ${exc.getMessage}"
+        error(500, s"cannot create format '$format' for uri='$uri' version='$version': $exm")
+    }
   }
 
 }
