@@ -13,12 +13,6 @@ import org.joda.time.DateTime
 class UserController(implicit setup: Setup) extends BaseController
       with Logging {
 
-  def getUserJson(user: User) = {
-    // TODO what exactly to report?
-    val res = PendUserResult(user.userName, user.ontUri, registered = Some(user.registered))
-    grater[PendUserResult].toCompactJSON(res)
-  }
-
   get("/") {
     usersDAO.find(MongoDBObject()) map getUserJson
   }
@@ -113,4 +107,9 @@ class UserController(implicit setup: Setup) extends BaseController
     if (special == pw) usersDAO.remove(MongoDBObject()) else halt(401)
   }
 
+  def getUserJson(user: User) = {
+    // TODO what exactly to report?
+    val res = PendUserResult(user.userName, user.ontUri, registered = Some(user.registered))
+    grater[PendUserResult].toCompactJSON(res)
+  }
 }

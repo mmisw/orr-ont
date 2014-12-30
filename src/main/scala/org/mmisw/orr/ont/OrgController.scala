@@ -13,13 +13,6 @@ import org.mmisw.orr.ont.auth.AuthenticationSupport
 class OrgController(implicit setup: Setup) extends BaseController
     with AuthenticationSupport with Logging {
 
-  def getOrgJson(org: Organization) = {
-    // TODO what exactly to report?
-    val res = PendOrgResult(org.orgName, org.name, org.ontUri,
-      registered = Some(org.registered))
-    grater[PendOrgResult].toCompactJSON(res)
-  }
-
   get("/") {
     orgsDAO.find(MongoDBObject()) map getOrgJson
   }
@@ -98,5 +91,12 @@ class OrgController(implicit setup: Setup) extends BaseController
     val pw = require(map, "pw")
     val special = setup.mongoConfig.getString("pw_special")
     if (special == pw) orgsDAO.remove(MongoDBObject()) else halt(401)
+  }
+
+  def getOrgJson(org: Organization) = {
+    // TODO what exactly to report?
+    val res = PendOrgResult(org.orgName, org.name, org.ontUri,
+      registered = Some(org.registered))
+    grater[PendOrgResult].toCompactJSON(res)
   }
 }
