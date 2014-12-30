@@ -13,6 +13,14 @@ class UserControllerSpec extends MutableScalatraSpec {
   implicit val setup = new Setup("/etc/orront.conf", testing = true)
   addServlet(new UserController, "/*")
 
+  "GET /admin" should {
+    "return status 200" in {
+      get("/admin") {
+        status must_== 200
+      }
+    }
+  }
+
   val userName = s"random:${java.util.UUID.randomUUID().toString}"
   val password = "mypassword"
   val map = Map(
@@ -80,6 +88,16 @@ class UserControllerSpec extends MutableScalatraSpec {
         status must_== 200
         val res = parse(body).extract[UserResult]
         res.userName must_== userName
+      }
+    }
+  }
+
+  "DELETE admin (in tests)" should {
+    "return status 200" in {
+      delete("/", Map("userName" -> "admin")) {
+        status must_== 200
+        val res = parse(body).extract[UserResult]
+        res.userName must_== "admin"
       }
     }
   }
