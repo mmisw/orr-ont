@@ -4,7 +4,6 @@ import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.slf4j.Logging
 
 import org.scalatra.servlet.{FileItem, SizeConstraintExceededException, FileUploadSupport}
-import org.scalatra.FlashMapSupport
 import javax.servlet.annotation.MultipartConfig
 import java.io.File
 import java.net.{URI, URISyntaxException}
@@ -19,7 +18,7 @@ import org.mmisw.orr.ont.swld.ontUtil
 
 @MultipartConfig(maxFileSize = 5*1024*1024)
 class OntController(implicit setup: Setup) extends BaseController
-      with FileUploadSupport with FlashMapSupport with Logging {
+      with FileUploadSupport with Logging {
 
   //configureMultipartHandling(MultipartConfig(maxFileSize = Some(5 * 1024 * 1024)))
 
