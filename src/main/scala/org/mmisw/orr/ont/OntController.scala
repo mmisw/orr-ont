@@ -72,11 +72,8 @@ class OntController(implicit setup: Setup) extends BaseController
     resolveUri(uri)
   }
 
-  /**
-   * General:
-   *   http get localhost:8080/ont/\?uri=http://mmisw.org/ont/mmi/device\&format=rdf
-   * Self-resolvability:
-   *   http get localhost:8080/ont/myorg/myont\?format=rdf
+  /*
+   * General ontology request
    */
   get("/(.*)".r) {
     params.get("uri") match {
@@ -261,16 +258,27 @@ class OntController(implicit setup: Setup) extends BaseController
     }
 
   }
+
   /**
-   * posts a new version of an existing ontology entry.
-   *
-   * http -f post localhost:8080/ont/version uri=http://ont1 userName=carueda file@src/test/resources/test.rdf format=rdf
+   * Updates a given version or adds a new version.
    */
-  post("/version") {
+  // TODO handle self-uri
+  put("/") {
     val uri = require(params, "uri")
-    val nameOpt = params.get("name")
+    val versionOpt = params.get("version")
     val user = verifyUser(params.get("userName"))
 
+    versionOpt match {
+      case Some(version) => updateVersion(uri, version, user)
+      case None => addVersion(uri, user)
+    }
+  }
+
+  /**
+   * Adds a new version of a registered ontology.
+   */
+  def addVersion(uri: String, user: db.User) = {
+    val nameOpt = params.get("name")
     val owners = getOwners
     val (fileItem, format) = getFileAndFormat
     val (version, date) = getVersion
@@ -308,15 +316,10 @@ class OntController(implicit setup: Setup) extends BaseController
 
   /**
    * updates a particular version.
-   * Note, only the name in the particular version can be updated.
+   * Note, only the name in the particular version can be updated at the moment.
    */
-  put("/version") {
-    acceptOnly("uri", "version", "userName", "name")
-    val uri      = require(params, "uri")
-    val version  = require(params, "version")
-    val user     = verifyUser(params.get("userName"))
-    val name     = require(params, "name")
-
+  def updateVersion(uri: String, version: String, user: db.User) = {
+    val name = require(params, "name")
     ontDAO.findOneById(uri) match {
       case None => error(404, s"'$uri' is not registered")
 
@@ -341,13 +344,7 @@ class OntController(implicit setup: Setup) extends BaseController
     }
   }
 
-  // deletes a particular version
-  delete("/version") {
-    acceptOnly("uri", "version", "userName")
-    val uri      = require(params, "uri")
-    val version  = require(params, "version")
-    val user     = verifyUser(params.get("userName"))
-
+  def deleteVersion(uri: String, version: String, user: db.User) = {
     ontDAO.findOneById(uri) match {
       case None => error(404, s"'$uri' is not registered")
 
@@ -368,12 +365,26 @@ class OntController(implicit setup: Setup) extends BaseController
     }
   }
 
-  // deletes a complete entry
+  /*
+   * Deletes a particular version or the whole ontology entry.
+   */
+  // TODO handle self-uri
+  // TODO authentication
   delete("/") {
-    acceptOnly("uri", "userName")
-    val uri   = require(params, "uri")
-    val user  = verifyUser(params.get("userName"))
+    val uri = require(params, "uri")
+    val versionOpt = params.get("version")
+    val user = verifyUser(params.get("userName"))
 
+    versionOpt match {
+      case Some(version) => deleteVersion(uri, version, user)
+      case None          => deleteOntology(uri, user)
+    }
+  }
+
+  /**
+   * Deletes a whole ontology entry.
+   */
+  def deleteOntology(uri: String, user: db.User) = {
     ontDAO.findOneById(uri) match {
       case None => error(404, s"'$uri' is not registered")
 

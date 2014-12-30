@@ -66,11 +66,11 @@ class OntControllerSpec extends MutableScalatraSpec with Logging {
     }
   }
 
-  "POST new version" should {
+  "PUT to register new version" should {
     "work" in {
       Thread.sleep(1500) // so the new version is diff.
       logger.info(s"post: $map2")
-      post("/version", params = map2, files = Map("file" -> file)) {
+      put("/", params = map2, files = Map("file" -> file)) {
         logger.info(s"post new version reply: $body")
         status must_== 200
         val res = parse(body).extract[OntologyResult]
@@ -103,7 +103,7 @@ class OntControllerSpec extends MutableScalatraSpec with Logging {
         "userName" -> "tester"
       )
       logger.info(s"put: $map3")
-      put("/version", map3) {
+      put("/", map3) {
         logger.info(s"put reply: $body")
         status must_== 200
         val res = parse(body).extract[OntologyResult]
@@ -120,7 +120,7 @@ class OntControllerSpec extends MutableScalatraSpec with Logging {
         "userName" -> "tester"
       )
       logger.info(s"delete version: $map")
-      delete("/version", map) {
+      delete("/", map) {
         status must_== 200
         val res = parse(body).extract[OntologyResult]
         res.uri must_== uri
