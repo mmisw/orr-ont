@@ -28,8 +28,145 @@ class OntController(implicit setup: Setup) extends BaseController
       error(413, "The file you uploaded exceeded the 5MB limit.")
   }
 
-  val versionFormatter = new java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss")
+  //
+  // posts a new ontology entry.
+  //
+  post("/") {
+    val uri = require(params, "uri")
+    val name = require(params, "name")
+    val orgNameOpt = params.get("orgName")
+    val user = verifyUser(params.get("userName"))
 
+    // TODO handle case where there is no explicit organization to verify
+    // the user can submit on her own behalf.
+    val orgName = verifyOrgAndUser(orgNameOpt, user.userName)
+
+    val owners = getOwners
+    val (fileItem, format) = getFileAndFormat
+    val (version, date) = getVersion
+
+    ontDAO.findOneById(uri) match {
+      case None =>
+        validateUri(uri)
+
+        writeOntologyFile(uri, version, fileItem, format)
+
+        val ontVersion = OntologyVersion(name, user.userName, format, new DateTime(date))
+        val ont = Ontology(uri, Some(orgName),
+          owners = owners,
+          versions = Map(version -> ontVersion))
+
+        Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
+          case Success(uriR) =>
+            OntologyResult(uri, version = Some(version), registered = Some(ontVersion.date))
+
+          case Failure(exc)  => error(500, s"insert failure = $exc")
+          // TODO note that it might be a duplicate key in concurrent registration
+        }
+
+
+      case Some(ont) =>   // bad request: existing ontology entry.
+        error(409, s"'$uri' is already registered")
+    }
+  }
+
+  //
+  // General ontology request
+  //
+  get("/(.*)".r) {
+    params.get("uri") match {
+      case Some(uri) => resolveUri(uri)
+
+      case None =>
+        val someSuffix = multiParams("captures").toList(0).length > 0
+        if (someSuffix) selfResolve
+        else {
+          // TODO what exactly to report for the list of all ontologies?
+          ontDAO.find(MongoDBObject()) map { ont =>
+            getLatestVersion(ont) match {
+              case Some((ontVersion, version)) =>
+                val ores = PendOntologyResult(ont.uri, ontVersion.name, sortedVersionKeys(ont))
+                grater[PendOntologyResult].toCompactJSON(ores)
+
+              case None =>  // should not happen
+                bug(s"'${ont.uri}', no versions registered")
+            }
+          }
+        }
+    }
+  }
+
+  //
+  // Dispatches organization OR user ontology request (.../ont/xyz)
+  //
+  get("/:xyz") {
+    val xyz = require(params, "xyz")
+
+    orgsDAO.findOneById(xyz) match {
+      case Some(org) =>
+        org.ontUri match {
+          case Some(ontUri) => resolveUri(ontUri)
+          case None =>
+            try selfResolve
+            catch {
+              case exc: AnyRef =>
+                logger.info(s"EXC in selfResolve: $exc")
+                // TODO dispatch some synthetic response as in previous Ont
+                error(500, s"TODO: generate summary for organization '$xyz'")
+            }
+        }
+      case None =>
+        usersDAO.findOneById(xyz) match {
+          case Some(user) =>
+            user.ontUri match {
+              case Some(ontUri) => resolveUri(ontUri)
+              case None => error(404, s"No ontology found for: '$xyz'")
+            }
+          case None => error(404, s"No organization or user by given name: '$xyz'")
+        }
+    }
+  }
+
+  //
+  // Updates a given version or adds a new version.
+  //
+  // TODO handle self-uri in put
+  // TODO authenticate put
+  put("/") {
+    val uri = require(params, "uri")
+    val versionOpt = params.get("version")
+    val user = verifyUser(params.get("userName"))
+
+    versionOpt match {
+      case Some(version) => updateVersion(uri, version, user)
+      case None => addVersion(uri, user)
+    }
+  }
+
+  //
+  // Deletes a particular version or the whole ontology entry.
+  //
+  // TODO handle self-uri in delete
+  // TODO authenticate delete
+  delete("/") {
+    val uri = require(params, "uri")
+    val versionOpt = params.get("version")
+    val user = verifyUser(params.get("userName"))
+
+    versionOpt match {
+      case Some(version) => deleteVersion(uri, version, user)
+      case None          => deleteOntology(uri, user)
+    }
+  }
+
+  post("/!/deleteAll") {
+    val map = body()
+    val pw = require(map, "pw")
+    val special = setup.mongoConfig.getString("pw_special")
+    if (special == pw) ontDAO.remove(MongoDBObject()) else halt(401)
+  }
+
+  val versionFormatter = new java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss")
 
   def getOntVersion(uri: String, versionOpt: Option[String]): (Ontology, OntologyVersion, String) = {
     val ont = ontDAO.findOneById(uri).getOrElse(error(404, s"'$uri' is not registered"))
@@ -70,63 +207,6 @@ class OntController(implicit setup: Setup) extends BaseController
     val uri = request.getRequestURL.toString
     logger.debug(s"self-resolving $uri")
     resolveUri(uri)
-  }
-
-  /*
-   * General ontology request
-   */
-  get("/(.*)".r) {
-    params.get("uri") match {
-      case Some(uri) => resolveUri(uri)
-
-      case None =>
-        val someSuffix = multiParams("captures").toList(0).length > 0
-        if (someSuffix) selfResolve
-        else {
-          // TODO what exactly to report for the list of all ontologies?
-          ontDAO.find(MongoDBObject()) map { ont =>
-            getLatestVersion(ont) match {
-              case Some((ontVersion, version)) =>
-                val ores = PendOntologyResult(ont.uri, ontVersion.name, sortedVersionKeys(ont))
-                grater[PendOntologyResult].toCompactJSON(ores)
-
-              case None =>  // should not happen
-                bug(s"'${ont.uri}', no versions registered")
-            }
-          }
-        }
-    }
-  }
-
-  /**
-   * dispatches organization OR user ontology request (.../ont/xyz)
-   */
-  get("/:xyz") {
-    val xyz = require(params, "xyz")
-
-    orgsDAO.findOneById(xyz) match {
-      case Some(org) =>
-        org.ontUri match {
-          case Some(ontUri) => resolveUri(ontUri)
-          case None =>
-            try selfResolve
-            catch {
-              case exc: AnyRef =>
-                logger.info(s"EXC in selfResolve: $exc")
-                // TODO dispatch some synthetic response as in previous Ont
-                error(500, s"TODO: generate summary for organization '$xyz'")
-            }
-        }
-      case None =>
-        usersDAO.findOneById(xyz) match {
-          case Some(user) =>
-            user.ontUri match {
-              case Some(ontUri) => resolveUri(ontUri)
-              case None => error(404, s"No ontology found for: '$xyz'")
-            }
-          case None => error(404, s"No organization or user by given name: '$xyz'")
-        }
-    }
   }
 
   /** latest version first */
@@ -202,50 +282,6 @@ class OntController(implicit setup: Setup) extends BaseController
     (version, date)
   }
 
-  /**
-   * posts a new ontology entry.
-   *
-   * http -f post localhost:8080/ont uri=http://ont1 name=example orgName=mmi userName=carueda file@src/test/resources/test.rdf format=rdf
-   */
-  post("/") {
-    val uri = require(params, "uri")
-    val name = require(params, "name")
-    val orgNameOpt = params.get("orgName")
-    val user = verifyUser(params.get("userName"))
-
-    // TODO handle case where there is no explicit organization to verify
-    // the user can submit on her own behalf.
-    val orgName = verifyOrgAndUser(orgNameOpt, user.userName)
-
-    val owners = getOwners
-    val (fileItem, format) = getFileAndFormat
-    val (version, date) = getVersion
-
-    ontDAO.findOneById(uri) match {
-      case None =>
-        validateUri(uri)
-
-        writeOntologyFile(uri, version, fileItem, format)
-
-        val ontVersion = OntologyVersion(name, user.userName, format, new DateTime(date))
-        val ont = Ontology(uri, Some(orgName),
-          owners = owners,
-          versions = Map(version -> ontVersion))
-
-        Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
-          case Success(uriR) =>
-            OntologyResult(uri, version = Some(version), registered = Some(ontVersion.date))
-
-          case Failure(exc)  => error(500, s"insert failure = $exc")
-              // TODO note that it might be a duplicate key in concurrent registration
-        }
-
-
-      case Some(ont) =>   // bad request: existing ontology entry.
-        error(409, s"'$uri' is already registered")
-    }
-  }
-
   def verifyOwner(userName: String, ont: Ontology) = {
     if (ont.owners.length > 0) {
       if (!ont.owners.contains(userName)) error(401, s"'$userName' is not an owner of '${ont.uri}'")
@@ -257,21 +293,6 @@ class OntController(implicit setup: Setup) extends BaseController
       case None => // TODO handle no-organization case
     }
 
-  }
-
-  /**
-   * Updates a given version or adds a new version.
-   */
-  // TODO handle self-uri
-  put("/") {
-    val uri = require(params, "uri")
-    val versionOpt = params.get("version")
-    val user = verifyUser(params.get("userName"))
-
-    versionOpt match {
-      case Some(version) => updateVersion(uri, version, user)
-      case None => addVersion(uri, user)
-    }
   }
 
   /**
@@ -318,6 +339,7 @@ class OntController(implicit setup: Setup) extends BaseController
    * updates a particular version.
    * Note, only the name in the particular version can be updated at the moment.
    */
+  // TODO handle other pieces that can/should be updated
   def updateVersion(uri: String, version: String, user: db.User) = {
     val name = require(params, "name")
     ontDAO.findOneById(uri) match {
@@ -344,6 +366,9 @@ class OntController(implicit setup: Setup) extends BaseController
     }
   }
 
+  /**
+   * Deletes a particular version.
+   */
   def deleteVersion(uri: String, version: String, user: db.User) = {
     ontDAO.findOneById(uri) match {
       case None => error(404, s"'$uri' is not registered")
@@ -365,22 +390,6 @@ class OntController(implicit setup: Setup) extends BaseController
     }
   }
 
-  /*
-   * Deletes a particular version or the whole ontology entry.
-   */
-  // TODO handle self-uri
-  // TODO authentication
-  delete("/") {
-    val uri = require(params, "uri")
-    val versionOpt = params.get("version")
-    val user = verifyUser(params.get("userName"))
-
-    versionOpt match {
-      case Some(version) => deleteVersion(uri, version, user)
-      case None          => deleteOntology(uri, user)
-    }
-  }
-
   /**
    * Deletes a whole ontology entry.
    */
@@ -398,13 +407,6 @@ class OntController(implicit setup: Setup) extends BaseController
           case Failure(exc)  => error(500, s"update failure = $exc")
         }
     }
-  }
-
-  post("/!/deleteAll") {
-    val map = body()
-    val pw = require(map, "pw")
-    val special = setup.mongoConfig.getString("pw_special")
-    if (special == pw) ontDAO.remove(MongoDBObject()) else halt(401)
   }
 
   def writeOntologyFile(uri: String, version: String,
