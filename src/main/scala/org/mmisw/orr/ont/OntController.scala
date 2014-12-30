@@ -31,7 +31,7 @@ class OntController(implicit setup: Setup) extends BaseController
   val versionFormatter = new java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss")
 
 
-  def getOntVersion(uri: String, versionOpt: Option[String]) = {
+  def getOntVersion(uri: String, versionOpt: Option[String]): (Ontology, OntologyVersion, String) = {
     val ont = ontDAO.findOneById(uri).getOrElse(error(404, s"'$uri' is not registered"))
     versionOpt match {
       case Some(v) =>
@@ -39,9 +39,14 @@ class OntController(implicit setup: Setup) extends BaseController
         (ont, ontVersion, v)
 
       case None =>
-        val ontVersion = ont.versions.getOrElse(ont.latestVersion,
-          bug(s"'$uri', version '${ont.latestVersion}' is not registered"))
-        (ont, ontVersion, ont.latestVersion)
+        // latest version
+        getLatestVersion(ont) match {
+          case Some((ontVersion, version)) =>
+            (ont, ontVersion, version)
+          case None =>
+            // should not happen
+            bug(s"'$uri', no versions registered")
+        }
     }
   }
 
@@ -54,7 +59,8 @@ class OntController(implicit setup: Setup) extends BaseController
     // todo: determine whether the request is for file contents, or metadata.
 
     if (format == "!md") {
-      val ores = PendOntologyResult(ont.uri, ontVersion.name, version, ont.versions.keys.toList)
+      val versions = sortedVersionKeys(ont)
+      val ores = PendOntologyResult(ont.uri, ontVersion.name, versions)
       grater[PendOntologyResult].toCompactJSON(ores)
     }
     else getOntologyFile(uri, version, format)
@@ -80,11 +86,16 @@ class OntController(implicit setup: Setup) extends BaseController
         val someSuffix = multiParams("captures").toList(0).length > 0
         if (someSuffix) selfResolve
         else {
-          // TODO what exactly to report?
+          // TODO what exactly to report for the list of all ontologies?
           ontDAO.find(MongoDBObject()) map { ont =>
-            val name = ont.versions.get(ont.latestVersion).get.name
-            val ores = PendOntologyResult(ont.uri, name, ont.latestVersion, ont.versions.keys.toList)
-            grater[PendOntologyResult].toCompactJSON(ores)
+            getLatestVersion(ont) match {
+              case Some((ontVersion, version)) =>
+                val ores = PendOntologyResult(ont.uri, ontVersion.name, sortedVersionKeys(ont))
+                grater[PendOntologyResult].toCompactJSON(ores)
+
+              case None =>  // should not happen
+                bug(s"'${ont.uri}', no versions registered")
+            }
           }
         }
     }
@@ -121,6 +132,18 @@ class OntController(implicit setup: Setup) extends BaseController
     }
   }
 
+  /** latest version first */
+  def sortedVersionKeys(ont: Ontology): List[String] =
+    ont.versions.keys.toList.sorted(Ordering[String].reverse)
+
+  def getLatestVersion(ont: Ontology): Option[(OntologyVersion,String)] = {
+    val versions = sortedVersionKeys(ont)
+    versions.headOption match {
+      case Some(version) => Some((ont.versions.get(version).get, version))
+      case None => None
+    }
+  }
+
   /**
    * Verifies the given organization and the userName against that organization.
    */
@@ -128,7 +151,7 @@ class OntController(implicit setup: Setup) extends BaseController
     if (setup.testing) orgName
     else {
       orgsDAO.findOneById(orgName) match {
-        case None => 
+        case None =>
           if (orgMustExist) bug(s"'$orgName' organization must exist")
           else error(400, s"'$orgName' invalid organization")
         case Some(org) =>
@@ -160,10 +183,10 @@ class OntController(implicit setup: Setup) extends BaseController
     logger.debug(s"owners=$owners")
     owners
   }
-  
+
   def getFileAndFormat = {
     val fileItem = fileParams.getOrElse("file", missing("file"))
-    
+
     // todo make format param optional
     val format = require(params, "format")
 
@@ -208,7 +231,7 @@ class OntController(implicit setup: Setup) extends BaseController
         writeOntologyFile(uri, version, fileItem, format)
 
         val ontVersion = OntologyVersion(name, user.userName, format, new DateTime(date))
-        val ont = Ontology(uri, version, Some(orgName),
+        val ont = Ontology(uri, Some(orgName),
           owners = owners,
           versions = Map(version -> ontVersion))
 
@@ -268,7 +291,7 @@ class OntController(implicit setup: Setup) extends BaseController
         }
 
         nameOpt foreach (name => ontVersion = ontVersion.copy(name = name))
-        update = update.copy(latestVersion = version,
+        update = update.copy(
           versions = ont.versions ++ Map(version -> ontVersion))
 
         logger.info(s"update: $update")

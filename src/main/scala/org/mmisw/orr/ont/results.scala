@@ -36,7 +36,6 @@ case class OntologyResult(
 case class PendOntologyResult(
             uri:            String,
             name:           String,
-            latestVersion:  String,
             versions:       List[String])
 
 case class VersionInfo(

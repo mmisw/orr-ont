@@ -60,7 +60,8 @@ class OntControllerSpec extends MutableScalatraSpec with Logging {
         status must_== 200
         val res = parse(body).extract[PendOntologyResult]
         res.uri must_== uri
-        res.latestVersion must_== registeredVersion.get
+        val latestVersion = res.versions.sorted(Ordering[String].reverse).head
+        latestVersion must_== registeredVersion.get
       }
     }
   }
@@ -88,7 +89,8 @@ class OntControllerSpec extends MutableScalatraSpec with Logging {
         status must_== 200
         val res = parse(body).extract[PendOntologyResult]
         res.uri must_== uri
-        res.latestVersion must_== registeredVersion.get
+        val latestVersion = res.versions.sorted(Ordering[String].reverse).head
+        latestVersion must_== registeredVersion.get
       }
     }
   }
