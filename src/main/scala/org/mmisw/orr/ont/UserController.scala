@@ -13,6 +13,8 @@ import org.joda.time.DateTime
 class UserController(implicit setup: Setup) extends BaseController
       with Logging {
 
+  createAdminIfMissing()
+
   get("/") {
     usersDAO.find(MongoDBObject()) map getUserJson
   }
@@ -25,27 +27,13 @@ class UserController(implicit setup: Setup) extends BaseController
   post("/") {
     val map = body()
 
-    val userName  = require(map, "userName")
+    val userName = require(map, "userName")
     val firstName = require(map, "firstName")
-    val lastName  = require(map, "lastName")
-    val password  = require(map, "password")
-    val ontUri    = getString(map, "ontUri")
+    val lastName = require(map, "lastName")
+    val password = require(map, "password")
+    val ontUri = getString(map, "ontUri")
 
-    val encPassword = userAuth.encryptPassword(password)
-
-    usersDAO.findOneById(userName) match {
-      case None =>
-        val obj = User(userName, firstName, lastName, encPassword, ontUri)
-
-        Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
-          case Success(r) => UserResult(userName, registered = Some(obj.registered))
-
-          case Failure(exc)  => error(500, s"insert failure = $exc")
-          // TODO note that it might be a duplicate key in concurrent registration
-        }
-
-      case Some(ont) => error(400, s"'$userName' already registered")
-    }
+    createUser(userName, firstName, lastName, password, ontUri)
   }
 
   post("/chkpw") {
@@ -112,4 +100,50 @@ class UserController(implicit setup: Setup) extends BaseController
     val res = PendUserResult(user.userName, user.ontUri, registered = Some(user.registered))
     grater[PendUserResult].toCompactJSON(res)
   }
+
+  def createUser(userName: String, firstName: String, lastName: String, password: String,
+                 ontUri: Option[String]) = {
+
+    val encPassword = userAuth.encryptPassword(password)
+
+    usersDAO.findOneById(userName) match {
+      case None =>
+        val obj = User(userName, firstName, lastName, encPassword, ontUri)
+
+        Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
+          case Success(r) => UserResult(userName, registered = Some(obj.registered))
+
+          case Failure(exc)  => error(500, s"insert failure = $exc")
+          // TODO note that it might be a duplicate key in concurrent registration
+        }
+
+      case Some(_) => error(400, s"'$userName' already registered")
+    }
+  }
+
+  /**
+   * Creates the "admin" user if not already in the database.
+   * This is called on initialization of this controller.
+   */
+  def createAdminIfMissing() {
+    val admin = "admin"
+    usersDAO.findOneById(admin) match {
+      case None =>
+        logger.debug("creating 'admin' user")
+        val password = setup.config.getString("admin.password")
+        val encPassword = userAuth.encryptPassword(password)
+        val obj = User(admin, "Adm", "In", encPassword)
+
+        Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
+          case Success(r) =>
+            logger.info(s"'admin' user created: ${obj.registered}")
+
+          case Failure(exc)  =>
+            logger.error(s"error creating 'admin' user", exc)
+        }
+
+      case Some(_) => // nothing
+    }
+  }
+
 }
