@@ -460,13 +460,32 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   }
 
   "DELETE an ont version" should {
-    "work" in {
+    "fail with no credentials" in {
       val map = Map("uri" -> uri,
         "version" -> registeredVersion.get,
         "userName" -> userName
       )
-      logger.info(s"delete version: $map")
       delete("/ont", map) {
+        status must_== 401
+      }
+    }
+
+    "fail with non-member of corresponding org" in {
+      val map = Map("uri" -> uri,
+        "version" -> registeredVersion.get,
+        "userName" -> userName2
+      )
+      delete("/ont", map, headers = user2Headers) {
+        status must_== 403
+      }
+    }
+
+    "work with member credentials" in {
+      val map = Map("uri" -> uri,
+        "version" -> registeredVersion.get,
+        "userName" -> userName
+      )
+      delete("/ont", map, headers = userHeaders) {
         status must_== 200
         val res = parse(body).extract[OntologyResult]
         res.uri must_== uri
@@ -475,17 +494,35 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   }
 
   "DELETE a whole ont entry" should {
-    "work" in {
+    "fail with no credentials" in {
       val map = Map("uri" -> uri,
         "userName" -> userName
       )
-      logger.info(s"delete entry: $map")
       delete("/ont", map) {
+        status must_== 401
+      }
+    }
+
+    "fail with non-member of corresponding org" in {
+      val map = Map("uri" -> uri,
+        "userName" -> userName2
+      )
+      delete("/ont", map, headers = user2Headers) {
+        status must_== 403
+      }
+    }
+
+    "work with member credentials" in {
+      val map = Map("uri" -> uri,
+        "userName" -> userName
+      )
+      delete("/ont", map, headers = userHeaders) {
         status must_== 200
         val res = parse(body).extract[OntologyResult]
         res.uri must_== uri
       }
     }
+
   }
 
   //////////////////////////////////////////

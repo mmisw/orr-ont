@@ -152,7 +152,6 @@ class OntController(implicit setup: Setup) extends BaseController
 
     ont.orgName match {
       case Some(orgName) =>
-        getOrg(orgName)
         orgsDAO.findOneById(orgName) match {
           case None =>
             bug(s"org '$orgName' should exist")
@@ -177,12 +176,27 @@ class OntController(implicit setup: Setup) extends BaseController
    * Deletes a particular version or the whole ontology entry.
    *
    * TODO handle self-uri in delete
-   * TODO authenticate delete
    */
   delete("/") {
     val uri = require(params, "uri")
     val versionOpt = params.get("version")
     val user = verifyUser(params.get("userName"))
+
+    val (ont, _, _) = getOntVersion(uri, versionOpt)
+
+    ont.orgName match {
+      case Some(orgName) =>
+        orgsDAO.findOneById(orgName) match {
+          case None =>
+            bug(s"org '$orgName' should exist")
+
+          case Some(org) =>
+            verifyAuthenticatedUser(org.members :+ "admin": _*)
+        }
+
+      case None =>
+        bug(s"currently I expect registered ont to have org associated")
+    }
 
     versionOpt match {
       case Some(version) => deleteVersion(uri, version, user)
