@@ -114,7 +114,7 @@ class UserController(implicit setup: Setup) extends BaseController
     UserResult("admin")
   }
 
-  post("/!/deleteAll") {
+  delete("/!/all") {
     verifyAuthenticatedUser("admin")
     usersDAO.remove(MongoDBObject())
   }
@@ -126,7 +126,7 @@ class UserController(implicit setup: Setup) extends BaseController
   }
 
   def createUser(userName: String, firstName: String, lastName: String, password: String,
-                 ontUri: Option[String]) = {
+                 ontUri: Option[String] = None) = {
 
     val encPassword = userAuth.encryptPassword(password)
 

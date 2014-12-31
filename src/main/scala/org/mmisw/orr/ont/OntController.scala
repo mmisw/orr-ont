@@ -30,8 +30,10 @@ class OntController(implicit setup: Setup) extends BaseController
   /*
    * Registers a new ontology entry.
    */
-  // TODO verifications as to who can do this
   post("/") {
+    // For the moment, require admin; TODO proper verifications as to who can do this
+    verifyAuthenticatedUser("admin")
+
     val uri = require(params, "uri")
     val name = require(params, "name")
     val orgNameOpt = params.get("orgName")
@@ -161,7 +163,7 @@ class OntController(implicit setup: Setup) extends BaseController
     }
   }
 
-  post("/!/deleteAll") {
+  delete("/!/all") {
     verifyAuthenticatedUser("admin")
     ontDAO.remove(MongoDBObject())
   }
@@ -225,16 +227,13 @@ class OntController(implicit setup: Setup) extends BaseController
    * Verifies the given organization and the userName against that organization.
    */
   def verifyOrgAndUser(orgName: String, userName: String, orgMustExist: Boolean = false): String = {
-    if (setup.testing) orgName
-    else {
-      orgsDAO.findOneById(orgName) match {
-        case None =>
-          if (orgMustExist) bug(s"'$orgName' organization must exist")
-          else error(400, s"'$orgName' invalid organization")
-        case Some(org) =>
-          if (org.members.contains(userName)) orgName
-          else error(401, s"user '$userName' is not a member of organization '$orgName'")
-      }
+    orgsDAO.findOneById(orgName) match {
+      case None =>
+        if (orgMustExist) bug(s"'$orgName' organization must exist")
+        else error(400, s"'$orgName' invalid organization")
+      case Some(org) =>
+        if (org.members.contains(userName)) orgName
+        else error(401, s"user '$userName' is not a member of organization '$orgName'")
     }
   }
 

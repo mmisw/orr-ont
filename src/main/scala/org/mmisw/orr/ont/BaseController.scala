@@ -23,8 +23,7 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
   }
 
   protected def verifyUser(userName: String): db.User = {
-    if (setup.testing) db.User(userName, "tFirstName", "tlastName", "tPassword")
-    else getUser(userName)
+    getUser(userName)
   }
 
   protected def verifyUser(userNameOpt: Option[String]): db.User = userNameOpt match {

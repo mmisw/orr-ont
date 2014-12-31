@@ -9,8 +9,11 @@ import org.mmisw.orr.ont.db.Db
 
 /**
  * Sets up the application according to configuration.
+ *
+ * @param configFilename
+ * @param testing  optional string for testing purposes
  */
-class Setup(configFilename: String, val testing: Boolean = false) extends AnyRef with Logging {
+class Setup(configFilename: String, val testing: Option[String] = None) extends AnyRef with Logging {
 
   private[this] var dbOpt: Option[Db] = None
 
@@ -26,28 +29,33 @@ class Setup(configFilename: String, val testing: Boolean = false) extends AnyRef
 
   val mongoConfig = {
     val mc = config.getConfig("mongo")
-    if (testing) {
-      val string = List("ontologies", "users", "organizations") map {collName =>
-        val testName = s"test-${mc.getString(collName)}"
-        s"$collName=$testName"
-      } mkString "\n"
-      logger.info(s"test mode: using:\n$string")
-      ConfigFactory.parseString(string).withFallback(mc)
+    testing match {
+      case None => mc
+
+      case Some(baseName) =>
+        // adjust collection names:
+        val string = List("ontologies", "users", "organizations") map { collName =>
+          val testName = s"ztest-$baseName-${mc.getString(collName)}"
+          s"$collName=$testName"
+        } mkString "\n"
+        logger.info(s"test mode: using:\n$string")
+        ConfigFactory.parseString(string).withFallback(mc)
     }
-    else mc
   }
 
   val filesConfig = {
     val fc = config.getConfig("files")
-    if (testing) {
-      val string = List("baseDirectory") map {name =>
-        val testName = s"${fc.getString(name)}-test"
-        s"$name=$testName"
-      } mkString "\n"
-      logger.info(s"test mode: using:\n$string")
-      ConfigFactory.parseString(string).withFallback(fc)
+    testing match {
+      case None => fc
+
+      case Some(baseName) =>
+        val string = List("baseDirectory") map { name =>
+          val testName = s"${fc.getString(name)}-test"
+          s"$name=$testName"
+        } mkString "\n"
+        logger.info(s"test mode: using:\n$string")
+        ConfigFactory.parseString(string).withFallback(fc)
     }
-    else fc
   }
 
   val db: Db = new Db(mongoConfig)

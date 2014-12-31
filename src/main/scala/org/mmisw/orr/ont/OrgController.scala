@@ -36,25 +36,12 @@ class OrgController(implicit setup: Setup) extends BaseController
     val map = body()
 
     logger.info(s"POST body = $map")
-    val orgName   = require(map, "orgName")
-    val name       = require(map, "name")
-    val ontUri     = getString(map, "ontUri")
-    val members    = getSeq(map, "members")
+    val orgName = require(map, "orgName")
+    val name = require(map, "name")
+    val ontUri = getString(map, "ontUri")
+    val members = getSeq(map, "members")
 
-    orgsDAO.findOneById(orgName) match {
-      case None =>
-        members foreach verifyUser
-        val obj = Organization(orgName, name, ontUri, members)
-
-        Try(orgsDAO.insert(obj, WriteConcern.Safe)) match {
-          case Success(r) => OrgResult(orgName, registered = Some(obj.registered))
-
-          case Failure(exc)  => error(500, s"insert failure = $exc")
-          // TODO note that it might be a duplicate key in concurrent registration
-        }
-
-      case Some(ont) => error(400, s"'$orgName' organization already registered")
-    }
+    createOrg(orgName, name, members, ontUri)
   }
 
   /*
@@ -104,9 +91,26 @@ class OrgController(implicit setup: Setup) extends BaseController
     }
   }
 
-  post("/!/deleteAll") {
+  delete("/!/all") {
     verifyAuthenticatedUser("admin")
     orgsDAO.remove(MongoDBObject())
+  }
+
+  def createOrg(orgName: String, name: String, members: List[String], ontUri: Option[String] = None) = {
+    orgsDAO.findOneById(orgName) match {
+      case None =>
+        members foreach verifyUser
+        val obj = Organization(orgName, name, ontUri, members)
+
+        Try(orgsDAO.insert(obj, WriteConcern.Safe)) match {
+          case Success(r) => OrgResult(orgName, registered = Some(obj.registered))
+
+          case Failure(exc)  => error(500, s"insert failure = $exc")
+          // TODO note that it might be a duplicate key in concurrent registration
+        }
+
+      case Some(ont) => error(400, s"'$orgName' organization already registered")
+    }
   }
 
   def getOrgJson(org: Organization) = {
