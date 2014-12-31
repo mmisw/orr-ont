@@ -1,5 +1,6 @@
 package org.mmisw.orr.ont
 
+import org.apache.commons.codec.binary.Base64
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.scalatra.test.specs2._
@@ -32,6 +33,29 @@ class UserControllerSpec extends MutableScalatraSpec {
   "GET /" should {
     "return status 200" in {
       get("/") {
+        status must_== 200
+      }
+    }
+  }
+
+  "POST /!/testAuth" should {
+    "return status 401 with no credentials" in {
+      post("/!/testAuth") {
+        status must_== 401
+      }
+    }
+    "return status 401 with non-admin credentials" in {
+      val bytes = s"$userName:$password".getBytes
+      val credentials = "Basic " + new String(Base64.encodeBase64(bytes))
+      post("/!/testAuth", body = "", headers = Map("Authorization" -> credentials)) {
+        status must_== 401
+      }
+    }
+    "return status 200 with admin credentials" in {
+      val password = setup.config.getString("admin.password")
+      val bytes = s"admin:$password".getBytes
+      val credentials = "Basic " + new String(Base64.encodeBase64(bytes))
+      post("/!/testAuth", body = "", headers = Map("Authorization" -> credentials)) {
         status must_== 200
       }
     }
