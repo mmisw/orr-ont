@@ -13,10 +13,8 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
 
 
   protected def verifyAuthenticatedUser(userNames: String*) {
-    if (!setup.testing) {
-      basicAuth
-      if (!userNames.contains(user.userName)) halt(403, s"unauthorized")
-    }
+    basicAuth
+    if (!userNames.contains(user.userName)) halt(403, s"unauthorized")
   }
 
   protected def getUser(userName: String): db.User = {

@@ -18,7 +18,7 @@ class UserControllerSpec extends MutableScalatraSpec with BaseSpec {
     }
   }
 
-  val userName = s"random:${java.util.UUID.randomUUID().toString}"
+  val userName = s"user-${java.util.UUID.randomUUID().toString}"
   val password = "mypassword"
   val credentials = basicCredentials(userName, password)
 
@@ -35,6 +35,8 @@ class UserControllerSpec extends MutableScalatraSpec with BaseSpec {
       }
     }
   }
+
+  sequential
 
   "POST /!/testAuth" should {
     "return status 401 with no credentials" in {
@@ -54,14 +56,12 @@ class UserControllerSpec extends MutableScalatraSpec with BaseSpec {
     }
   }
 
-  sequential
-
   "POST new user" should {
     "return status 200" in {
 
-      post("/", body = pretty(render(map)),
-           headers=Map("content-type" -> "application/json")) {
+      val headers = Map("content-type" -> "application/json", "Authorization" -> adminCredentials)
 
+      post("/", body = pretty(render(map)), headers = headers) {
         println(s"body = $body")
         status must_== 200
         val res = parse(body).extract[UserResult]
@@ -70,17 +70,14 @@ class UserControllerSpec extends MutableScalatraSpec with BaseSpec {
     }
   }
 
-  "POST check correct password" should {
-    "return status 200" in {
+  "POST check password" should {
+    "return status 200 with correct password" in {
       post("/chkpw", body = pretty(render(Map("userName" -> userName, "password" -> password))),
         headers=Map("content-type" -> "application/json")) {
         status must_== 200
       }
     }
-  }
-
-  "POST check wrong password" should {
-    "return status 401" in {
+    "return status 401 with bad password" in {
       post("/chkpw", body = pretty(render(Map("userName" -> userName, "password" -> "wrong"))),
         headers=Map("content-type" -> "application/json")) {
         status must_== 401
@@ -89,9 +86,25 @@ class UserControllerSpec extends MutableScalatraSpec with BaseSpec {
   }
 
   "PUT update user" should {
-    "return status 200" in {
-      put("/", body = pretty(render(Map("userName" -> userName, "firstName" -> "updated.firstName"))),
-        headers=Map("content-type" -> "application/json")) {
+    val body = pretty(render(Map("userName" -> userName, "firstName" -> "updated.firstName")))
+
+    "return status 401 with no credentials" in {
+      val headers = Map("content-type" -> "application/json")
+      put("/", body = body, headers = headers) {
+        status must_== 401
+      }
+    }
+    "return status 200 with user credentials" in {
+      val headers = Map("content-type" -> "application/json", "Authorization" -> credentials)
+      put("/", body = body, headers = headers) {
+        status must_== 200
+        val res = parse(body).extract[UserResult]
+        res.userName must_== userName
+      }
+    }
+    "return status 200 with admin credentials" in {
+      val headers = Map("content-type" -> "application/json", "Authorization" -> adminCredentials)
+      put("/", body = body, headers = headers) {
         status must_== 200
         val res = parse(body).extract[UserResult]
         res.userName must_== userName
@@ -101,7 +114,8 @@ class UserControllerSpec extends MutableScalatraSpec with BaseSpec {
 
   "DELETE user" should {
     "return status 200" in {
-      delete("/", Map("userName" -> userName)) {
+      val headers = Map("Authorization" -> adminCredentials)
+      delete("/", Map("userName" -> userName), headers) {
         status must_== 200
         val res = parse(body).extract[UserResult]
         res.userName must_== userName
@@ -109,9 +123,21 @@ class UserControllerSpec extends MutableScalatraSpec with BaseSpec {
     }
   }
 
-  "DELETE admin (in tests)" should {
-    "return status 200" in {
+  "DELETE admin" should {
+    "return status 401 with no credentials" in {
       delete("/", Map("userName" -> "admin")) {
+        status must_== 401
+      }
+    }
+    "return status 401 with non-admin credentials" in {
+      val headers = Map("Authorization" -> credentials)
+      delete("/", Map("userName" -> "admin"), headers) {
+        status must_== 401
+      }
+    }
+    "return status 200" in {
+      val headers = Map("Authorization" -> adminCredentials)
+      delete("/", Map("userName" -> "admin"), headers) {
         status must_== 200
         val res = parse(body).extract[UserResult]
         res.userName must_== "admin"

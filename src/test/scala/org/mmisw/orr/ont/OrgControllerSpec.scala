@@ -10,7 +10,7 @@ class OrgControllerSpec extends MutableScalatraSpec with BaseSpec {
 
   addServlet(new OrgController, "/*")
 
-  val orgName = s"random.${java.util.UUID.randomUUID().toString}"
+  val orgName = s"org-${java.util.UUID.randomUUID().toString}"
   val map =
     ("orgName"    -> orgName) ~
     ("name"       -> "some organization") ~
@@ -29,11 +29,15 @@ class OrgControllerSpec extends MutableScalatraSpec with BaseSpec {
   sequential
 
   "POST new organization" should {
-    "return status 200" in {
-
-      post("/", body = pretty(render(map)),
-           headers = Map("content-type" -> "application/json")) {
-
+    "return status 401 with no credentials" in {
+      val headers = Map("content-type" -> "application/json")
+      post("/", body = pretty(render(map)), headers = headers) {
+        status must_== 401
+      }
+    }
+    "return status 200 with admin credentials" in {
+      val headers = Map("content-type" -> "application/json", "Authorization" -> adminCredentials)
+      post("/", body = pretty(render(map)), headers = headers) {
         status must_== 200
         val res = parse(body).extract[OrgResult]
         res.orgName must_== orgName
@@ -42,9 +46,17 @@ class OrgControllerSpec extends MutableScalatraSpec with BaseSpec {
   }
 
   "PUT update organization" should {
-    "return status 200" in {
+    "return status 401 with no credentials" in {
+      val headers = Map("content-type" -> "application/json")
       put(s"/$orgName", body = pretty(render("ontUri" -> "updated.ontUri")),
-        headers = Map("content-type" -> "application/json")) {
+        headers = headers) {
+        status must_== 401
+      }
+    }
+    "return status 200 with admin credentials" in {
+      val headers = Map("content-type" -> "application/json", "Authorization" -> adminCredentials)
+      put(s"/$orgName", body = pretty(render("ontUri" -> "updated.ontUri")),
+        headers = headers) {
         status must_== 200
         val res = parse(body).extract[OrgResult]
         res.orgName must_== orgName
@@ -53,8 +65,14 @@ class OrgControllerSpec extends MutableScalatraSpec with BaseSpec {
   }
 
   "DELETE organization" should {
-    "return status 200" in {
-      delete(s"/$orgName", Map.empty) {
+    "return status 401 with no credentials" in {
+      delete(s"/$orgName", headers = Map.empty) {
+        status must_== 401
+      }
+    }
+    "return status 200 with admin credentials" in {
+      val headers = Map("Authorization" -> adminCredentials)
+      delete(s"/$orgName", headers = headers) {
         status must_== 200
         val res = parse(body).extract[OrgResult]
         res.orgName must_== orgName

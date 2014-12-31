@@ -110,7 +110,7 @@ class UserController(implicit setup: Setup) extends BaseController
 
   // for initial testing of authentication from unit tests
   post("/!/testAuth") {
-    basicAuth()
+    verifyAuthenticatedUser("admin")
     UserResult("admin")
   }
 
