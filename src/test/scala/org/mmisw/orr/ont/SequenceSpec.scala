@@ -25,9 +25,11 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   //////////
 
   "GET all users" should {
-    "work" in {
+    "work and contain admin" in {
       get("/user") {
         status must_== 200
+        val res = parse(body).extract[List[PendUserResult]]
+        res.exists(r => r.userName == "admin") must beTrue
       }
     }
   }
@@ -36,6 +38,9 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     "work" in {
       get("/user/admin") {
         status must_== 200
+        logger.debug(s"body=$body")
+        val res = parse(body).extract[PendUserResult]
+        res.userName must_== "admin"
       }
     }
   }
@@ -52,6 +57,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     "password"  -> password)
 
   val userName2 = newUserName() // to test DELETE
+  val password2 = "pass2"
 
   "POST new users" should {
     "fail with no credentials" in {
@@ -76,7 +82,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       "userName"  -> userName2,
       "firstName" -> "myFirstName",
       "lastName"  -> "myLastName",
-      "password"  -> "pass2")
+      "password"  -> password2)
 
     "fail with regular user credentials" in {
       // first userName (already added) trying to create a new user
@@ -147,35 +153,17 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
   }
 
-  "DELETE a user" should {
-    "fail with no credentials" in {
-      delete("/user", Map("userName" -> userName2)) {
-        status must_== 401
-      }
-    }
-
-    "fail with regular user credentials" in {
-      delete("/user", Map("userName" -> userName2), headers = userHeaders) {
-        status must_== 403
-      }
-    }
-
-    "work with admin credentials" in {
-      delete("/user", Map("userName" -> userName2), adminHeaders) {
-        status must_== 200
-        val res = parse(body).extract[UserResult]
-        res.userName must_== userName2
-      }
-    }
-  }
-
   //////////
   // orgs
   //////////
 
-  "GET /org" should {
+  "GET all orgs" should {
     "work" in {
-      get("/org") { status must_== 200 }
+      get("/org") {
+        status must_== 200
+        val res = parse(body).extract[List[PendOrgResult]]
+        res.length must be >= 0
+      }
     }
   }
 
@@ -241,7 +229,24 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
 
-    // TODO "work with member credentials"
+    "work with member credentials" in {
+      val headers = Map("content-type" -> "application/json", "Authorization" -> userCredentials)
+      put(s"/org/$orgName", body = pretty(render("ontUri" -> "updated.ontUri")),
+        headers = headers) {
+        status must_== 200
+        val res = parse(body).extract[OrgResult]
+        res.orgName must_== orgName
+      }
+    }
+
+    "fail with non-member credentials" in {
+      val userCredentials = basicCredentials(userName2, password2)
+      val headers = Map("content-type" -> "application/json", "Authorization" -> userCredentials)
+      put(s"/org/$orgName", body = pretty(render("ontUri" -> "updated.ontUri")),
+        headers = headers) {
+        status must_== 403
+      }
+    }
 
     "work with admin credentials" in {
       val headers = Map("content-type" -> "application/json", "Authorization" -> adminCredentials)
@@ -280,7 +285,11 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
   "GET all onts" should {
     "work" in {
-      get("/ont") { status must_== 200 }
+      get("/ont") {
+        status must_== 200
+        val res = parse(body).extract[List[PendOntologyResult]]
+        res.length must be >= 0
+      }
     }
   }
 
@@ -390,6 +399,36 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
   }
+
+  //////////////////////////////////////////
+  // Misc operations on supporting entities
+  //////////////////////////////////////////
+
+  "DELETE a user" should {
+    "fail with no credentials" in {
+      delete("/user", Map("userName" -> userName2)) {
+        status must_== 401
+      }
+    }
+
+    "fail with regular user credentials" in {
+      delete("/user", Map("userName" -> userName2), headers = userHeaders) {
+        status must_== 403
+      }
+    }
+
+    "work with admin credentials" in {
+      delete("/user", Map("userName" -> userName2), adminHeaders) {
+        status must_== 200
+        val res = parse(body).extract[UserResult]
+        res.userName must_== userName2
+      }
+    }
+  }
+
+  /////////////////////
+  // final cleanup
+  /////////////////////
 
   "cleanup" should {
     "fail for /ont with no admin credentials" in {

@@ -46,13 +46,14 @@ class OrgController(implicit setup: Setup) extends BaseController
 
   /*
    * Updates an organization.
-   * Only "admin" can do this.
-   * TODO also allow any of the current members to do the update.
+   * Only members and "admin" can do this.
    */
   put("/:orgName") {
-    verifyAuthenticatedUser("admin")
     val orgName = require(params, "orgName")
     val org = getOrg(orgName)
+
+    verifyAuthenticatedUser(org.members :+ "admin": _*)
+
     val map = body()
     var update = org
 
