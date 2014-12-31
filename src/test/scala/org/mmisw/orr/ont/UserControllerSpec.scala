@@ -1,17 +1,13 @@
 package org.mmisw.orr.ont
 
-import org.apache.commons.codec.binary.Base64
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.scalatra.test.specs2._
 
 
-class UserControllerSpec extends MutableScalatraSpec {
-  implicit val formats = org.json4s.DefaultFormats
-  com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers()
+class UserControllerSpec extends MutableScalatraSpec with BaseSpec {
   import org.json4s.JsonDSL._
 
-  implicit val setup = new Setup("/etc/orront.conf", testing = true)
   addServlet(new UserController, "/*")
 
   "GET /admin" should {
@@ -24,6 +20,8 @@ class UserControllerSpec extends MutableScalatraSpec {
 
   val userName = s"random:${java.util.UUID.randomUUID().toString}"
   val password = "mypassword"
+  val credentials = basicCredentials(userName, password)
+
   val map = Map(
     "userName"  -> userName,
     "firstName" -> "myFirstName",
@@ -45,17 +43,12 @@ class UserControllerSpec extends MutableScalatraSpec {
       }
     }
     "return status 401 with non-admin credentials" in {
-      val bytes = s"$userName:$password".getBytes
-      val credentials = "Basic " + new String(Base64.encodeBase64(bytes))
       post("/!/testAuth", body = "", headers = Map("Authorization" -> credentials)) {
         status must_== 401
       }
     }
     "return status 200 with admin credentials" in {
-      val password = setup.config.getString("admin.password")
-      val bytes = s"admin:$password".getBytes
-      val credentials = "Basic " + new String(Base64.encodeBase64(bytes))
-      post("/!/testAuth", body = "", headers = Map("Authorization" -> credentials)) {
+      post("/!/testAuth", body = "", headers = Map("Authorization" -> adminCredentials)) {
         status must_== 200
       }
     }

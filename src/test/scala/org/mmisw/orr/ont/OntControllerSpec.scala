@@ -7,11 +7,8 @@ import com.typesafe.scalalogging.slf4j.Logging
 import java.io.File
 
 
-class OntControllerSpec extends MutableScalatraSpec with Logging {
-  implicit val formats = org.json4s.DefaultFormats
-  com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers()
+class OntControllerSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
-  implicit val setup = new Setup("/etc/orront.conf", testing = true)
   addServlet(new OntController, "/*")
 
   val uri  = s"random.${java.util.UUID.randomUUID().toString}"

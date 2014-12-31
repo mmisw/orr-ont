@@ -5,12 +5,9 @@ import org.json4s.native.JsonMethods._
 import org.scalatra.test.specs2._
 
 
-class OrgControllerSpec extends MutableScalatraSpec {
-  implicit val formats = org.json4s.DefaultFormats
-  com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers()
+class OrgControllerSpec extends MutableScalatraSpec with BaseSpec {
   import org.json4s.JsonDSL._
 
-  implicit val setup = new Setup("/etc/orront.conf", testing = true)
   addServlet(new OrgController, "/*")
 
   val orgName = s"random.${java.util.UUID.randomUUID().toString}"
