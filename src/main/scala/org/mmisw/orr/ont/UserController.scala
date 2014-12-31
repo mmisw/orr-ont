@@ -15,16 +15,27 @@ class UserController(implicit setup: Setup) extends BaseController
 
   createAdminIfMissing()
 
+  /*
+   * Gets all users
+   */
   get("/") {
     usersDAO.find(MongoDBObject()) map getUserJson
   }
 
+  /*
+   * Gets a user
+   */
   get("/:userName") {
     val userName = require(params, "userName")
     getUserJson(getUser(userName))
   }
 
+  /*
+   * Registers a new user.
+   * Only "admin" can do this.
+   */
   post("/") {
+    verifyAuthenticatedUser("admin")
     val map = body()
 
     val userName = require(map, "userName")
@@ -46,12 +57,16 @@ class UserController(implicit setup: Setup) extends BaseController
     else error(401, "bad password")
   }
 
+  /*
+   * Updates a user account.
+   * Only the same user or "admin" can do this.
+   */
   put("/") {
     val map = body()
-
     val userName = require(map, "userName")
-    val user = getUser(userName)
-    var update = user
+    verifyAuthenticatedUser(userName, "admin")
+
+    var update = getUser(userName)
 
     if (map.contains("firstName")) {
       update = update.copy(firstName = require(map, "firstName"))
@@ -77,7 +92,12 @@ class UserController(implicit setup: Setup) extends BaseController
     }
   }
 
+  /*
+   * Removes a user account.
+   * Only "admin" can do this.
+   */
   delete("/") {
+    verifyAuthenticatedUser("admin")
     val userName = require(params, "userName")
     val user = getUser(userName)
     Try(usersDAO.remove(user, WriteConcern.Safe)) match {
@@ -89,10 +109,8 @@ class UserController(implicit setup: Setup) extends BaseController
   }
 
   post("/!/deleteAll") {
-    val map = body()
-    val pw = require(map, "pw")
-    val special = setup.mongoConfig.getString("pw_special")
-    if (special == pw) usersDAO.remove(MongoDBObject()) else halt(401)
+    verifyAuthenticatedUser("admin")
+    usersDAO.remove(MongoDBObject())
   }
 
   def getUserJson(user: User) = {

@@ -27,9 +27,10 @@ class OntController(implicit setup: Setup) extends BaseController
       error(413, "The file you uploaded exceeded the 5MB limit.")
   }
 
-  //
-  // posts a new ontology entry.
-  //
+  /*
+   * Registers a new ontology entry.
+   */
+  // TODO verifications as to who can do this
   post("/") {
     val uri = require(params, "uri")
     val name = require(params, "name")
@@ -69,9 +70,9 @@ class OntController(implicit setup: Setup) extends BaseController
     }
   }
 
-  //
-  // General ontology request
-  //
+  /*
+   * General ontology request
+   */
   get("/(.*)".r) {
     params.get("uri") match {
       case Some(uri) => resolveUri(uri)
@@ -95,9 +96,9 @@ class OntController(implicit setup: Setup) extends BaseController
     }
   }
 
-  //
-  // Dispatches organization OR user ontology request (.../ont/xyz)
-  //
+  /*
+   * Dispatches organization OR user ontology request (.../ont/xyz)
+   */
   get("/:xyz") {
     val xyz = require(params, "xyz")
 
@@ -126,11 +127,12 @@ class OntController(implicit setup: Setup) extends BaseController
     }
   }
 
-  //
-  // Updates a given version or adds a new version.
-  //
-  // TODO handle self-uri in put
-  // TODO authenticate put
+  /*
+   * Updates a given version or adds a new version.
+   *
+   * TODO handle self-uri in put
+   * TODO authenticate put
+   */
   put("/") {
     val uri = require(params, "uri")
     val versionOpt = params.get("version")
@@ -142,11 +144,12 @@ class OntController(implicit setup: Setup) extends BaseController
     }
   }
 
-  //
-  // Deletes a particular version or the whole ontology entry.
-  //
-  // TODO handle self-uri in delete
-  // TODO authenticate delete
+  /*
+   * Deletes a particular version or the whole ontology entry.
+   *
+   * TODO handle self-uri in delete
+   * TODO authenticate delete
+   */
   delete("/") {
     val uri = require(params, "uri")
     val versionOpt = params.get("version")
@@ -159,10 +162,8 @@ class OntController(implicit setup: Setup) extends BaseController
   }
 
   post("/!/deleteAll") {
-    val map = body()
-    val pw = require(map, "pw")
-    val special = setup.mongoConfig.getString("pw_special")
-    if (special == pw) ontDAO.remove(MongoDBObject()) else halt(401)
+    verifyAuthenticatedUser("admin")
+    ontDAO.remove(MongoDBObject())
   }
 
   val versionFormatter = new java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss")

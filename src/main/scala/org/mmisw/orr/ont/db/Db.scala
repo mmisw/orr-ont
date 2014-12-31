@@ -16,8 +16,7 @@ class Db(mongoConfig: Config) extends AnyRef with Logging {
 
   private[this] var mcOpt: Option[MongoClient] = None
 
-  logger.info(s"mongoConfig = ${ConfigFactory.parseString(
-    "pw=\"*\"\npw_special=\"*\"").withFallback(mongoConfig)}")
+  logger.info(s"mongoConfig = $mongoConfig")
 
   val host = mongoConfig.getString("host")
   val port = mongoConfig.getInt(   "port")

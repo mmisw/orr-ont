@@ -15,9 +15,6 @@ mongo {
   user = <user name>      # optional
   pw   = <user password>  # required if user given
 
-  # password for special operations against mongo
-  pw_special = somepassword
-
   // collection names:
   ontologies    = <name>
   users         = <name>

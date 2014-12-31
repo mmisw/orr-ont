@@ -7,25 +7,32 @@ import scala.util.{Failure, Success, Try}
 import com.novus.salat._
 import com.novus.salat.global._
 import org.joda.time.DateTime
-import org.mmisw.orr.ont.auth.AuthenticationSupport
 
 
 class OrgController(implicit setup: Setup) extends BaseController
-    with AuthenticationSupport with Logging {
+    with Logging {
 
+  /*
+   * Gets all organizations
+   */
   get("/") {
     orgsDAO.find(MongoDBObject()) map getOrgJson
   }
 
+  /*
+   * Gets an organization
+   */
   get("/:orgName") {
     val orgName = require(params, "orgName")
     getOrgJson(getOrg(orgName))
   }
 
-  // http post localhost:8080/org orgName=mmi name="mmi project" ontUri=http://mmisw.org/ont/mmi members:='["carueda"]'
-  // basic authentication: http -a username:password post ...
+  /*
+   * Registers a new organization.
+   * Only "admin" can do this.
+   */
   post("/") {
-    if (!setup.testing) basicAuth
+    verifyAuthenticatedUser("admin")
     val map = body()
 
     logger.info(s"POST body = $map")
@@ -50,7 +57,13 @@ class OrgController(implicit setup: Setup) extends BaseController
     }
   }
 
+  /*
+   * Updates an organization.
+   * Only "admin" can do this.
+   * TODO also allow any of the current members to do the update.
+   */
   put("/:orgName") {
+    verifyAuthenticatedUser("admin")
     val orgName = require(params, "orgName")
     val org = getOrg(orgName)
     val map = body()
@@ -76,7 +89,12 @@ class OrgController(implicit setup: Setup) extends BaseController
     }
   }
 
+  /*
+   * Deletes an organization.
+   * Only "admin" can do this.
+   */
   delete("/:orgName") {
+    verifyAuthenticatedUser("admin")
     val orgName = require(params, "orgName")
     val org = getOrg(orgName)
     Try(orgsDAO.remove(org, WriteConcern.Safe)) match {
@@ -87,10 +105,8 @@ class OrgController(implicit setup: Setup) extends BaseController
   }
 
   post("/!/deleteAll") {
-    val map = body()
-    val pw = require(map, "pw")
-    val special = setup.mongoConfig.getString("pw_special")
-    if (special == pw) orgsDAO.remove(MongoDBObject()) else halt(401)
+    verifyAuthenticatedUser("admin")
+    orgsDAO.remove(MongoDBObject())
   }
 
   def getOrgJson(org: Organization) = {

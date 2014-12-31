@@ -1,14 +1,23 @@
 package org.mmisw.orr.ont
 
+import org.mmisw.orr.ont.auth.AuthenticationSupport
+
 
 abstract class BaseController(implicit setup: Setup) extends OrrOntStack
-    with SimpleMongoDbJsonConversion {
+  with AuthenticationSupport with SimpleMongoDbJsonConversion {
 
   protected val orgsDAO     = setup.db.orgsDAO
   protected val usersDAO    = setup.db.usersDAO
   protected val ontDAO      = setup.db.ontDAO
   protected val userAuth    = setup.db.authenticator
 
+
+  protected def verifyAuthenticatedUser(userNames: String*) {
+    if (!setup.testing) {
+      basicAuth
+      if (!userNames.contains(user.userName)) halt(403, s"unauthorized")
+    }
+  }
 
   protected def getUser(userName: String): db.User = {
     usersDAO.findOneById(userName).getOrElse(
