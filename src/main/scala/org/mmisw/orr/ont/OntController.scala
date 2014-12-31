@@ -142,12 +142,30 @@ class OntController(implicit setup: Setup) extends BaseController
    * Updates a given version or adds a new version.
    *
    * TODO handle self-uri in put
-   * TODO authenticate put
    */
   put("/") {
     val uri = require(params, "uri")
     val versionOpt = params.get("version")
     val user = verifyUser(params.get("userName"))
+
+    val (ont, _, _) = getOntVersion(uri, versionOpt)
+
+    ont.orgName match {
+      case Some(orgName) =>
+        getOrg(orgName)
+        orgsDAO.findOneById(orgName) match {
+          case None =>
+            bug(s"org '$orgName' should exist")
+
+          case Some(org) =>
+            verifyAuthenticatedUser(org.members :+ "admin": _*)
+        }
+
+      case None =>
+        bug(s"currently I expect registered ont to have org associated")
+    }
+
+    // ok, authenticated user can PUT.
 
     versionOpt match {
       case Some(version) => updateVersion(uri, version, user)
