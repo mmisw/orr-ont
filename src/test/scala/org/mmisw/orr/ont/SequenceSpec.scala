@@ -311,16 +311,45 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
 
-    // TODO "work with user credentials depending on org or no org"
+    "fail with user not member of org" in {
+      val userCredentials = basicCredentials(userName2, password2)
+      val user2Headers = Map("Authorization" -> userCredentials)
+      post("/ont", map1, Map("file" -> file), headers = user2Headers) {
+        status must_== 403
+      }
+    }
 
-    "work with admin credentials" in {
-      post("/ont", map1, Map("file" -> file), headers = adminHeaders) {
+    "work with org member credentials" in {
+      post("/ont", map1, Map("file" -> file), headers = userHeaders) {
         status must_== 200
         val res = parse(body).extract[OntologyResult]
         res.uri must_== uri
         registeredVersion = res.version
       }
     }
+
+    "fail with duplicate uri if resubmitted as new" in {
+      post("/ont", map1, Map("file" -> file), headers = userHeaders) {
+        status must_== 409
+      }
+    }
+
+    "work with admin credentials" in {
+      // need a diff uri
+      val map2 = Map("uri" -> newOntUri(),
+        "name" -> "some ont name",
+        "orgName" -> orgName,
+        "userName" -> userName,
+        "format" -> format
+      )
+      post("/ont", map2, Map("file" -> file), headers = adminHeaders) {
+        status must_== 200
+        val res = parse(body).extract[OntologyResult]
+        res.uri must_== map2("uri")
+      }
+    }
+
+    // TODO "work with no explicit org"?
   }
 
   "GET an ont with given uri" should {

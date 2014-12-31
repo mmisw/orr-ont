@@ -31,19 +31,28 @@ class OntController(implicit setup: Setup) extends BaseController
    * Registers a new ontology entry.
    */
   post("/") {
-    // For the moment, require admin; TODO proper verifications as to who can do this
-    verifyAuthenticatedUser("admin")
-
     val uri = require(params, "uri")
     val name = require(params, "name")
     val orgNameOpt = params.get("orgName")
     val user = verifyUser(params.get("userName"))
 
-    // TODO handle case where there is no explicit organization to verify
-    // the user can submit on her own behalf.
-    val orgName = verifyOrgAndUser(orgNameOpt, user.userName)
+    orgNameOpt match {
+      case Some(orgName) =>
+        orgsDAO.findOneById(orgName) match {
+          case None =>
+            error(400, s"'$orgName' invalid organization")
 
-    val owners = getOwners
+          case Some(org) =>
+            verifyAuthenticatedUser(org.members :+ "admin": _*)
+        }
+
+      case None =>
+        // No org given. TODO could user submit on her own behalf?
+        missing("orgName")
+    }
+
+    // ok, go ahead with registration
+    val owners = getRequestOwners
     val (fileItem, format) = getFileAndFormat
     val (version, date) = getVersion
 
@@ -54,7 +63,7 @@ class OntController(implicit setup: Setup) extends BaseController
         writeOntologyFile(uri, version, fileItem, format)
 
         val ontVersion = OntologyVersion(name, user.userName, format, new DateTime(date))
-        val ont = Ontology(uri, Some(orgName),
+        val ont = Ontology(uri, orgNameOpt,
           owners = owners,
           versions = Map(version -> ontVersion))
 
@@ -252,7 +261,7 @@ class OntController(implicit setup: Setup) extends BaseController
     }
   }
 
-  def getOwners = {
+  def getRequestOwners = {
     // if owners is given, verify them in general (for either new entry or new version)
     val owners = multiParams("owners").filter(_.trim.length > 0).toSet.toList
     owners foreach verifyUser
@@ -299,7 +308,7 @@ class OntController(implicit setup: Setup) extends BaseController
    */
   def addVersion(uri: String, user: db.User) = {
     val nameOpt = params.get("name")
-    val owners = getOwners
+    val owners = getRequestOwners
     val (fileItem, format) = getFileAndFormat
     val (version, date) = getVersion
 
