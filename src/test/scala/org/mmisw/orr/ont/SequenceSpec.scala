@@ -552,7 +552,10 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   // final cleanup
   /////////////////////
 
-  "cleanup" should {
+  // don't do it if the nocleanup env var is defined. Allows to inspect the
+  // final contents of the test collections.
+  if (!sys.env.isDefinedAt("nocleanup")) "cleanup" should {
+
     "fail for /ont with no admin credentials" in {
       delete("/ont/!/all", headers = Map.empty) { status must_== 401 }
     }
