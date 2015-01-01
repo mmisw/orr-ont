@@ -24,8 +24,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   // users
   //////////
 
-  "GET all users" should {
-    "work and contain admin" in {
+  "Get all users (GET /user)" should {
+    "succeed and contain the 'admin' user" in {
       get("/user") {
         status must_== 200
         val res = parse(body).extract[List[PendUserResult]]
@@ -34,8 +34,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
   }
 
-  "GET admin user" should {
-    "work" in {
+  "Get admin user (GET /user/admin)" should {
+    "succeed" in {
       get("/user/admin") {
         status must_== 200
         logger.debug(s"body=$body")
@@ -60,7 +60,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   val password2 = "pass2"
   val user2Headers = Map("Authorization" -> basicCredentials(userName2, password2))
 
-  "POST new users" should {
+  "Create new users (POST /user)" should {
     "fail with no credentials" in {
       post("/user", body = pretty(render(map))) {
         println(s"body = $body")
@@ -70,7 +70,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
     val adminHeaders = Map("content-type" -> "application/json", "Authorization" -> adminCredentials)
 
-    "work with admin credentials" in {
+    "succeed with admin credentials" in {
       post("/user", body = pretty(render(map)), headers = adminHeaders) {
         println(s"body = $body")
         status must_== 200
@@ -93,7 +93,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
 
-    "work (user2)" in {
+    "succeed (user2)" in {
       post("/user", body = pretty(render(map2)), headers = adminHeaders) {
         println(s"body = $body")
         status must_== 200
@@ -103,13 +103,13 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
   }
 
-  "GET a user" should {
-    "work" in {
+  "Get a user (GET /user/:userName)" should {
+    "succeed" in {
       get(s"/user/$userName") { status must_== 200 }
     }
   }
 
-  "POST check password" should {
+  "Check password (POST /user/chkpw)" should {
     "return 200 with correct password" in {
       post("/user/chkpw", body = pretty(render(Map("userName" -> userName, "password" -> password))),
         headers = Map("content-type" -> "application/json")) {
@@ -127,7 +127,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   val userCredentials = basicCredentials(userName, password)
   val userHeaders = Map("Authorization" -> userCredentials)
 
-  "PUT to update a user" should {
+  "Update a user (PUT /user)" should {
     val body = pretty(render(Map("userName" -> userName, "firstName" -> "updated.firstName")))
 
     "fail with no credentials" in {
@@ -136,7 +136,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
         status must_== 401
       }
     }
-    "work with user credentials" in {
+    "succeed with user credentials" in {
       val headers = Map("content-type" -> "application/json", "Authorization" -> userCredentials)
       put("/user", body = body, headers = headers) {
         status must_== 200
@@ -144,7 +144,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
         res.userName must_== userName
       }
     }
-    "work with admin credentials" in {
+    "succeed with admin credentials" in {
       val headers = Map("content-type" -> "application/json", "Authorization" -> adminCredentials)
       put("/user", body = body, headers = headers) {
         status must_== 200
@@ -158,8 +158,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   // orgs
   //////////
 
-  "GET all orgs" should {
-    "work" in {
+  "Get all orgs (GET /org)" should {
+    "succeed" in {
       get("/org") {
         status must_== 200
         val res = parse(body).extract[List[PendOrgResult]]
@@ -178,7 +178,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
   val orgName2 = newOrgName()  // to test DELETE
 
-  "POST new orgs" should {
+  "Create new orgs (POST /org)" should {
     val body = pretty(render(orgMap))
 
     "fail with no credentials" in {
@@ -197,7 +197,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
     val adminHeaders = Map("content-type" -> "application/json", "Authorization" -> adminCredentials)
 
-    "work with admin credentials" in {
+    "succeed with admin credentials" in {
       post("/org", body = body, headers = adminHeaders) {
         status must_== 200
         val res = parse(body).extract[OrgResult]
@@ -205,7 +205,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
 
-    "work with admin credentials (org2)" in {
+    "succeed with admin credentials (org2)" in {
       val orgMap =
         ("orgName"    -> orgName2) ~
           ("name"       -> "some organization2") ~
@@ -221,7 +221,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
   }
 
-  "PUT to update an org" should {
+  "Update an org (PUT /org/:orgName)" should {
     "fail with no credentials" in {
       val headers = Map("content-type" -> "application/json")
       put(s"/org/$orgName", body = pretty(render("ontUri" -> "updated.ontUri")),
@@ -230,7 +230,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
 
-    "work with member credentials" in {
+    "succeed with member credentials" in {
       val headers = Map("content-type" -> "application/json", "Authorization" -> userCredentials)
       put(s"/org/$orgName", body = pretty(render("ontUri" -> "updated.ontUri")),
         headers = headers) {
@@ -249,7 +249,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
 
-    "work with admin credentials" in {
+    "succeed with admin credentials" in {
       val headers = Map("content-type" -> "application/json", "Authorization" -> adminCredentials)
       put(s"/org/$orgName", body = pretty(render("ontUri" -> "updated.ontUri")),
         headers = headers) {
@@ -260,7 +260,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
   }
 
-  "DELETE an org" should {
+  "Delete an org (DELETE /org/:orgName)" should {
     "fail with no credentials" in {
       delete(s"/org/$orgName2", headers = Map.empty) {
         status must_== 401
@@ -271,7 +271,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
         status must_== 403
       }
     }
-    "work with admin credentials" in {
+    "succeed with admin credentials" in {
       delete(s"/org/$orgName2", headers = adminHeaders) {
         status must_== 200
         val res = parse(body).extract[OrgResult]
@@ -284,8 +284,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   // onts
   //////////
 
-  "GET all onts" should {
-    "work" in {
+  "Get all onts (GET /ont)" should {
+    "succeed" in {
       get("/ont") {
         status must_== 200
         val res = parse(body).extract[List[PendOntologyResult]]
@@ -305,7 +305,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   )
   var registeredVersion: Option[String] = None
 
-  "POST a new ont" should {
+  "Register a new ont (POST /ont)" should {
     "fail with no credentials" in {
       post("/ont", map1, Map("file" -> file)) {
         status must_== 401
@@ -318,7 +318,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
 
-    "work with org member credentials" in {
+    "succeed with org member credentials" in {
       post("/ont", map1, Map("file" -> file), headers = userHeaders) {
         status must_== 200
         val res = parse(body).extract[OntologyResult]
@@ -334,7 +334,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
 
-    "work with admin credentials" in {
+    "succeed with admin credentials" in {
       // need a diff uri
       val map2 = Map("uri" -> newOntUri(),
         "name" -> "some ont name",
@@ -349,10 +349,10 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
 
-    // TODO "work with no explicit org"?
+    // TODO "succeed with no explicit org"?
   }
 
-  "GET an ont with given uri" should {
+  "Get an ont with given uri (GET /ont)" should {
     "return the latest version" in {
       val map = Map("uri" -> uri, "format" -> "!md")
       logger.info(s"get: $map")
@@ -367,7 +367,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
   }
 
-  "PUT to register a new ont version" should {
+  "Register a new ont version (PUT /ont)" should {
     val map2 = map1 + ("name" -> "modified name")
     //val body2 = pretty(render(Extraction.decompose(map2)))
 
@@ -383,7 +383,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
 
-    "work with member of corresponding org" in {
+    "succeed with member of corresponding org" in {
       Thread.sleep(1500) // so automatically assigned new version is diff.
       put("/ont", params = map2, files = Map("file" -> file), headers = userHeaders) {
         status must_== 200
@@ -394,7 +394,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
 
-    "work with admin credentials" in {
+    "succeed with admin credentials" in {
       Thread.sleep(1500) // so automatically assigned new version is diff.
       put("/ont", params = map2, files = Map("file" -> file), headers = adminHeaders) {
         status must_== 200
@@ -406,7 +406,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
   }
 
-  "GET an ont with given uri" should {
+  "Get an ont with given uri (GET /ont)" should {
     "return the new latest version" in {
       val map = Map("uri" -> uri, "format" -> "!md")
       logger.info(s"get: $map")
@@ -421,7 +421,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
   }
 
-  "PUT to update a specific ont version" should {
+  "Update a specific ont version (PUT /ont)" should {
     val map2 = map1 + ("name" -> "modified name on version")
 
     // pass the specific version (registeredVersion).
@@ -440,7 +440,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
 
-    "work with member of corresponding org" in {
+    "succeed with member of corresponding org" in {
       Thread.sleep(1500) // so automatically assigned new version is diff.
       put("/ont", params = map2 + ("version" -> registeredVersion.get), files = Map("file" -> file), headers = userHeaders) {
         status must_== 200
@@ -449,7 +449,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
 
-    "work with admin credentials" in {
+    "succeed with admin credentials" in {
       Thread.sleep(1500) // so automatically assigned new version is diff.
       put("/ont", params = map2, files = Map("file" -> file), headers = adminHeaders) {
         status must_== 200
@@ -459,7 +459,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
   }
 
-  "DELETE an ont version" should {
+  "Delete an ont version (DELETE /ont)" should {
     "fail with no credentials" in {
       val map = Map("uri" -> uri,
         "version" -> registeredVersion.get,
@@ -480,7 +480,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
 
-    "work with member credentials" in {
+    "succeed with member credentials" in {
       val map = Map("uri" -> uri,
         "version" -> registeredVersion.get,
         "userName" -> userName
@@ -493,7 +493,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
   }
 
-  "DELETE a whole ont entry" should {
+  "Delete a whole ont entry (DELETE /org/)" should {
     "fail with no credentials" in {
       val map = Map("uri" -> uri,
         "userName" -> userName
@@ -512,7 +512,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
 
-    "work with member credentials" in {
+    "succeed with member credentials" in {
       val map = Map("uri" -> uri,
         "userName" -> userName
       )
@@ -529,7 +529,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   // Misc operations on supporting entities
   //////////////////////////////////////////
 
-  "DELETE a user" should {
+  "Delete a user (DELETE /user)" should {
     "fail with no credentials" in {
       delete("/user", Map("userName" -> userName2)) {
         status must_== 401
@@ -542,7 +542,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
 
-    "work with admin credentials" in {
+    "succeed with admin credentials" in {
       delete("/user", Map("userName" -> userName2), adminHeaders) {
         status must_== 200
         val res = parse(body).extract[UserResult]
@@ -576,14 +576,14 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       delete("/user/!/all", headers = userHeaders) { status must_== 403 }
     }
 
-    "work for /ont with admin credentials" in {
+    "succeed for /ont with admin credentials" in {
       delete("/ont/!/all", headers = adminHeaders) { status must_== 200 }
     }
-    "work for /ont with admin credentials" in {
+    "succeed for /ont with admin credentials" in {
       delete("/org/!/all", headers = adminHeaders) { status must_== 200 }
     }
     // users at the end to allow admin authentication for all of the above as well
-    "work for /ont with admin credentials" in {
+    "succeed for /ont with admin credentials" in {
       delete("/user/!/all", headers = adminHeaders) { status must_== 200 }
     }
   }
