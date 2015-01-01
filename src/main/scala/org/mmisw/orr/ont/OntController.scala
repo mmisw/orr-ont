@@ -33,22 +33,17 @@ class OntController(implicit setup: Setup) extends BaseController
   post("/") {
     val uri = require(params, "uri")
     val name = require(params, "name")
-    val orgNameOpt = params.get("orgName")
+    val orgName = require(params, "orgName")
     val user = verifyUser(params.get("userName"))
 
-    orgNameOpt match {
-      case Some(orgName) =>
-        orgsDAO.findOneById(orgName) match {
-          case None =>
-            error(400, s"'$orgName' invalid organization")
+    // TODO allow absent orgName so user can submit on her own behalf?
 
-          case Some(org) =>
-            verifyAuthenticatedUser(org.members :+ "admin": _*)
-        }
-
+    orgsDAO.findOneById(orgName) match {
       case None =>
-        // No org given. TODO could user submit on her own behalf?
-        missing("orgName")
+        error(400, s"'$orgName' invalid organization")
+
+      case Some(org) =>
+        verifyAuthenticatedUser(org.members :+ "admin": _*)
     }
 
     // ok, go ahead with registration
@@ -62,7 +57,7 @@ class OntController(implicit setup: Setup) extends BaseController
         writeOntologyFile(uri, version, fileItem, format)
 
         val ontVersion = OntologyVersion(name, user.userName, format, new DateTime(date))
-        val ont = Ontology(uri, orgNameOpt,
+        val ont = Ontology(uri, Some(orgName),
           versions = Map(version -> ontVersion))
 
         Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
@@ -72,7 +67,6 @@ class OntController(implicit setup: Setup) extends BaseController
           case Failure(exc)  => error(500, s"insert failure = $exc")
           // TODO note that it might be a duplicate key in concurrent registration
         }
-
 
       case Some(ont) =>   // bad request: existing ontology entry.
         error(409, s"'$uri' is already registered")
