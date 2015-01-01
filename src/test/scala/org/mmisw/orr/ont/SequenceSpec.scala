@@ -576,11 +576,11 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     "succeed for /ont with admin credentials" in {
       delete("/ont/!/all", headers = adminHeaders) { status must_== 200 }
     }
-    "succeed for /ont with admin credentials" in {
+    "succeed for /org with admin credentials" in {
       delete("/org/!/all", headers = adminHeaders) { status must_== 200 }
     }
     // users at the end to allow admin authentication for all of the above as well
-    "succeed for /ont with admin credentials" in {
+    "succeed for /user with admin credentials" in {
       delete("/user/!/all", headers = adminHeaders) { status must_== 200 }
     }
   }
