@@ -8,7 +8,6 @@ import scala.util.{Success, Failure, Try}
 case class Ontology(
             @Key("_id") uri: String,
             orgName:         Option[String],
-            owners:          List[String] = List.empty,
             versions:        Map[String, OntologyVersion] = Map.empty)
 
 case class OntologyVersion(

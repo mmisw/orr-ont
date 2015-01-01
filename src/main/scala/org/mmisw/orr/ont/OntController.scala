@@ -52,7 +52,6 @@ class OntController(implicit setup: Setup) extends BaseController
     }
 
     // ok, go ahead with registration
-    val owners = getRequestOwners
     val (fileItem, format) = getFileAndFormat
     val (version, date) = getVersion
 
@@ -64,7 +63,6 @@ class OntController(implicit setup: Setup) extends BaseController
 
         val ontVersion = OntologyVersion(name, user.userName, format, new DateTime(date))
         val ont = Ontology(uri, orgNameOpt,
-          owners = owners,
           versions = Map(version -> ontVersion))
 
         Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
@@ -267,23 +265,15 @@ class OntController(implicit setup: Setup) extends BaseController
   /**
    * Verifies the given organization and the userName against that organization.
    */
-  def verifyOrgAndUser(orgName: String, userName: String, orgMustExist: Boolean = false): String = {
+  def verifyOrgAndUser(orgName: String, userName: String): Unit = {
     orgsDAO.findOneById(orgName) match {
-      case None =>
-        if (orgMustExist) bug(s"'$orgName' organization must exist")
-        else error(400, s"'$orgName' invalid organization")
       case Some(org) =>
-        if (org.members.contains(userName)) orgName
-        else error(401, s"user '$userName' is not a member of organization '$orgName'")
-    }
-  }
+        if (!org.members.contains(userName))
+          error(401, s"user '$userName' is not a member of organization '$orgName'")
 
-  /**
-   * Verifies the organization and the userName against that organization.
-   */
-  def verifyOrgAndUser(orgNameOpt: Option[String], userName: String): String = orgNameOpt match {
-    case None => missing("orgName")
-    case Some(orgName) => verifyOrgAndUser(orgName, userName)
+      case None =>
+        bug(s"'$orgName' organization must exist")
+    }
   }
 
   def validateUri(uri: String) {
@@ -291,14 +281,6 @@ class OntController(implicit setup: Setup) extends BaseController
     catch {
       case e: URISyntaxException => error(400, s"invalid URI '$uri': ${e.getMessage}")
     }
-  }
-
-  def getRequestOwners = {
-    // if owners is given, verify them in general (for either new entry or new version)
-    val owners = multiParams("owners").filter(_.trim.length > 0).toSet.toList
-    owners foreach verifyUser
-    logger.debug(s"owners=$owners")
-    owners
   }
 
   def getFileAndFormat = {
@@ -322,17 +304,20 @@ class OntController(implicit setup: Setup) extends BaseController
     (version, date)
   }
 
-  def verifyOwner(userName: String, ont: Ontology) = {
-    if (ont.owners.length > 0) {
-      if (!ont.owners.contains(userName)) error(401, s"'$userName' is not an owner of '${ont.uri}'")
-    }
-    else ont.orgName match {
+  /**
+   * Verifies the user can make changes or removals wrt to
+   * the given ont.
+   * @param userName
+   * @param ont
+   */
+  def verifyOwner(userName: String, ont: Ontology): Unit = {
+    ont.orgName match {
       case Some(orgName) =>
-        verifyOrgAndUser(orgName, userName, orgMustExist = true)
+        verifyOrgAndUser(orgName, userName)
 
       case None => // TODO handle no-organization case
+        bug(s"currently I expect registered ont to have org associated")
     }
-
   }
 
   /**
@@ -340,7 +325,6 @@ class OntController(implicit setup: Setup) extends BaseController
    */
   def addVersion(uri: String, user: db.User) = {
     val nameOpt = params.get("name")
-    val owners = getRequestOwners
     val (fileItem, format) = getFileAndFormat
     val (version, date) = getVersion
 
@@ -353,11 +337,6 @@ class OntController(implicit setup: Setup) extends BaseController
         verifyOwner(user.userName, ont)
 
         var update = ont
-
-        // if owners explicitly given, use it:
-        if (params.contains("owners")) {
-          update = update.copy(owners = owners.toSet.toList)
-        }
 
         nameOpt foreach (name => ontVersion = ontVersion.copy(name = name))
         update = update.copy(
