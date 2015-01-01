@@ -526,21 +526,21 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   // Misc operations on supporting entities
   //////////////////////////////////////////
 
-  "Delete a user (DELETE /user)" should {
+  "Delete a user (DELETE /user/:userName)" should {
     "fail with no credentials" in {
-      delete("/user", Map("userName" -> userName2)) {
+      delete(s"/user/$userName2", headers = Map.empty) {
         status must_== 401
       }
     }
 
     "fail with regular user credentials" in {
-      delete("/user", Map("userName" -> userName2), headers = userHeaders) {
+      delete(s"/user/$userName2", headers = userHeaders) {
         status must_== 403
       }
     }
 
     "succeed with admin credentials" in {
-      delete("/user", Map("userName" -> userName2), adminHeaders) {
+      delete(s"/user/$userName2", headers = adminHeaders) {
         status must_== 200
         val res = parse(body).extract[UserResult]
         res.userName must_== userName2

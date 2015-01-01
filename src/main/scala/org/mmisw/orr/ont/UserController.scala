@@ -97,7 +97,7 @@ class UserController(implicit setup: Setup) extends BaseController
    * Removes a user account.
    * Only "admin" can do this.
    */
-  delete("/") {
+  delete("/:userName") {
     verifyAuthenticatedUser("admin")
     val userName = require(params, "userName")
     val user = getUser(userName)
