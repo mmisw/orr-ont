@@ -61,9 +61,10 @@ class UserController(implicit setup: Setup) extends BaseController
    * Updates a user account.
    * Only the same user or "admin" can do this.
    */
-  put("/") {
+  put("/:userName") {
+    val userName = require(params, "userName")
+    logger.debug(s"PUT userName=$userName")
     val map = body()
-    val userName = require(map, "userName")
     verifyAuthenticatedUser(userName, "admin")
 
     var update = getUser(userName)

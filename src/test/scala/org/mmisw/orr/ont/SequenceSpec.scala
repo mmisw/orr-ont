@@ -38,7 +38,6 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     "succeed" in {
       get("/user/admin") {
         status must_== 200
-        logger.debug(s"body=$body")
         val res = parse(body).extract[PendUserResult]
         res.userName must_== "admin"
       }
@@ -63,7 +62,6 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   "Create new users (POST /user)" should {
     "fail with no credentials" in {
       post("/user", body = pretty(render(map))) {
-        println(s"body = $body")
         status must_== 401
       }
     }
@@ -72,7 +70,6 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
     "succeed with admin credentials" in {
       post("/user", body = pretty(render(map)), headers = adminHeaders) {
-        println(s"body = $body")
         status must_== 200
         val res = parse(body).extract[UserResult]
         res.userName must_== userName
@@ -88,14 +85,12 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     "fail with regular user credentials" in {
       // first userName (already added) trying to create a new user
       post("/user", body = pretty(render(map2)), headers = userHeaders) {
-        println(s"body = $body")
         status must_== 403
       }
     }
 
     "succeed (user2)" in {
       post("/user", body = pretty(render(map2)), headers = adminHeaders) {
-        println(s"body = $body")
         status must_== 200
         val res = parse(body).extract[UserResult]
         res.userName must_== userName2
@@ -127,26 +122,28 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   val userCredentials = basicCredentials(userName, password)
   val userHeaders = Map("Authorization" -> userCredentials)
 
-  "Update a user (PUT /user)" should {
-    val body = pretty(render(Map("userName" -> userName, "firstName" -> "updated.firstName")))
+  "Update a user (PUT /user/:userName)" should {
+    // don't name this 'body' as it would take precedence over the replied body below
+    val reqBody = pretty(render(Map("firstName" -> "updated.firstName")))
 
     "fail with no credentials" in {
       val headers = Map("content-type" -> "application/json")
-      put("/user", body = body, headers = headers) {
+      put(s"/user/$userName", body = reqBody, headers = headers) {
         status must_== 401
       }
     }
     "succeed with user credentials" in {
       val headers = Map("content-type" -> "application/json", "Authorization" -> userCredentials)
-      put("/user", body = body, headers = headers) {
+      put(s"/user/$userName", body = reqBody, headers = headers) {
         status must_== 200
+        logger.debug(s"PUT user reply body=$body")
         val res = parse(body).extract[UserResult]
         res.userName must_== userName
       }
     }
     "succeed with admin credentials" in {
       val headers = Map("content-type" -> "application/json", "Authorization" -> adminCredentials)
-      put("/user", body = body, headers = headers) {
+      put(s"/user/$userName", body = reqBody, headers = headers) {
         status must_== 200
         val res = parse(body).extract[UserResult]
         res.userName must_== userName
@@ -179,18 +176,18 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   val orgName2 = newOrgName()  // to test DELETE
 
   "Create new orgs (POST /org)" should {
-    val body = pretty(render(orgMap))
+    val reqBody = pretty(render(orgMap))
 
     "fail with no credentials" in {
       val headers = Map("content-type" -> "application/json")
-      post("/org", body = body, headers = headers) {
+      post("/org", body = reqBody, headers = headers) {
         status must_== 401
       }
     }
 
     "fail with regular user credentials" in {
       val headers = Map("content-type" -> "application/json", "Authorization" -> userCredentials)
-      post("/org", body = body, headers = headers) {
+      post("/org", body = reqBody, headers = headers) {
         status must_== 403
       }
     }
@@ -198,7 +195,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     val adminHeaders = Map("content-type" -> "application/json", "Authorization" -> adminCredentials)
 
     "succeed with admin credentials" in {
-      post("/org", body = body, headers = adminHeaders) {
+      post("/org", body = reqBody, headers = adminHeaders) {
         status must_== 200
         val res = parse(body).extract[OrgResult]
         res.orgName must_== orgName
@@ -211,9 +208,9 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
           ("name"       -> "some organization2") ~
           ("ontUri"     -> "org.ontUri") ~
           ("members"    -> orgMembers)
-      val body = pretty(render(orgMap))
+      val reqBody = pretty(render(orgMap))
 
-      post("/org", body = body, headers = adminHeaders) {
+      post("/org", body = reqBody, headers = adminHeaders) {
         status must_== 200
         val res = parse(body).extract[OrgResult]
         res.orgName must_== orgName2
