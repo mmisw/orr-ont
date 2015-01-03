@@ -3,6 +3,7 @@ package org.mmisw.orr.ont
 import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.slf4j.Logging
 import org.mmisw.orr.ont.db.Organization
+import org.scalatra.Created
 import scala.util.{Failure, Success, Try}
 import com.novus.salat._
 import com.novus.salat.global._
@@ -50,7 +51,7 @@ class OrgController(implicit setup: Setup) extends BaseController
     val ontUri = getString(map, "ontUri")
     val members = getSeq(map, "members")
 
-    createOrg(orgName, name, members, ontUri)
+    Created(createOrg(orgName, name, members, ontUri))
   }
 
   /*

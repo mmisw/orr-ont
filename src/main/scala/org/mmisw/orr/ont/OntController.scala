@@ -2,6 +2,7 @@ package org.mmisw.orr.ont
 
 import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.slf4j.Logging
+import org.scalatra.Created
 
 import org.scalatra.servlet.{FileItem, SizeConstraintExceededException, FileUploadSupport}
 import javax.servlet.annotation.MultipartConfig
@@ -50,28 +51,9 @@ class OntController(implicit setup: Setup) extends BaseController
     val (fileItem, format) = getFileAndFormat
     val (version, date) = getVersion
 
-    ontDAO.findOneById(uri) match {
-      case None =>
-        validateUri(uri)
-
-        writeOntologyFile(uri, version, fileItem, format)
-
-        val ontVersion = OntologyVersion(name, user.userName, format, new DateTime(date))
-        val ont = Ontology(uri, Some(orgName),
-          versions = Map(version -> ontVersion))
-
-        Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
-          case Success(uriR) =>
-            OntologyResult(uri, version = Some(version), registered = Some(ontVersion.date))
-
-          case Failure(exc)  => error(500, s"insert failure = $exc")
-          // TODO note that it might be a duplicate key in concurrent registration
-        }
-
-      case Some(ont) =>   // bad request: existing ontology entry.
-        error(409, s"'$uri' is already registered")
-    }
+    Created(createOnt(uri, name, version, date, fileItem, orgName))
   }
+
 
   /*
    * General ontology request
@@ -200,6 +182,32 @@ class OntController(implicit setup: Setup) extends BaseController
   delete("/!/all") {
     verifyAuthenticatedUser("admin")
     ontDAO.remove(MongoDBObject())
+  }
+
+  def createOnt(uri: String, name: String, version: String, date: String,
+                fileItem: FileItem, orgName: String) = {
+
+    ontDAO.findOneById(uri) match {
+      case None =>
+        validateUri(uri)
+
+        writeOntologyFile(uri, version, fileItem, format)
+
+        val ontVersion = OntologyVersion(name, user.userName, format, new DateTime(date))
+        val ont = Ontology(uri, Some(orgName),
+          versions = Map(version -> ontVersion))
+
+        Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
+          case Success(uriR) =>
+            OntologyResult(uri, version = Some(version), registered = Some(ontVersion.date))
+
+          case Failure(exc)  => error(500, s"insert failure = $exc")
+          // TODO note that it might be a duplicate key in concurrent registration
+        }
+
+      case Some(ont) =>   // bad request: existing ontology entry.
+        error(409, s"'$uri' is already registered")
+    }
   }
 
   /**

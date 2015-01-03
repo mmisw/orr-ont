@@ -4,6 +4,7 @@ import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.slf4j.Logging
 
 import org.mmisw.orr.ont.db.User
+import org.scalatra.Created
 import scala.util.{Failure, Success, Try}
 import com.novus.salat._
 import com.novus.salat.global._
@@ -44,7 +45,7 @@ class UserController(implicit setup: Setup) extends BaseController
     val password = require(map, "password")
     val ontUri = getString(map, "ontUri")
 
-    createUser(userName, firstName, lastName, password, ontUri)
+    Created(createUser(userName, firstName, lastName, password, ontUri))
   }
 
   post("/chkpw") {

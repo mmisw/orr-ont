@@ -70,7 +70,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
     "succeed with admin credentials" in {
       post("/user", body = pretty(render(map)), headers = adminHeaders) {
-        status must_== 200
+        status must_== 201
         val res = parse(body).extract[UserResult]
         res.userName must_== userName
       }
@@ -91,7 +91,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
     "succeed (user2)" in {
       post("/user", body = pretty(render(map2)), headers = adminHeaders) {
-        status must_== 200
+        status must_== 201
         val res = parse(body).extract[UserResult]
         res.userName must_== userName2
       }
@@ -196,7 +196,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
     "succeed with admin credentials" in {
       post("/org", body = reqBody, headers = adminHeaders) {
-        status must_== 200
+        status must_== 201
         val res = parse(body).extract[OrgResult]
         res.orgName must_== orgName
       }
@@ -211,7 +211,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       val reqBody = pretty(render(orgMap))
 
       post("/org", body = reqBody, headers = adminHeaders) {
-        status must_== 200
+        status must_== 201
         val res = parse(body).extract[OrgResult]
         res.orgName must_== orgName2
       }
@@ -325,7 +325,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
     "succeed with org member credentials" in {
       post("/ont", map1, Map("file" -> file), headers = userHeaders) {
-        status must_== 200
+        status must_== 201
         val res = parse(body).extract[OntologyResult]
         res.uri must_== uri
         registeredVersion = res.version
@@ -348,7 +348,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
         "format" -> format
       )
       post("/ont", map2, Map("file" -> file), headers = adminHeaders) {
-        status must_== 200
+        status must_== 201
         val res = parse(body).extract[OntologyResult]
         res.uri must_== map2("uri")
       }
