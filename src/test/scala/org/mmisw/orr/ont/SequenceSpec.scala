@@ -219,7 +219,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   }
 
   "Get members of an org (GET /org/:orgName/members)" should {
-    "fail with no credentials" in {
+    "succeed" in {
       get(s"/org/$orgName/members") {
         status must_== 200
       }
