@@ -29,33 +29,6 @@ class OntController(implicit setup: Setup) extends BaseController
   }
 
   /*
-   * Registers a new ontology entry.
-   */
-  post("/") {
-    val uri = require(params, "uri")
-    val name = require(params, "name")
-    val orgName = require(params, "orgName")
-    val user = verifyUser(params.get("userName"))
-
-    // TODO allow absent orgName so user can submit on her own behalf?
-
-    orgsDAO.findOneById(orgName) match {
-      case None =>
-        error(400, s"'$orgName' invalid organization")
-
-      case Some(org) =>
-        verifyAuthenticatedUser(org.members :+ "admin": _*)
-    }
-
-    // ok, go ahead with registration
-    val (fileItem, format) = getFileAndFormat
-    val (version, date) = getVersion
-
-    Created(createOnt(uri, name, version, date, fileItem, orgName))
-  }
-
-
-  /*
    * General ontology request
    */
   get("/(.*)".r) {
@@ -111,6 +84,32 @@ class OntController(implicit setup: Setup) extends BaseController
           case None => error(404, s"No organization or user by given name: '$xyz'")
         }
     }
+  }
+
+  /*
+   * Registers a new ontology entry.
+   */
+  post("/") {
+    val uri = require(params, "uri")
+    val name = require(params, "name")
+    val orgName = require(params, "orgName")
+    val user = verifyUser(params.get("userName"))
+
+    // TODO allow absent orgName so user can submit on her own behalf?
+
+    orgsDAO.findOneById(orgName) match {
+      case None =>
+        error(400, s"'$orgName' invalid organization")
+
+      case Some(org) =>
+        verifyAuthenticatedUser(org.members :+ "admin": _*)
+    }
+
+    // ok, go ahead with registration
+    val (fileItem, format) = getFileAndFormat
+    val (version, date) = getVersion
+
+    Created(createOnt(uri, name, version, date, fileItem, orgName))
   }
 
   /*
