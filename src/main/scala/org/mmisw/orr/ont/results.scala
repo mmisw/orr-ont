@@ -18,7 +18,8 @@ case class OrgResult(
             orgName:     String,
             registered:  Option[DateTime] = None,
             updated:     Option[DateTime] = None,
-            removed:     Option[DateTime] = None)
+            removed:     Option[DateTime] = None,
+            members:     List[String] = List.empty)
 
 case class PendOrgResult(
             orgName:     String,
@@ -36,6 +37,7 @@ case class OntologyResult(
 case class PendOntologyResult(
             uri:            String,
             name:           String,
+            orgName:        Option[String] = None,
             versions:       List[String])
 
 case class VersionInfo(

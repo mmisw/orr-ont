@@ -84,11 +84,12 @@ class OntController(implicit setup: Setup) extends BaseController
         val someSuffix = multiParams("captures").toList(0).length > 0
         if (someSuffix) selfResolve
         else {
+          val query = getQueryFromParams(params.keySet - "captures")
           // TODO what exactly to report for the list of all ontologies?
-          ontDAO.find(MongoDBObject()) map { ont =>
+          ontDAO.find(query) map { ont =>
             getLatestVersion(ont) match {
               case Some((ontVersion, version)) =>
-                val ores = PendOntologyResult(ont.uri, ontVersion.name, sortedVersionKeys(ont))
+                val ores = PendOntologyResult(ont.uri, ontVersion.name, ont.orgName, sortedVersionKeys(ont))
                 grater[PendOntologyResult].toCompactJSON(ores)
 
               case None =>  // should not happen
@@ -201,6 +202,25 @@ class OntController(implicit setup: Setup) extends BaseController
     ontDAO.remove(MongoDBObject())
   }
 
+  /**
+   * Preliminary mapping from given parameters to a query for filtering purposes
+   * @param keys keys to be considered
+   * @return MongoDBObject
+   */
+  /*
+   * TODO(low priority) more options for the query, eg., glob filtering (orgName=mmi*),
+   * or perhaps allow to pass a Mongo query directly in an special
+   * parameter, eg (with appropriate encoding: mq={orgName:{$in:['mmi','foo']}}
+   */
+  def getQueryFromParams(keys: Set[String]): MongoDBObject = {
+    var query = MongoDBObject()
+    if (keys.size > 0) {
+      keys foreach (key => query = query.updated(key, params.get(key).get))
+      logger.debug(s"GET query=$query")
+    }
+    query
+  }
+
   val versionFormatter = new java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss")
 
   def getOntVersion(uri: String, versionOpt: Option[String]): (Ontology, OntologyVersion, String) = {
@@ -232,7 +252,7 @@ class OntController(implicit setup: Setup) extends BaseController
 
     if (format == "!md") {
       val versions = sortedVersionKeys(ont)
-      val ores = PendOntologyResult(ont.uri, ontVersion.name, versions)
+      val ores = PendOntologyResult(ont.uri, ontVersion.name, ont.orgName, versions)
       grater[PendOntologyResult].toCompactJSON(ores)
     }
     else getOntologyFile(uri, version, format)

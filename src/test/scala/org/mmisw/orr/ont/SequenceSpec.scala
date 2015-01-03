@@ -218,6 +218,14 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
   }
 
+  "Get members of an org (GET /org/:orgName/members)" should {
+    "fail with no credentials" in {
+      get(s"/org/$orgName/members") {
+        status must_== 200
+      }
+    }
+  }
+
   "Update an org (PUT /org/:orgName)" should {
     "fail with no credentials" in {
       val headers = Map("content-type" -> "application/json")
@@ -360,6 +368,18 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
         res.uri must_== uri
         val latestVersion = res.versions.sorted(Ordering[String].reverse).head
         latestVersion must_== registeredVersion.get
+      }
+    }
+  }
+
+  "Get onts with some filter parameters (GET /ont?orgName=nn)" should {
+    "return list containing submission above" in {
+      val map = Map("orgName" -> orgName)
+      logger.info(s"get: $map")
+      get("/ont", map) {
+        status must_== 200
+        val res = parse(body).extract[List[PendOntologyResult]]
+        res.exists(_.orgName == Some(orgName)) must beTrue
       }
     }
   }
