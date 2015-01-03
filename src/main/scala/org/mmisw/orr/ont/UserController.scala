@@ -102,12 +102,7 @@ class UserController(implicit setup: Setup) extends BaseController
     verifyAuthenticatedUser("admin")
     val userName = require(params, "userName")
     val user = getUser(userName)
-    Try(usersDAO.remove(user, WriteConcern.Safe)) match {
-      case Success(result) =>
-        UserResult(userName, removed = Some(DateTime.now()))
-
-      case Failure(exc)  => error(500, s"update failure = $exc")
-    }
+    deleteUser(user)
   }
 
   // for initial testing of authentication from unit tests
@@ -120,6 +115,8 @@ class UserController(implicit setup: Setup) extends BaseController
     verifyAuthenticatedUser("admin")
     usersDAO.remove(MongoDBObject())
   }
+
+  ///////////////////////////////////////////////////////////////////////////
 
   def getUserJson(user: User) = {
     // TODO what exactly to report?
@@ -169,6 +166,13 @@ class UserController(implicit setup: Setup) extends BaseController
         }
 
       case Some(_) => // nothing
+    }
+  }
+
+  def deleteUser(user: db.User) = {
+    Try(usersDAO.remove(user, WriteConcern.Safe)) match {
+      case Success(result) => UserResult(user.userName, removed = Some(DateTime.now()))
+      case Failure(exc)    => error(500, s"update failure = $exc")
     }
   }
 

@@ -157,32 +157,15 @@ class OntController(implicit setup: Setup) extends BaseController
     val versionOpt = params.get("version")
     val user = verifyUser(params.get("userName"))
 
-    val (ont, _, _) = getOntVersion(uri, versionOpt)
-
-    ont.orgName match {
-      case Some(orgName) =>
-        orgsDAO.findOneById(orgName) match {
-          case None =>
-            bug(s"org '$orgName' should exist")
-
-          case Some(org) =>
-            verifyAuthenticatedUser(org.members :+ "admin": _*)
-        }
-
-      case None =>
-        bug(s"currently I expect registered ont to have org associated")
-    }
-
-    versionOpt match {
-      case Some(version) => deleteVersion(uri, version, user)
-      case None          => deleteOntology(uri, user)
-    }
+    deleteOnt(uri, versionOpt, user)
   }
 
   delete("/!/all") {
     verifyAuthenticatedUser("admin")
     ontDAO.remove(MongoDBObject())
   }
+
+  ///////////////////////////////////////////////////////////////////////////
 
   def createOnt(uri: String, name: String, version: String, date: String,
                 fileItem: FileItem, orgName: String) = {
@@ -207,6 +190,27 @@ class OntController(implicit setup: Setup) extends BaseController
 
       case Some(ont) =>   // bad request: existing ontology entry.
         error(409, s"'$uri' is already registered")
+    }
+  }
+
+  def deleteOnt(uri: String, versionOpt: Option[String], user: db.User) = {
+    val (ont, _, _) = getOntVersion(uri, versionOpt)
+
+    ont.orgName match {
+      case Some(orgName) =>
+        orgsDAO.findOneById(orgName) match {
+          case None => bug(s"org '$orgName' should exist")
+
+          case Some(org) => verifyAuthenticatedUser(org.members :+ "admin": _*)
+        }
+
+      case None =>
+        bug(s"currently I expect registered ont to have org associated")
+    }
+
+    versionOpt match {
+      case Some(version) => deleteVersion(uri, version, user)
+      case None          => deleteOntology(uri, user)
     }
   }
 

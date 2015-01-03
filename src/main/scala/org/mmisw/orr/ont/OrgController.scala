@@ -95,17 +95,15 @@ class OrgController(implicit setup: Setup) extends BaseController
     verifyAuthenticatedUser("admin")
     val orgName = require(params, "orgName")
     val org = getOrg(orgName)
-    Try(orgsDAO.remove(org, WriteConcern.Safe)) match {
-      case Success(result) => OrgResult(orgName, removed = Some(DateTime.now())) //TODO
-
-      case Failure(exc)  => error(500, s"update failure = $exc")
-    }
+    deleteOrg(org)
   }
 
   delete("/!/all") {
     verifyAuthenticatedUser("admin")
     orgsDAO.remove(MongoDBObject())
   }
+
+  ///////////////////////////////////////////////////////////////////////////
 
   def createOrg(orgName: String, name: String, members: List[String], ontUri: Option[String] = None) = {
     orgsDAO.findOneById(orgName) match {
@@ -121,6 +119,14 @@ class OrgController(implicit setup: Setup) extends BaseController
         }
 
       case Some(ont) => error(400, s"'$orgName' organization already registered")
+    }
+  }
+
+  def deleteOrg(org: db.Organization) = {
+    Try(orgsDAO.remove(org, WriteConcern.Safe)) match {
+      case Success(result) => OrgResult(org.orgName, removed = Some(DateTime.now())) //TODO
+
+      case Failure(exc)  => error(500, s"update failure = $exc")
     }
   }
 
