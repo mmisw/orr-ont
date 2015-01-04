@@ -46,6 +46,14 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
   }
 
+  "Get non-existent user (GET /ont)" should {
+    "fail with not found status" in {
+      get(s"/user/${newUserName()}") {
+        status must_== 404
+      }
+    }
+  }
+
   val adminHeaders = Map("Authorization" -> adminCredentials)
 
   val userName = newUserName()
@@ -163,6 +171,14 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
         status must_== 200
         val res = parse(body).extract[List[PendOrgResult]]
         res.length must be >= 0
+      }
+    }
+  }
+
+  "Get non-existent org (GET /ont)" should {
+    "fail with not found status" in {
+      get(s"/org/${newOrgName()}") {
+        status must_== 404
       }
     }
   }
@@ -297,6 +313,15 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
         status must_== 200
         val res = parse(body).extract[List[PendOntologyResult]]
         res.length must be >= 0
+      }
+    }
+  }
+
+  "Get non-existent ont (GET /ont)" should {
+    "fail with not found status" in {
+      val map = Map("uri" -> newOntUri())
+      get("/ont", map) {
+        status must_== 404
       }
     }
   }

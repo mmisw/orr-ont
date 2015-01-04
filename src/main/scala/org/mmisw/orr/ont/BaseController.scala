@@ -19,7 +19,7 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
 
   protected def getUser(userName: String): db.User = {
     usersDAO.findOneById(userName).getOrElse(
-      error(400, s"'$userName' user is not registered"))
+      error(404, s"'$userName' user is not registered"))
   }
 
   protected def verifyUser(userName: String): db.User = {
