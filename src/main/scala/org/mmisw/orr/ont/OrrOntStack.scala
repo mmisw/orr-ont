@@ -17,6 +17,8 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport {
 
   protected def error(status: Int, msg: String): Nothing = halt(status, MongoDBObject("error" -> msg))
 
+  protected def error(status: Int, details: Seq[(String,String)]): Nothing = halt(status, MongoDBObject(details: _*))
+
   protected def missing(paramName: String): Nothing = error(400, s"'$paramName' param missing")
 
   protected def bug(msg: String): Nothing = error(500, s"$msg. Please notify this bug.")

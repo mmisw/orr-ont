@@ -208,7 +208,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
   private def resolveOntology(uri: String, versionOpt: Option[String]): (Ontology, OntologyVersion, String) = {
     Try(ontService.resolveOntology(uri, versionOpt)) match {
       case Success(res)         => res
-      case Failure(exc: NoSuch) => error(404, exc.message)
+      case Failure(exc: NoSuch) => error(404, exc.details)
       case Failure(exc)         => error(500, exc.getMessage)
     }
   }
@@ -216,7 +216,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
   private def getOntologyFile(uri: String, version: String, reqFormat: String): (File, String) = {
     Try(ontService.getOntologyFile(uri, version, reqFormat)) match {
       case Success(res)                   => res
-      case Failure(exc: NoSuchOntFormat)  => error(406, exc.message)
+      case Failure(exc: NoSuchOntFormat)  => error(406, exc.details)
       case Failure(exc) => error(500, exc.getMessage)
     }
   }
