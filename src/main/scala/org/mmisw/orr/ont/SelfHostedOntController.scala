@@ -44,9 +44,8 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
    * This intends to emulate behavior in previous Ont service
    * when xyx corresponds to an existing authority abbreviation
    * (with generation of list of associated ontologies).
-   * Here this is very preliminary. Also possible dispatching the case
-   * when xyz corresponds to the userName when there's no organization
-   * by that name.
+   * Here this is very preliminary. Also possible dispatch in the case
+   * where xyz corresponds to a userName.
    * TODO review the whole thing.
    */
   private def resolveOrgOrUser(xyz: String) = {
@@ -54,7 +53,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
     orgsDAO.findOneById(xyz) match {
       case Some(org) =>
         org.ontUri match {
-          case Some(ontUri) => resolveUri(ontUri)
+          case Some(ontUri) => redirect(ontUri)
           case None =>
             try selfResolve
             catch {
@@ -68,7 +67,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
         usersDAO.findOneById(xyz) match {
           case Some(user) =>
             user.ontUri match {
-              case Some(ontUri) => resolveUri(ontUri)
+              case Some(ontUri) => redirect(ontUri)
               case None =>
                 error(500, s"TODO: generate summary for user '$xyz'")
             }
