@@ -5,6 +5,8 @@ import com.typesafe.scalalogging.slf4j.Logging
 import org.mmisw.orr.ont.db.Organization
 import org.scalatra.Created
 import scala.util.{Failure, Success, Try}
+import com.novus.salat._
+import com.novus.salat.global._
 import org.joda.time.DateTime
 
 
@@ -130,6 +132,7 @@ class OrgController(implicit setup: Setup) extends BaseController
 
   def getOrgJson(org: Organization) = {
     // TODO what exactly to report?
-    PendOrgResult(org.orgName, org.name, org.ontUri, registered = Some(org.registered))
+    val res = PendOrgResult(org.orgName, org.name, org.ontUri, registered = Some(org.registered))
+    grater[PendOrgResult].toCompactJSON(res)
   }
 }
