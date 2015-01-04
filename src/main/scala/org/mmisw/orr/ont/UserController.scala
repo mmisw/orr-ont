@@ -6,8 +6,6 @@ import com.typesafe.scalalogging.slf4j.Logging
 import org.mmisw.orr.ont.db.User
 import org.scalatra.Created
 import scala.util.{Failure, Success, Try}
-import com.novus.salat._
-import com.novus.salat.global._
 import org.joda.time.DateTime
 
 
@@ -120,8 +118,7 @@ class UserController(implicit setup: Setup) extends BaseController
 
   def getUserJson(user: User) = {
     // TODO what exactly to report?
-    val res = PendUserResult(user.userName, user.ontUri, registered = Some(user.registered))
-    grater[PendUserResult].toCompactJSON(res)
+    PendUserResult(user.userName, user.ontUri, registered = Some(user.registered))
   }
 
   def createUser(userName: String, firstName: String, lastName: String, password: String,
