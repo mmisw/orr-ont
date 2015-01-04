@@ -1,10 +1,10 @@
-package org.mmisw.orr.ont
+package org.mmisw.orr.ont.app
 
-import org.scalatra._
 import com.mongodb.casbah.Imports._
-import org.scalatra.json.JacksonJsonSupport
 import org.json4s._
 import org.json4s.mongo.{JObjectParser, ObjectIdSerializer}
+import org.scalatra._
+import org.scalatra.json.JacksonJsonSupport
 
 /**
  * (from scalatra-casbah-example)

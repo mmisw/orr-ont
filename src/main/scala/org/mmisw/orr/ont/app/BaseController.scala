@@ -1,6 +1,7 @@
-package org.mmisw.orr.ont
+package org.mmisw.orr.ont.app
 
 import org.mmisw.orr.ont.auth.AuthenticationSupport
+import org.mmisw.orr.ont.{Setup, db}
 
 
 abstract class BaseController(implicit setup: Setup) extends OrrOntStack

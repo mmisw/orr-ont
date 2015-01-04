@@ -1,4 +1,4 @@
-package org.mmisw.orr.ont
+package org.mmisw.orr.ont.app
 
 import java.io.File
 
@@ -6,6 +6,7 @@ import com.typesafe.scalalogging.slf4j.Logging
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.mmisw.orr.ont.service.OntService
+import org.mmisw.orr.ont._
 import org.scalatra.test.specs2._
 
 

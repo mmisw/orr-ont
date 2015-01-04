@@ -1,12 +1,12 @@
-package org.mmisw.orr.ont
+package org.mmisw.orr.ont.app
 
+import com.mongodb.casbah.Imports._
+import org.json4s.JsonAST.{JArray, JNothing, JString, JValue}
+import org.json4s.ext.JodaTimeSerializers
+import org.json4s.{DefaultFormats, Formats}
+import org.mmisw.orr.ont.swld.ontUtil
 import org.scalatra._
 import org.scalatra.json.NativeJsonSupport
-import org.json4s.{DefaultFormats, Formats}
-import org.json4s.JsonAST.{JArray, JString, JValue, JNothing}
-import org.json4s.ext.JodaTimeSerializers
-import com.mongodb.casbah.Imports._
-import org.mmisw.orr.ont.swld.ontUtil
 
 
 trait OrrOntStack extends ScalatraServlet with NativeJsonSupport {

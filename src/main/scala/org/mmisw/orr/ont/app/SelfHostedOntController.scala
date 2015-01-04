@@ -1,12 +1,13 @@
-package org.mmisw.orr.ont
+package org.mmisw.orr.ont.app
 
 import java.io.File
 
 import com.novus.salat._
 import com.novus.salat.global._
 import com.typesafe.scalalogging.slf4j.Logging
-import org.mmisw.orr.ont.db.{OntologyVersion, Ontology}
-import org.mmisw.orr.ont.service.{NoSuchOntFormat, NoSuch, OntService}
+import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
+import org.mmisw.orr.ont.service.{NoSuch, NoSuchOntFormat, OntService}
+import org.mmisw.orr.ont.{PendOntologyResult, Setup}
 
 import scala.util.{Failure, Success, Try}
 

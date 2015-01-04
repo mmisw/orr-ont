@@ -1,14 +1,15 @@
-package org.mmisw.orr.ont
+package org.mmisw.orr.ont.app
 
 import com.mongodb.casbah.Imports._
-import com.typesafe.scalalogging.slf4j.Logging
-
-import org.mmisw.orr.ont.db.User
-import org.scalatra.Created
-import scala.util.{Failure, Success, Try}
 import com.novus.salat._
 import com.novus.salat.global._
+import com.typesafe.scalalogging.slf4j.Logging
 import org.joda.time.DateTime
+import org.mmisw.orr.ont.db
+import org.mmisw.orr.ont.{PendUserResult, Setup, UserResult}
+import org.scalatra.Created
+
+import scala.util.{Failure, Success, Try}
 
 
 class UserController(implicit setup: Setup) extends BaseController
@@ -118,7 +119,7 @@ class UserController(implicit setup: Setup) extends BaseController
 
   ///////////////////////////////////////////////////////////////////////////
 
-  def getUserJson(user: User) = {
+  def getUserJson(user: db.User) = {
     // TODO what exactly to report?
     val res = PendUserResult(user.userName, user.ontUri, registered = Some(user.registered))
     grater[PendUserResult].toCompactJSON(res)
@@ -131,7 +132,7 @@ class UserController(implicit setup: Setup) extends BaseController
 
     usersDAO.findOneById(userName) match {
       case None =>
-        val obj = User(userName, firstName, lastName, encPassword, ontUri)
+        val obj = db.User(userName, firstName, lastName, encPassword, ontUri)
 
         Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
           case Success(r) => UserResult(userName, registered = Some(obj.registered))
@@ -155,7 +156,7 @@ class UserController(implicit setup: Setup) extends BaseController
         logger.debug("creating 'admin' user")
         val password = setup.config.getString("admin.password")
         val encPassword = userAuth.encryptPassword(password)
-        val obj = User(admin, "Adm", "In", encPassword)
+        val obj = db.User(admin, "Adm", "In", encPassword)
 
         Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
           case Success(r) =>

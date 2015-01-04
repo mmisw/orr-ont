@@ -1,6 +1,7 @@
-package org.mmisw.orr.ont
+package org.mmisw.orr.ont.app
 
 import org.apache.commons.codec.binary.Base64
+import org.mmisw.orr.ont.Setup
 
 trait BaseSpec {
   implicit val formats = org.json4s.DefaultFormats

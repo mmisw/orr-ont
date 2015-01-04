@@ -1,17 +1,20 @@
-package org.mmisw.orr.ont
+package org.mmisw.orr.ont.app
+
+import java.io.File
+import javax.servlet.annotation.MultipartConfig
 
 import com.mongodb.casbah.Imports._
-import com.typesafe.scalalogging.slf4j.Logging
-import org.mmisw.orr.ont.service._
-import org.scalatra.Created
-
-import org.scalatra.servlet.{FileItem, SizeConstraintExceededException, FileUploadSupport}
-import javax.servlet.annotation.MultipartConfig
-import java.io.File
-import org.mmisw.orr.ont.db.{OntologyVersion, Ontology}
-import scala.util.{Failure, Success, Try}
 import com.novus.salat._
 import com.novus.salat.global._
+import com.typesafe.scalalogging.slf4j.Logging
+import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
+import org.mmisw.orr.ont.db
+import org.mmisw.orr.ont.service._
+import org.mmisw.orr.ont.{PendOntologyResult, Setup}
+import org.scalatra.Created
+import org.scalatra.servlet.{FileItem, FileUploadSupport, SizeConstraintExceededException}
+
+import scala.util.{Failure, Success, Try}
 
 
 /**
