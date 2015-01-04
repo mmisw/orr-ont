@@ -1,7 +1,8 @@
-package org.mmisw.orr.ont
+package org.mmisw.orr.ont.service
 
+import org.mmisw.orr.ont.Setup
 
-class BaseService(setup: Setup) {
+abstract class BaseService(setup: Setup) {
 
   protected val orgsDAO     = setup.db.orgsDAO
   protected val usersDAO    = setup.db.usersDAO
