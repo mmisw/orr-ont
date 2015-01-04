@@ -28,7 +28,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
    */
   def resolveOntology(uri: String, versionOpt: Option[String]): (Ontology, OntologyVersion, String) = {
 
-    val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
+    val ont = getOnt(uri)
 
     versionOpt match {
       case Some(version) =>
@@ -61,9 +61,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     }
   }
 
-  private def getOnt(uri: String): Ontology = {
-    ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
-  }
+  private def getOnt(uri: String) = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
 
   private def getLatestVersion(ont: Ontology): Option[(OntologyVersion,String)] = {
     ont.sortedVersionKeys.headOption match {

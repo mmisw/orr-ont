@@ -23,9 +23,10 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     implicit val setup = new Setup(configFilename)
     implicit val ontService = new OntService
 
-    context.mount(new OrgController,        "/org/*")
-    context.mount(new UserController,       "/user/*")
-    context.mount(new OntController,        "/ont/*")
+    context.mount(new OrgController,           "/api/v0/org/*")
+    context.mount(new UserController,          "/api/v0/user/*")
+    context.mount(new OntController,           "/api/v0/ont/*")
+    context.mount(new SelfHostedOntController, "/*")
 
     setupOpt = Some(setup)
   }

@@ -15,6 +15,9 @@ import com.novus.salat._
 import com.novus.salat.global._
 
 
+/**
+ * Controller for the "ont" API.
+ */
 @MultipartConfig(maxFileSize = 5*1024*1024)
 class OntController(implicit setup: Setup, ontService: OntService) extends BaseController
       with FileUploadSupport with Logging {
@@ -29,23 +32,19 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
   /*
    * General ontology request
    */
-  get("/(.*)".r) {
+  get("/") {
     params.get("uri") match {
       case Some(uri) => resolveUri(uri)
-
       case None =>
-        val someSuffix = multiParams("captures").toList(0).length > 0
-        if (someSuffix) selfResolve
-        else {
-          val query = getQueryFromParams(params.keySet - "captures")
-          // TODO what exactly to report for the list of ontologies?
-          ontService.getOntologies(query) map grater[PendOntologyResult].toCompactJSON
-        }
+        val query = getQueryFromParams(params.keySet)
+        // TODO what exactly to report for the list of ontologies?
+        ontService.getOntologies(query) map grater[PendOntologyResult].toCompactJSON
     }
   }
 
   /*
    * Dispatches organization OR user ontology request (.../ont/xyz)
+   * TODO move to SelfHostedOntController
    */
   get("/:xyz") {
     val xyz = require(params, "xyz")
@@ -73,6 +72,12 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
           case None => error(404, s"No organization or user by given name: '$xyz'")
         }
     }
+  }
+  // TODO move to SelfHostedOntController
+  private def selfResolve = {
+    val uri = request.getRequestURL.toString
+    logger.debug(s"self-resolving $uri")
+    resolveUri(uri)
   }
 
   /*
@@ -103,8 +108,6 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
 
   /*
    * Updates a given version or adds a new version.
-   *
-   * TODO handle self-uri in put
    */
   put("/") {
     val uri = require(params, "uri")
@@ -137,8 +140,6 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
 
   /*
    * Deletes a particular version or the whole ontology entry.
-   *
-   * TODO handle self-uri in delete
    */
   delete("/") {
     val uri = require(params, "uri")
@@ -155,7 +156,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
 
   ///////////////////////////////////////////////////////////////////////////
 
-  def createOnt(uri: String, name: String, version: String, date: String,
+  private def createOnt(uri: String, name: String, version: String, date: String,
                 fileItem: FileItem, orgName: String) = {
 
     ontDAO.findOneById(uri) match {
@@ -181,7 +182,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     }
   }
 
-  def deleteOnt(uri: String, versionOpt: Option[String], user: db.User) = {
+  private def deleteOnt(uri: String, versionOpt: Option[String], user: db.User) = {
     val (ont, _, _) = resolveOntology(uri, versionOpt)
 
     ont.orgName match {
@@ -212,7 +213,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
    * or perhaps allow to pass a Mongo query directly in an special
    * parameter, eg (with appropriate encoding: mq={orgName:{$in:['mmi','foo']}}
    */
-  def getQueryFromParams(keys: Set[String]): MongoDBObject = {
+  private def getQueryFromParams(keys: Set[String]): MongoDBObject = {
     var query = MongoDBObject()
     if (keys.size > 0) {
       keys foreach (key => query = query.updated(key, params.get(key).get))
@@ -221,9 +222,9 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     query
   }
 
-  val versionFormatter = new java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss")
+  private val versionFormatter = new java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss")
 
-  def resolveUri(uri: String) = {
+  private def resolveUri(uri: String) = {
     val (ont, ontVersion, version) = resolveOntology(uri, params.get("version"))
 
     // format is the one given if any, or the one in the db:
@@ -242,7 +243,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     }
   }
 
-  def resolveOntology(uri: String, versionOpt: Option[String]): (Ontology, OntologyVersion, String) = {
+  private def resolveOntology(uri: String, versionOpt: Option[String]): (Ontology, OntologyVersion, String) = {
     Try(ontService.resolveOntology(uri, versionOpt)) match {
       case Success(res)         => res
       case Failure(exc: NoSuch) => error(400, exc.message)
@@ -250,7 +251,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     }
   }
 
-  def getOntologyFile(uri: String, version: String, reqFormat: String): (File, String) = {
+  private def getOntologyFile(uri: String, version: String, reqFormat: String): (File, String) = {
     Try(ontService.getOntologyFile(uri, version, reqFormat)) match {
       case Success(res)                   => res
       case Failure(exc: NoSuchOntFormat)  => error(406, exc.message)
@@ -258,23 +259,10 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     }
   }
 
-  def selfResolve = {
-    val uri = request.getRequestURL.toString
-    logger.debug(s"self-resolving $uri")
-    resolveUri(uri)
-  }
-
-  def getLatestVersion(ont: Ontology): Option[(OntologyVersion,String)] = {
-    ont.sortedVersionKeys.headOption match {
-      case Some(version) => Some((ont.versions.get(version).get, version))
-      case None => None
-    }
-  }
-
   /**
    * Verifies the given organization and the userName against that organization.
    */
-  def verifyOrgAndUser(orgName: String, userName: String): Unit = {
+  private def verifyOrgAndUser(orgName: String, userName: String): Unit = {
     orgsDAO.findOneById(orgName) match {
       case Some(org) =>
         if (!org.members.contains(userName))
@@ -285,14 +273,14 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     }
   }
 
-  def validateUri(uri: String) {
+  private def validateUri(uri: String) {
     try new URI(uri)
     catch {
       case e: URISyntaxException => error(400, s"invalid URI '$uri': ${e.getMessage}")
     }
   }
 
-  def getFileAndFormat = {
+  private def getFileAndFormat = {
     val fileItem = fileParams.getOrElse("file", missing("file"))
 
     // todo make format param optional
@@ -305,7 +293,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     (fileItem, format)
   }
 
-  def getVersion = {
+  private def getVersion = {
     // for now, the version is always automatically assigned
     val now = new java.util.Date()
     val version = versionFormatter.format(now)
@@ -319,7 +307,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
    * @param userName
    * @param ont
    */
-  def verifyOwner(userName: String, ont: Ontology): Unit = {
+  private def verifyOwner(userName: String, ont: Ontology): Unit = {
     ont.orgName match {
       case Some(orgName) =>
         verifyOrgAndUser(orgName, userName)
@@ -332,7 +320,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
   /**
    * Adds a new version of a registered ontology.
    */
-  def addVersion(uri: String, user: db.User) = {
+  private def addVersion(uri: String, user: db.User) = {
     val nameOpt = params.get("name")
     val (fileItem, format) = getFileAndFormat
     val (version, date) = getVersion
@@ -368,7 +356,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
    * Note, only the name in the particular version can be updated at the moment.
    */
   // TODO handle other pieces that can/should be updated
-  def updateVersion(uri: String, version: String, user: db.User) = {
+  private def updateVersion(uri: String, version: String, user: db.User) = {
     val name = require(params, "name")
     ontDAO.findOneById(uri) match {
       case None => error(404, s"'$uri' is not registered")
@@ -397,7 +385,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
   /**
    * Deletes a particular version.
    */
-  def deleteVersion(uri: String, version: String, user: db.User) = {
+  private def deleteVersion(uri: String, version: String, user: db.User) = {
     ontDAO.findOneById(uri) match {
       case None => error(404, s"'$uri' is not registered")
 
@@ -421,7 +409,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
   /**
    * Deletes a whole ontology entry.
    */
-  def deleteOntology(uri: String, user: db.User) = {
+  private def deleteOntology(uri: String, user: db.User) = {
     ontDAO.findOneById(uri) match {
       case None => error(404, s"'$uri' is not registered")
 
@@ -437,7 +425,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     }
   }
 
-  def writeOntologyFile(uri: String, version: String,
+  private def writeOntologyFile(uri: String, version: String,
                     file: FileItem, format: String) = {
 
     val baseDir = setup.filesConfig.getString("baseDirectory")
