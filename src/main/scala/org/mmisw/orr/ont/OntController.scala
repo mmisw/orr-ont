@@ -121,26 +121,13 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
   private def createOnt(uri: String, name: String, version: String, date: String,
                 fileItem: FileItem, orgName: String) = {
 
-    ontDAO.findOneById(uri) match {
-      case None =>
-        validateUri(uri)
+    Try(ontService.createOntology(uri, name, version, date, user.userName, orgName, fileItem, format)) match {
+      case Success(ontologyResult) => ontologyResult
 
-        writeOntologyFile(uri, version, fileItem, format)
-
-        val ontVersion = OntologyVersion(name, user.userName, format, new DateTime(date))
-        val ont = Ontology(uri, Some(orgName),
-          versions = Map(version -> ontVersion))
-
-        Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
-          case Success(uriR) =>
-            OntologyResult(uri, version = Some(version), registered = Some(ontVersion.date))
-
-          case Failure(exc)  => error(500, s"insert failure = $exc")
-          // TODO note that it might be a duplicate key in concurrent registration
-        }
-
-      case Some(ont) =>   // bad request: existing ontology entry.
-        error(409, s"'$uri' is already registered")
+      case Failure(exc: InvalidUri)        => error(400, exc.details)
+      case Failure(exc: AlreadyRegistered) => error(409, exc.details)
+      case Failure(exc: Problem)           => error(500, exc.details)
+      case Failure(exc)                    => error(500, exc.getMessage)
     }
   }
 
@@ -232,13 +219,6 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
 
       case None =>
         bug(s"'$orgName' organization must exist")
-    }
-  }
-
-  private def validateUri(uri: String) {
-    try new URI(uri)
-    catch {
-      case e: URISyntaxException => error(400, s"invalid URI '$uri': ${e.getMessage}")
     }
   }
 

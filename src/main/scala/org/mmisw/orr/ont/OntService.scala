@@ -1,11 +1,16 @@
 package org.mmisw.orr.ont
 
 import java.io.File
+import java.net.{URISyntaxException, URI}
 
 import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.slf4j.Logging
+import org.joda.time.DateTime
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.swld.ontUtil
+import org.scalatra.servlet.FileItem
+
+import scala.util.{Failure, Success, Try}
 
 
 abstract class OntError(val details: Seq[(String,String)]) extends Error
@@ -21,11 +26,25 @@ case class NoSuchOntVersion(uri: String, version: String)
 case class NoSuchOntFormat(uri: String, version: String, format: String)
   extends NoSuch("uri" -> uri, "version" -> version, "format" -> format, "error" -> "No such ontology format")
 
+abstract class Invalid(d: (String,String)*) extends OntError(d)
+
+case class InvalidUri(uri: String, error: String)
+  extends Invalid("uri" -> uri, "error" -> error)
+
+case class AlreadyRegistered(uri: String)
+  extends Invalid("uri" -> uri, "error" -> "Ontology URI already registered")
+
 abstract class Problem(d: (String,String)*) extends OntError(d)
 
 case class CannotCreateFormat(uri: String, version: String, format: String, msg: String)
   extends Problem("uri" -> uri, "version" -> version, "format" -> format,
     "error" -> s"Cannot create requested ontology format: $msg")
+
+case class CannotCreateDirectory(directory: String)
+  extends Problem("directory" -> directory, "error" -> "Cannot create directory")
+
+case class CannotInsertOntology(uri: String, error: String)
+  extends Problem("uri" -> uri, "error" -> error)
 
 case class Bug(msg: String) extends Problem("error" -> msg)
 
@@ -120,6 +139,57 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
         throw CannotCreateFormat(uri, version, reqFormat, exm)
     }
   }
+
+  def createOntology(uri: String, name: String, version: String, date: String,
+                    userName: String, orgName: String, fileItem: FileItem, format: String) = {
+
+    ontDAO.findOneById(uri) match {
+      case None =>
+        validateUri(uri)
+
+        writeOntologyFile(uri, version, fileItem, format)
+
+        val ontVersion = OntologyVersion(name, userName, format, new DateTime(date))
+        val ont = Ontology(uri, Some(orgName),
+          versions = Map(version -> ontVersion))
+
+        Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
+          case Success(_) =>
+            OntologyResult(uri, version = Some(version), registered = Some(ontVersion.date))
+
+          case Failure(exc) => throw CannotInsertOntology(uri, exc.getMessage)
+              // perhaps duplicate key in concurrent registration
+        }
+
+      case Some(ont) =>   // bad request: existing ontology entry.
+        throw AlreadyRegistered(uri)
+    }
+  }
+
+  private def validateUri(uri: String) {
+    try new URI(uri)
+    catch {
+      case e: URISyntaxException => throw InvalidUri(uri, e.getMessage)
+    }
+    if (uri.contains("|")) throw InvalidUri(uri, "cannot contain the '|' character")
+  }
+
+  private def writeOntologyFile(uri: String, version: String,
+                                file: FileItem, format: String) = {
+    require(!uri.contains("|"))
+
+    val uriEnc = uri.replace('/', '|')
+    val uriDir = new File(ontsDir, uriEnc)
+    val versionDir = new File(uriDir, version)
+    if (!versionDir.isDirectory && !versionDir.mkdirs()) {
+      throw CannotCreateDirectory(versionDir.getAbsolutePath)
+    }
+    val destFilename = s"file.$format"
+    val dest = new File(versionDir, destFilename)
+
+    file.write(dest)
+  }
+
 
   private val baseDir = setup.filesConfig.getString("baseDirectory")
   private val ontsDir = new File(baseDir, "onts")
