@@ -1,13 +1,14 @@
-package org.mmisw.orr.ont
+package org.mmisw.orr.ont.service
 
 import java.io.File
-import java.net.{URISyntaxException, URI}
+import java.net.{URI, URISyntaxException}
 
 import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.slf4j.Logging
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.swld.ontUtil
+import org.mmisw.orr.ont.{BaseService, OntologyResult, PendOntologyResult, Setup}
 import org.scalatra.servlet.FileItem
 
 import scala.util.{Failure, Success, Try}

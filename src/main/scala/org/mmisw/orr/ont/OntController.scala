@@ -2,6 +2,7 @@ package org.mmisw.orr.ont
 
 import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.slf4j.Logging
+import org.mmisw.orr.ont.service._
 import org.scalatra.Created
 
 import org.scalatra.servlet.{FileItem, SizeConstraintExceededException, FileUploadSupport}

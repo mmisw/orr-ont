@@ -6,7 +6,7 @@ import com.novus.salat._
 import com.novus.salat.global._
 import com.typesafe.scalalogging.slf4j.Logging
 import org.mmisw.orr.ont.db.{OntologyVersion, Ontology}
-import org.scalatra.NotFound
+import org.mmisw.orr.ont.service.{NoSuchOntFormat, NoSuch, OntService}
 
 import scala.util.{Failure, Success, Try}
 
