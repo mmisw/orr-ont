@@ -113,12 +113,13 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
 
   private def getUser(userName: String): User = usersDAO.findOneById(userName).getOrElse(throw NoSuchUser(userName))
 
+  /*
+   * TODO validate userName
+   *  For migration from previous database note that there are userNames
+   *  with spaces, with periods, and even some emails.
+   * Actually, email would be a desirable ID in general: review this.
+   **/
   private def validateUserName(userName: String) {
-    if (userName.length == 0
-      || !userName.forall(Character.isJavaIdentifierPart)
-      || !Character.isJavaIdentifierStart(userName(0))) {
-      throw InvalidUserName(userName)
-    }
   }
 
   // TODO validate email
