@@ -128,7 +128,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
 
   delete("/!/all") {
     verifyAuthenticatedUser("admin")
-    ontDAO.remove(MongoDBObject())
+    ontService.deleteAll()
   }
 
   ///////////////////////////////////////////////////////////////////////////

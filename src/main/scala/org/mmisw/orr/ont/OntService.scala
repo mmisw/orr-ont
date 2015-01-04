@@ -270,6 +270,11 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     }
   }
 
+  /**
+   * Deletes the whole ontologies collection
+   */
+  def deleteAll() = ontDAO.remove(MongoDBObject())
+
   ///////////////////////////////////////////////////////////////////////////
 
   /**
