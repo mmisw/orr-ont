@@ -96,7 +96,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
 
     versionOpt match {
       case Some(version) => updateVersion(uri, version, user)
-      case None => addVersion(uri, user)
+      case None          => createOntologyVersion(uri, user)
     }
   }
 
@@ -262,34 +262,17 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
   /**
    * Adds a new version of a registered ontology.
    */
-  private def addVersion(uri: String, user: db.User) = {
+  private def createOntologyVersion(uri: String, user: db.User) = {
     val nameOpt = params.get("name")
     val (fileItem, format) = getFileAndFormat
     val (version, date) = getVersion
 
-    var ontVersion = OntologyVersion("", user.userName, format, new DateTime(date))
+    Try(ontService.createOntologyVersion(uri, nameOpt, user.userName, version, date, fileItem, format)) match {
+      case Success(ontologyResult) => ontologyResult
 
-    ontDAO.findOneById(uri) match {
-      case None => error(404, s"'$uri' is not registered")
-
-      case Some(ont) =>
-        verifyOwner(user.userName, ont)
-
-        var update = ont
-
-        nameOpt foreach (name => ontVersion = ontVersion.copy(name = name))
-        update = update.copy(
-          versions = ont.versions ++ Map(version -> ontVersion))
-
-        logger.info(s"update: $update")
-        writeOntologyFile(uri, version, fileItem, format)
-
-        Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
-          case Success(result) =>
-            OntologyResult(uri, version = Some(version), updated = Some(ontVersion.date))
-
-          case Failure(exc)  => error(500, s"update failure = $exc")
-        }
+      case Failure(exc: NotAMember)                   => error(401, exc.details)
+      case Failure(exc: CannotInsertOntologyVersion)  => error(500, exc.details)
+      case Failure(exc)                               => error(500, exc.getMessage)
     }
   }
 

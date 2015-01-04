@@ -34,6 +34,9 @@ case class InvalidUri(uri: String, error: String)
 case class AlreadyRegistered(uri: String)
   extends Invalid("uri" -> uri, "error" -> "Ontology URI already registered")
 
+case class NotAMember(userName: String, orgName: String)
+  extends Invalid("userName" -> userName, "orgName" -> orgName, "error" -> "User is not a member of the organization")
+
 abstract class Problem(d: (String,String)*) extends OntError(d)
 
 case class CannotCreateFormat(uri: String, version: String, format: String, msg: String)
@@ -45,6 +48,9 @@ case class CannotCreateDirectory(directory: String)
 
 case class CannotInsertOntology(uri: String, error: String)
   extends Problem("uri" -> uri, "error" -> error)
+
+case class CannotInsertOntologyVersion(uri: String, version: String, error: String)
+  extends Problem("uri" -> uri, "version" -> version, "error" -> error)
 
 case class Bug(msg: String) extends Problem("error" -> msg)
 
@@ -163,6 +169,56 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
       case Some(ont) =>   // bad request: existing ontology entry.
         throw AlreadyRegistered(uri)
+    }
+  }
+
+  def createOntologyVersion(uri: String, nameOpt: Option[String], userName: String,
+                            version: String, date: String,
+                            fileItem: FileItem, format: String) = {
+
+    val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
+
+    verifyOwner(userName, ont)
+
+    var update = ont
+
+    var ontVersion = OntologyVersion("", userName, format, new DateTime(date))
+
+    nameOpt foreach (name => ontVersion = ontVersion.copy(name = name))
+    update = update.copy(versions = ont.versions ++ Map(version -> ontVersion))
+
+    logger.info(s"update: $update")
+    writeOntologyFile(uri, version, fileItem, format)
+
+    Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
+      case Success(result) =>
+        OntologyResult(uri, version = Some(version), updated = Some(ontVersion.date))
+
+      case Failure(exc)  => throw CannotInsertOntologyVersion(uri, version, exc.getMessage)
+    }
+  }
+
+  /**
+   * Verifies the user can make changes or removals wrt to the given ont.
+   */
+  private def verifyOwner(userName: String, ont: Ontology): Unit = {
+    ont.orgName match {
+      case Some(orgName) => verifyOrgAndUser(orgName, userName)
+
+      case None => // TODO handle no-organization case
+        throw Bug(s"currently I expect registered ont to have org associated")
+    }
+  }
+
+  /**
+   * Verifies the given organization and the userName against that organization.
+   */
+  private def verifyOrgAndUser(orgName: String, userName: String): Unit = {
+    orgsDAO.findOneById(orgName) match {
+      case Some(org) =>
+        if (!org.members.contains(userName)) throw NotAMember(userName, orgName)
+
+      case None => throw Bug(s"'$orgName' organization must exist")
     }
   }
 
