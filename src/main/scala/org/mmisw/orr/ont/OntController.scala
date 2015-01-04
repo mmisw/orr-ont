@@ -8,7 +8,6 @@ import org.scalatra.servlet.{FileItem, SizeConstraintExceededException, FileUplo
 import javax.servlet.annotation.MultipartConfig
 import java.io.File
 import org.mmisw.orr.ont.db.{OntologyVersion, Ontology}
-import org.joda.time.DateTime
 import scala.util.{Failure, Success, Try}
 import com.novus.salat._
 import com.novus.salat.global._
@@ -203,20 +202,6 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     }
   }
 
-  /**
-   * Verifies the given organization and the userName against that organization.
-   */
-  private def verifyOrgAndUser(orgName: String, userName: String): Unit = {
-    orgsDAO.findOneById(orgName) match {
-      case Some(org) =>
-        if (!org.members.contains(userName))
-          error(401, s"user '$userName' is not a member of organization '$orgName'")
-
-      case None =>
-        bug(s"'$orgName' organization must exist")
-    }
-  }
-
   private def getFileAndFormat = {
     val fileItem = fileParams.getOrElse("file", missing("file"))
 
@@ -236,22 +221,6 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     val version = versionFormatter.format(now)
     val date = dateFormatter.format(now)
     (version, date)
-  }
-
-  /**
-   * Verifies the user can make changes or removals wrt to
-   * the given ont.
-   * @param userName
-   * @param ont
-   */
-  private def verifyOwner(userName: String, ont: Ontology): Unit = {
-    ont.orgName match {
-      case Some(orgName) =>
-        verifyOrgAndUser(orgName, userName)
-
-      case None => // TODO handle no-organization case
-        bug(s"currently I expect registered ont to have org associated")
-    }
   }
 
   /**
@@ -309,18 +278,13 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
    * Deletes a whole ontology entry.
    */
   private def deleteOntology(uri: String, user: db.User) = {
-    ontDAO.findOneById(uri) match {
-      case None => error(404, s"'$uri' is not registered")
+    Try(ontService.deleteOntology(uri, user.userName)) match {
+      case Success(ontologyResult) => ontologyResult
 
-      case Some(ont) =>
-        verifyOwner(user.userName, ont)
-
-        Try(ontDAO.remove(ont, WriteConcern.Safe)) match {
-          case Success(result) =>
-            OntologyResult(uri, removed = Some(DateTime.now())) //TODO
-
-          case Failure(exc)  => error(500, s"update failure = $exc")
-        }
+      case Failure(exc: NoSuch)                       => error(404, exc.details)
+      case Failure(exc: NotAMember)                   => error(401, exc.details)
+      case Failure(exc: CannotDeleteOntology)         => error(500, exc.details)
+      case Failure(exc)                               => error(500, exc.getMessage)
     }
   }
 }

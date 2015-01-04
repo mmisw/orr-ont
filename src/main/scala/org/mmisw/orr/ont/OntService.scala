@@ -58,6 +58,9 @@ case class CannotUpdateOntologyVersion(uri: String, version: String, error: Stri
 case class CannotDeleteOntologyVersion(uri: String, version: String, error: String)
   extends Problem("uri" -> uri, "version" -> version, "error" -> error)
 
+case class CannotDeleteOntology(uri: String, error: String)
+  extends Problem("uri" -> uri, "error" -> error)
+
 case class Bug(msg: String) extends Problem("error" -> msg)
 
 
@@ -89,7 +92,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   }
 
   /**
-   * Get the ontologies satisfying the given query.
+   * Gets the ontologies satisfying the given query.
    * @param query  Query
    * @return       iterator
    */
@@ -118,7 +121,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   }
 
   /**
-   * Gets the file for a given ontolofy.
+   * Gets the file for a given ontology.
    *
    * @param uri        ontology URI
    * @param version    version
@@ -152,6 +155,9 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     }
   }
 
+  /**
+   * Creates a new ontology entry.
+   */
   def createOntology(uri: String, name: String, version: String, date: String,
                     userName: String, orgName: String, fileItem: FileItem, format: String) = {
 
@@ -178,6 +184,9 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     }
   }
 
+  /**
+   * Creates a version.
+   */
   def createOntologyVersion(uri: String, nameOpt: Option[String], userName: String,
                             version: String, date: String,
                             fileItem: FileItem, format: String) = {
@@ -204,6 +213,9 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     }
   }
 
+  /**
+   * Updates a particular version.
+   */
   def updateOntologyVersion(uri: String, version: String, name: String, userName: String) = {
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
     verifyOwner(userName, ont)
@@ -224,6 +236,9 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     }
   }
 
+  /**
+   * Deletes a particular version.
+   */
   def deleteOntologyVersion(uri: String, version: String, userName: String) = {
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
     verifyOwner(userName, ont)
@@ -239,6 +254,23 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
       case Failure(exc)  => throw CannotDeleteOntologyVersion(uri, version, exc.getMessage)
     }
   }
+
+  /**
+   * Deletes a whole ontology entry.
+   */
+  def deleteOntology(uri: String, userName: String) = {
+    val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
+    verifyOwner(userName, ont)
+
+    Try(ontDAO.remove(ont, WriteConcern.Safe)) match {
+      case Success(result) =>
+        OntologyResult(uri, removed = Some(DateTime.now())) //TODO
+
+      case Failure(exc)  => throw CannotDeleteOntology(uri, exc.getMessage)
+    }
+  }
+
+  ///////////////////////////////////////////////////////////////////////////
 
   /**
    * Verifies the user can make changes or removals wrt to the given ont.
