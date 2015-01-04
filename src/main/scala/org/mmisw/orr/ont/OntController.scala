@@ -7,7 +7,6 @@ import org.scalatra.Created
 import org.scalatra.servlet.{FileItem, SizeConstraintExceededException, FileUploadSupport}
 import javax.servlet.annotation.MultipartConfig
 import java.io.File
-import java.net.{URI, URISyntaxException}
 import org.mmisw.orr.ont.db.{OntologyVersion, Ontology}
 import org.joda.time.DateTime
 import scala.util.{Failure, Success, Try}
@@ -95,7 +94,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     // ok, authenticated user can PUT.
 
     versionOpt match {
-      case Some(version) => updateVersion(uri, version, user)
+      case Some(version) => updateOntologyVersion(uri, version, user)
       case None          => createOntologyVersion(uri, user)
     }
   }
@@ -270,6 +269,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     Try(ontService.createOntologyVersion(uri, nameOpt, user.userName, version, date, fileItem, format)) match {
       case Success(ontologyResult) => ontologyResult
 
+      case Failure(exc: NoSuch)                       => error(404, exc.details)
       case Failure(exc: NotAMember)                   => error(401, exc.details)
       case Failure(exc: CannotInsertOntologyVersion)  => error(500, exc.details)
       case Failure(exc)                               => error(500, exc.getMessage)
@@ -281,29 +281,16 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
    * Note, only the name in the particular version can be updated at the moment.
    */
   // TODO handle other pieces that can/should be updated
-  private def updateVersion(uri: String, version: String, user: db.User) = {
+  private def updateOntologyVersion(uri: String, version: String, user: db.User) = {
     val name = require(params, "name")
-    ontDAO.findOneById(uri) match {
-      case None => error(404, s"'$uri' is not registered")
 
-      case Some(ont) =>
-        verifyOwner(user.userName, ont)
+    Try(ontService.updateOntologyVersion(uri, version, name, user.userName)) match {
+      case Success(ontologyResult) => ontologyResult
 
-        var ontVersion = ont.versions.getOrElse(version,
-          error(404, s"'$uri', version '$version' is not registered"))
-
-        ontVersion = ontVersion.copy(name = name)
-
-        val newVersions = ont.versions.updated(version, ontVersion)
-        val update = ont.copy(versions = newVersions)
-        logger.info(s"update: $update")
-
-        Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
-          case Success(result) =>
-            OntologyResult(uri, version = Some(version), updated = Some(ontVersion.date))
-
-          case Failure(exc)  => error(500, s"update failure = $exc")
-        }
+      case Failure(exc: NoSuch)                       => error(404, exc.details)
+      case Failure(exc: NotAMember)                   => error(401, exc.details)
+      case Failure(exc: CannotUpdateOntologyVersion)  => error(500, exc.details)
+      case Failure(exc)                               => error(500, exc.getMessage)
     }
   }
 
@@ -349,26 +336,4 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
         }
     }
   }
-
-  private def writeOntologyFile(uri: String, version: String,
-                    file: FileItem, format: String) = {
-
-    val baseDir = setup.filesConfig.getString("baseDirectory")
-    val ontsDir = new File(baseDir, "onts")
-
-    !uri.contains("|") || error(400, s"'$uri': invalid URI")
-
-    val uriEnc = uri.replace('/', '|')
-
-    val uriDir = new File(ontsDir, uriEnc)
-
-    val versionDir = new File(uriDir, version)
-    versionDir.mkdirs() || error(500, s"could not create directory: $versionDir")
-
-    val destFilename = s"file.$format"
-    val dest = new File(versionDir, destFilename)
-
-    file.write(dest)
-  }
-
 }
