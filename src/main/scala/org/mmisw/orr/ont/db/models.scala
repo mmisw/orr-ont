@@ -24,7 +24,9 @@ case class User(
             firstName:             String,
             lastName:              String,
             password:              String,
+            email:                 Option[String] = None, // TODO make email required
             ontUri:                Option[String] = None,
+            phone:                 Option[String] = None,
             registered:            DateTime = DateTime.now(),
             updated:               Option[DateTime] = None)
 
