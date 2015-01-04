@@ -6,6 +6,7 @@ import com.novus.salat._
 import com.novus.salat.global._
 import com.typesafe.scalalogging.slf4j.Logging
 import org.mmisw.orr.ont.db.{OntologyVersion, Ontology}
+import org.scalatra.NotFound
 
 import scala.util.{Failure, Success, Try}
 
@@ -18,12 +19,63 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
 
   get("/(.*)".r) {
     multiParams("captures").headOption match {
-      case Some(someSuffix) => if (someSuffix.startsWith("api")) pass() else selfResolve
+      case Some(suffix) => if (suffix.startsWith("api")) pass() else resolve(suffix)
       case _ => pass()
     }
   }
 
   ///////////////////////////////////////////////////////////////////////////
+
+  private val orgOrUserPattern = "ont/([^/]+)$".r
+
+  private def resolve(suffix: String) = {
+    logger.debug(s"resolve: suffix='$suffix'")
+    orgOrUserPattern.findFirstMatchIn(suffix).toList.headOption match {
+      case Some(m) => resolveOrgOrUser(m.group(1))
+      case None =>
+        val uri = request.getRequestURL.toString
+        logger.debug(s"self-resolving '$uri' ...")
+        resolveUri(uri)
+    }
+  }
+
+  /*
+   * Dispatches organization OR user ontology request (/ont/xyz).
+   * This intends to emulate behavior in previous Ont service
+   * when xyx corresponds to an existing authority abbreviation
+   * (with generation of list of associated ontologies).
+   * Here this is very preliminary. Also possible dispatching the case
+   * when xyz corresponds to the userName when there's no organization
+   * by that name.
+   * TODO review the whole thing.
+   */
+  private def resolveOrgOrUser(xyz: String) = {
+    logger.debug(s"resolve: xyz='$xyz'")
+    orgsDAO.findOneById(xyz) match {
+      case Some(org) =>
+        org.ontUri match {
+          case Some(ontUri) => resolveUri(ontUri)
+          case None =>
+            try selfResolve
+            catch {
+              case exc: AnyRef =>
+                logger.info(s"EXC in selfResolve: $exc")
+                // TODO dispatch some synthetic response as in previous Ont
+                error(500, s"TODO: generate summary for organization '$xyz'")
+            }
+        }
+      case None =>
+        usersDAO.findOneById(xyz) match {
+          case Some(user) =>
+            user.ontUri match {
+              case Some(ontUri) => resolveUri(ontUri)
+              case None =>
+                error(500, s"TODO: generate summary for user '$xyz'")
+            }
+          case None => error(404, s"No organization or user by given name: '$xyz'")
+        }
+    }
+  }
 
   private def selfResolve = {
     val uri = request.getRequestURL.toString
@@ -53,7 +105,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
   private def resolveOntology(uri: String, versionOpt: Option[String]): (Ontology, OntologyVersion, String) = {
     Try(ontService.resolveOntology(uri, versionOpt)) match {
       case Success(res)         => res
-      case Failure(exc: NoSuch) => error(400, exc.message)
+      case Failure(exc: NoSuch) => error(404, exc.message)
       case Failure(exc)         => error(500, exc.getMessage)
     }
   }

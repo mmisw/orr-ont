@@ -43,44 +43,6 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
   }
 
   /*
-   * Dispatches organization OR user ontology request (.../ont/xyz)
-   * TODO move to SelfHostedOntController
-   */
-  get("/:xyz") {
-    val xyz = require(params, "xyz")
-
-    orgsDAO.findOneById(xyz) match {
-      case Some(org) =>
-        org.ontUri match {
-          case Some(ontUri) => resolveUri(ontUri)
-          case None =>
-            try selfResolve
-            catch {
-              case exc: AnyRef =>
-                logger.info(s"EXC in selfResolve: $exc")
-                // TODO dispatch some synthetic response as in previous Ont
-                error(500, s"TODO: generate summary for organization '$xyz'")
-            }
-        }
-      case None =>
-        usersDAO.findOneById(xyz) match {
-          case Some(user) =>
-            user.ontUri match {
-              case Some(ontUri) => resolveUri(ontUri)
-              case None => error(404, s"No ontology found for: '$xyz'")
-            }
-          case None => error(404, s"No organization or user by given name: '$xyz'")
-        }
-    }
-  }
-  // TODO move to SelfHostedOntController
-  private def selfResolve = {
-    val uri = request.getRequestURL.toString
-    logger.debug(s"self-resolving $uri")
-    resolveUri(uri)
-  }
-
-  /*
    * Registers a new ontology entry.
    */
   post("/") {
@@ -246,7 +208,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
   private def resolveOntology(uri: String, versionOpt: Option[String]): (Ontology, OntologyVersion, String) = {
     Try(ontService.resolveOntology(uri, versionOpt)) match {
       case Success(res)         => res
-      case Failure(exc: NoSuch) => error(400, exc.message)
+      case Failure(exc: NoSuch) => error(404, exc.message)
       case Failure(exc)         => error(500, exc.getMessage)
     }
   }
