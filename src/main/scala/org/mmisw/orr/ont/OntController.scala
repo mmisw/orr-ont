@@ -64,7 +64,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     val (fileItem, format) = getFileAndFormat
     val (version, date) = getVersion
 
-    Created(createOnt(uri, name, version, date, fileItem, orgName))
+    Created(createOntology(uri, name, version, date, fileItem, orgName))
   }
 
   /*
@@ -107,30 +107,6 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     val versionOpt = params.get("version")
     val user = verifyUser(params.get("userName"))
 
-    deleteOnt(uri, versionOpt, user)
-  }
-
-  delete("/!/all") {
-    verifyAuthenticatedUser("admin")
-    ontDAO.remove(MongoDBObject())
-  }
-
-  ///////////////////////////////////////////////////////////////////////////
-
-  private def createOnt(uri: String, name: String, version: String, date: String,
-                fileItem: FileItem, orgName: String) = {
-
-    Try(ontService.createOntology(uri, name, version, date, user.userName, orgName, fileItem, format)) match {
-      case Success(ontologyResult) => ontologyResult
-
-      case Failure(exc: InvalidUri)        => error(400, exc.details)
-      case Failure(exc: AlreadyRegistered) => error(409, exc.details)
-      case Failure(exc: Problem)           => error(500, exc.details)
-      case Failure(exc)                    => error(500, exc.getMessage)
-    }
-  }
-
-  private def deleteOnt(uri: String, versionOpt: Option[String], user: db.User) = {
     val (ont, _, _) = resolveOntology(uri, versionOpt)
 
     ont.orgName match {
@@ -146,8 +122,28 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     }
 
     versionOpt match {
-      case Some(version) => deleteVersion(uri, version, user)
+      case Some(version) => deleteOntologyVersion(uri, version, user)
       case None          => deleteOntology(uri, user)
+    }
+  }
+
+  delete("/!/all") {
+    verifyAuthenticatedUser("admin")
+    ontDAO.remove(MongoDBObject())
+  }
+
+  ///////////////////////////////////////////////////////////////////////////
+
+  private def createOntology(uri: String, name: String, version: String, date: String,
+                             fileItem: FileItem, orgName: String) = {
+
+    Try(ontService.createOntology(uri, name, version, date, user.userName, orgName, fileItem, format)) match {
+      case Success(ontologyResult) => ontologyResult
+
+      case Failure(exc: InvalidUri) => error(400, exc.details)
+      case Failure(exc: AlreadyRegistered) => error(409, exc.details)
+      case Failure(exc: Problem) => error(500, exc.details)
+      case Failure(exc) => error(500, exc.getMessage)
     }
   }
 
@@ -193,16 +189,16 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
 
   private def resolveOntology(uri: String, versionOpt: Option[String]): (Ontology, OntologyVersion, String) = {
     Try(ontService.resolveOntology(uri, versionOpt)) match {
-      case Success(res)         => res
+      case Success(res) => res
       case Failure(exc: NoSuch) => error(404, exc.details)
-      case Failure(exc)         => error(500, exc.getMessage)
+      case Failure(exc) => error(500, exc.getMessage)
     }
   }
 
   private def getOntologyFile(uri: String, version: String, reqFormat: String): (File, String) = {
     Try(ontService.getOntologyFile(uri, version, reqFormat)) match {
-      case Success(res)                   => res
-      case Failure(exc: NoSuchOntFormat)  => error(406, exc.details)
+      case Success(res) => res
+      case Failure(exc: NoSuchOntFormat) => error(406, exc.details)
       case Failure(exc) => error(500, exc.getMessage)
     }
   }
@@ -238,7 +234,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     // for now, the version is always automatically assigned
     val now = new java.util.Date()
     val version = versionFormatter.format(now)
-    val date    = dateFormatter.format(now)
+    val date = dateFormatter.format(now)
     (version, date)
   }
 
@@ -297,24 +293,15 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
   /**
    * Deletes a particular version.
    */
-  private def deleteVersion(uri: String, version: String, user: db.User) = {
-    ontDAO.findOneById(uri) match {
-      case None => error(404, s"'$uri' is not registered")
+  private def deleteOntologyVersion(uri: String, version: String, user: db.User) = {
 
-      case Some(ont) =>
-        verifyOwner(user.userName, ont)
+    Try(ontService.deleteOntologyVersion(uri, version,  user.userName)) match {
+      case Success(ontologyResult) => ontologyResult
 
-        ont.versions.getOrElse(version, error(404, s"'$uri', version '$version' is not registered"))
-
-        val update = ont.copy(versions = ont.versions - version)
-        logger.info(s"update: $update")
-
-        Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
-          case Success(result) =>
-            OntologyResult(uri, version = Some(version), removed = Some(DateTime.now())) //TODO
-
-          case Failure(exc)  => error(500, s"update failure = $exc")
-        }
+      case Failure(exc: NoSuch)                       => error(404, exc.details)
+      case Failure(exc: NotAMember)                   => error(401, exc.details)
+      case Failure(exc: CannotDeleteOntologyVersion)  => error(500, exc.details)
+      case Failure(exc)                               => error(500, exc.getMessage)
     }
   }
 

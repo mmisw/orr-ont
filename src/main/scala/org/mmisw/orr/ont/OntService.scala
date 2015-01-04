@@ -55,6 +55,9 @@ case class CannotInsertOntologyVersion(uri: String, version: String, error: Stri
 case class CannotUpdateOntologyVersion(uri: String, version: String, error: String)
   extends Problem("uri" -> uri, "version" -> version, "error" -> error)
 
+case class CannotDeleteOntologyVersion(uri: String, version: String, error: String)
+  extends Problem("uri" -> uri, "version" -> version, "error" -> error)
+
 case class Bug(msg: String) extends Problem("error" -> msg)
 
 
@@ -218,6 +221,22 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
         OntologyResult(uri, version = Some(version), updated = Some(ontVersion.date))
 
       case Failure(exc)  => throw CannotUpdateOntologyVersion(uri, version, exc.getMessage)
+    }
+  }
+
+  def deleteOntologyVersion(uri: String, version: String, userName: String) = {
+    val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
+    verifyOwner(userName, ont)
+    ont.versions.getOrElse(version, throw NoSuchOntVersion(uri, version))
+
+    val update = ont.copy(versions = ont.versions - version)
+    //logger.info(s"update: $update")
+
+    Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
+      case Success(result) =>
+        OntologyResult(uri, version = Some(version), removed = Some(DateTime.now())) //TODO
+
+      case Failure(exc)  => throw CannotDeleteOntologyVersion(uri, version, exc.getMessage)
     }
   }
 
