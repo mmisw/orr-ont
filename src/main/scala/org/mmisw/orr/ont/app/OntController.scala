@@ -144,7 +144,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
       case Success(ontologyResult) => ontologyResult
 
       case Failure(exc: InvalidUri) => error(400, exc.details)
-      case Failure(exc: AlreadyRegistered) => error(409, exc.details)
+      case Failure(exc: OntologyAlreadyRegistered) => error(409, exc.details)
       case Failure(exc: Problem) => error(500, exc.details)
       case Failure(exc) => error(500, exc.getMessage)
     }

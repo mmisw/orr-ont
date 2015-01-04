@@ -129,8 +129,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
               // perhaps duplicate key in concurrent registration
         }
 
-      case Some(ont) =>   // bad request: existing ontology entry.
-        throw AlreadyRegistered(uri)
+      case Some(ont) => throw OntologyAlreadyRegistered(uri)
     }
   }
 

@@ -14,16 +14,25 @@ case class NoSuchOntVersion(uri: String, version: String)
 case class NoSuchOntFormat(uri: String, version: String, format: String)
   extends NoSuch("uri" -> uri, "version" -> version, "format" -> format, "error" -> "No such ontology format")
 
+case class NoSuchUser(userName: String)
+  extends NoSuch("userName" -> userName)
+
 abstract class Invalid(d: (String,String)*) extends OntError(d)
 
 case class InvalidUri(uri: String, error: String)
   extends Invalid("uri" -> uri, "error" -> error)
 
-case class AlreadyRegistered(uri: String)
+case class OntologyAlreadyRegistered(uri: String)
   extends Invalid("uri" -> uri, "error" -> "Ontology URI already registered")
 
 case class NotAMember(userName: String, orgName: String)
   extends Invalid("userName" -> userName, "orgName" -> orgName, "error" -> "User is not a member of the organization")
+
+case class InvalidUserName(userName: String)
+  extends Invalid("userName" -> userName, "error" -> "Invalid userName")
+
+case class UserAlreadyRegistered(userName: String)
+  extends Invalid("userName" -> userName, "error" -> "User already registered")
 
 abstract class Problem(d: (String,String)*) extends OntError(d)
 
@@ -48,5 +57,14 @@ case class CannotDeleteOntologyVersion(uri: String, version: String, error: Stri
 
 case class CannotDeleteOntology(uri: String, error: String)
   extends Problem("uri" -> uri, "error" -> error)
+
+case class CannotInsertUser(userName: String, error: String)
+  extends Problem("userName" -> userName, "error" -> error)
+
+case class CannotUpdateUser(userName: String, error: String)
+  extends Problem("userName" -> userName, "error" -> error)
+
+case class CannotDeleteUser(userName: String, error: String)
+  extends Problem("userName" -> userName, "error" -> error)
 
 case class Bug(msg: String) extends Problem("error" -> msg)
