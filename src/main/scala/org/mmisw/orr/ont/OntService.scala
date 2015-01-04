@@ -8,15 +8,28 @@ import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.swld.ontUtil
 
 
-abstract class OntError extends Error
-abstract class NoSuch(val message: String) extends OntError
-case class NoSuchOntUri(uri: String, override val message: String = "No such ontology") extends NoSuch(message)
-case class NoSuchOntVersion(uri: String, version: String, override val message: String = "No such ontology version") extends NoSuch(message)
-case class NoSuchOntFormat(uri: String, version: String, format: String, override val message: String = "No such ontology format") extends NoSuch(message)
-case class CannotCreateFormat(uri: String, version: String, format: String, message: String = "Cannot create requested ontology format") extends OntError
-case class Bug(message: String) extends OntError
+abstract class OntError(val message: String) extends Error
+
+abstract class NoSuch(msg: String) extends OntError(msg)
+
+case class NoSuchOntUri(uri: String)
+  extends NoSuch(s"uri=$uri: No such ontology")
+
+case class NoSuchOntVersion(uri: String, version: String)
+  extends NoSuch(s"uri=$uri version=$version: No such ontology version")
+
+case class NoSuchOntFormat(uri: String, version: String, format: String)
+  extends NoSuch(s"uri=$uri version=$version format=$format: No such ontology format")
+
+case class CannotCreateFormat(uri: String, version: String, format: String, msg: String)
+  extends OntError(s"uri=$uri version=$version format=$format: Cannot create requested ontology format: $msg")
+
+case class Bug(msg: String) extends OntError(msg)
 
 
+/**
+ * Ontology service
+ */
 class OntService(implicit setup: Setup) extends BaseService(setup) with Logging {
 
   /**
