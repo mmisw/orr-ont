@@ -8,7 +8,10 @@ import scala.util.{Success, Failure, Try}
 case class Ontology(
             @Key("_id") uri: String,
             orgName:         Option[String],
-            versions:        Map[String, OntologyVersion] = Map.empty)
+            versions:        Map[String, OntologyVersion] = Map.empty) {
+
+  lazy val sortedVersionKeys = versions.keys.toList.sorted(Ordering[String].reverse)
+}
 
 case class OntologyVersion(
             name:            String,

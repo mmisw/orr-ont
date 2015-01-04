@@ -21,6 +21,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers()
 
     implicit val setup = new Setup(configFilename)
+    implicit val ontService = new OntService
 
     context.mount(new OrgController,        "/org/*")
     context.mount(new UserController,       "/user/*")

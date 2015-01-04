@@ -14,6 +14,8 @@ import org.scalatra.test.specs2._
 class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   import org.json4s.JsonDSL._
 
+  implicit val ontService = new OntService
+
   addServlet(new UserController, "/user/*")
   addServlet(new OrgController,  "/org/*")
   addServlet(new OntController,  "/ont/*")

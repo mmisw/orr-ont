@@ -14,11 +14,9 @@ import scala.util.{Failure, Success, Try}
 import com.novus.salat._
 import com.novus.salat.global._
 
-import org.mmisw.orr.ont.swld.ontUtil
-
 
 @MultipartConfig(maxFileSize = 5*1024*1024)
-class OntController(implicit setup: Setup) extends BaseController
+class OntController(implicit setup: Setup, ontService: OntService) extends BaseController
       with FileUploadSupport with Logging {
 
   //configureMultipartHandling(MultipartConfig(maxFileSize = Some(5 * 1024 * 1024)))
@@ -40,17 +38,8 @@ class OntController(implicit setup: Setup) extends BaseController
         if (someSuffix) selfResolve
         else {
           val query = getQueryFromParams(params.keySet - "captures")
-          // TODO what exactly to report for the list of all ontologies?
-          ontDAO.find(query) map { ont =>
-            getLatestVersion(ont) match {
-              case Some((ontVersion, version)) =>
-                val ores = PendOntologyResult(ont.uri, ontVersion.name, ont.orgName, sortedVersionKeys(ont))
-                grater[PendOntologyResult].toCompactJSON(ores)
-
-              case None =>  // should not happen
-                bug(s"'${ont.uri}', no versions registered")
-            }
-          }
+          // TODO what exactly to report for the list of ontologies?
+          ontService.getOntologies(query) map grater[PendOntologyResult].toCompactJSON
         }
     }
   }
@@ -122,7 +111,7 @@ class OntController(implicit setup: Setup) extends BaseController
     val versionOpt = params.get("version")
     val user = verifyUser(params.get("userName"))
 
-    val (ont, _, _) = getOntVersion(uri, versionOpt)
+    val (ont, _, _) = resolveOntology(uri, versionOpt)
 
     ont.orgName match {
       case Some(orgName) =>
@@ -193,7 +182,7 @@ class OntController(implicit setup: Setup) extends BaseController
   }
 
   def deleteOnt(uri: String, versionOpt: Option[String], user: db.User) = {
-    val (ont, _, _) = getOntVersion(uri, versionOpt)
+    val (ont, _, _) = resolveOntology(uri, versionOpt)
 
     ont.orgName match {
       case Some(orgName) =>
@@ -234,39 +223,39 @@ class OntController(implicit setup: Setup) extends BaseController
 
   val versionFormatter = new java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss")
 
-  def getOntVersion(uri: String, versionOpt: Option[String]): (Ontology, OntologyVersion, String) = {
-    val ont = ontDAO.findOneById(uri).getOrElse(error(404, s"'$uri' is not registered"))
-    versionOpt match {
-      case Some(v) =>
-        val ontVersion = ont.versions.getOrElse(v, error(404, s"'$uri', version '$v' is not registered"))
-        (ont, ontVersion, v)
+  def resolveUri(uri: String) = {
+    val (ont, ontVersion, version) = resolveOntology(uri, params.get("version"))
 
-      case None =>
-        // latest version
-        getLatestVersion(ont) match {
-          case Some((ontVersion, version)) =>
-            (ont, ontVersion, version)
-          case None =>
-            // should not happen
-            bug(s"'$uri', no versions registered")
-        }
+    // format is the one given if any, or the one in the db:
+    val reqFormat = params.get("format").getOrElse(ontVersion.format)
+
+    // todo: determine mechanism to request for file contents or metadata:  format=!md is preliminary
+
+    if (reqFormat == "!md") {
+      val ores = PendOntologyResult(ont.uri, ontVersion.name, ont.orgName, ont.sortedVersionKeys)
+      grater[PendOntologyResult].toCompactJSON(ores)
+    }
+    else {
+      val (file, actualFormat) = getOntologyFile(uri, version, reqFormat)
+      contentType = formats(actualFormat)
+      file
     }
   }
 
-  def resolveUri(uri: String) = {
-    val (ont, ontVersion, version) = getOntVersion(uri, params.get("version"))
-
-    // format is the one given, if any, or the one in the db:
-    val format = params.get("format").getOrElse(ontVersion.format)
-
-    // todo: determine whether the request is for file contents, or metadata.
-
-    if (format == "!md") {
-      val versions = sortedVersionKeys(ont)
-      val ores = PendOntologyResult(ont.uri, ontVersion.name, ont.orgName, versions)
-      grater[PendOntologyResult].toCompactJSON(ores)
+  def resolveOntology(uri: String, versionOpt: Option[String]): (Ontology, OntologyVersion, String) = {
+    Try(ontService.resolveOntology(uri, versionOpt)) match {
+      case Success(res)         => res
+      case Failure(exc: NoSuch) => error(400, exc.message)
+      case Failure(exc)         => error(500, exc.getMessage)
     }
-    else getOntologyFile(uri, version, format)
+  }
+
+  def getOntologyFile(uri: String, version: String, reqFormat: String): (File, String) = {
+    Try(ontService.getOntologyFile(uri, version, reqFormat)) match {
+      case Success(res)                   => res
+      case Failure(exc: NoSuchOntFormat)  => error(406, exc.message)
+      case Failure(exc) => error(500, exc.getMessage)
+    }
   }
 
   def selfResolve = {
@@ -275,13 +264,8 @@ class OntController(implicit setup: Setup) extends BaseController
     resolveUri(uri)
   }
 
-  /** latest version first */
-  def sortedVersionKeys(ont: Ontology): List[String] =
-    ont.versions.keys.toList.sorted(Ordering[String].reverse)
-
   def getLatestVersion(ont: Ontology): Option[(OntologyVersion,String)] = {
-    val versions = sortedVersionKeys(ont)
-    versions.headOption match {
+    ont.sortedVersionKeys.headOption match {
       case Some(version) => Some((ont.versions.get(version).get, version))
       case None => None
     }
@@ -472,45 +456,6 @@ class OntController(implicit setup: Setup) extends BaseController
     val dest = new File(versionDir, destFilename)
 
     file.write(dest)
-  }
-
-  def getOntologyFile(uri: String, version: String, reqFormat: String) = {
-
-    val baseDir = setup.filesConfig.getString("baseDirectory")
-    val ontsDir = new File(baseDir, "onts")
-
-    val uriEnc = uri.replace('/', '|')
-
-    val uriDir = new File(ontsDir, uriEnc)
-
-    val versionDir = new File(uriDir, version)
-
-    val format = ontUtil.storedFormat(reqFormat)
-
-    val file = new File(versionDir, s"file.$format")
-
-    if (file.canRead) {
-      // already exists, just return it
-      contentType = formats(format)
-      file
-    }
-    else try {
-      // TODO determine base format for conversions
-      val fromFile = new File(versionDir, "file.rdf")
-      ontUtil.convert(uri, fromFile, fromFormat = "rdf", file, toFormat = format) match {
-        case Some(resFile) =>
-          contentType = formats(format)
-          resFile
-        case _ =>
-          error(406, s"Format '$format' not available for uri='$uri' version='$version'")
-           // TODO include accepted formats
-      }
-    }
-    catch {
-      case exc: Exception => // likely com.hp.hpl.jena.shared.NoWriterForLangException
-        val exm = s"${exc.getClass.getName}: ${exc.getMessage}"
-        error(500, s"cannot create format '$format' for uri='$uri' version='$version': $exm")
-    }
   }
 
 }
