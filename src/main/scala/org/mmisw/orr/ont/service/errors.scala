@@ -15,7 +15,10 @@ case class NoSuchOntFormat(uri: String, version: String, format: String)
   extends NoSuch("uri" -> uri, "version" -> version, "format" -> format, "error" -> "No such ontology format")
 
 case class NoSuchUser(userName: String)
-  extends NoSuch("userName" -> userName)
+  extends NoSuch("userName" -> userName, "error" -> "No such user")
+
+case class NoSuchOrg(orgName: String)
+  extends NoSuch("orgName" -> orgName, "error" -> "No such organization")
 
 abstract class Invalid(d: (String,String)*) extends OntError(d)
 
@@ -31,8 +34,14 @@ case class NotAMember(userName: String, orgName: String)
 case class InvalidUserName(userName: String)
   extends Invalid("userName" -> userName, "error" -> "Invalid userName")
 
+case class InvalidOrgName(orgName: String)
+  extends Invalid("orgName" -> orgName, "error" -> "Invalid orgName")
+
 case class UserAlreadyRegistered(userName: String)
   extends Invalid("userName" -> userName, "error" -> "User already registered")
+
+case class OrgAlreadyRegistered(orgName: String)
+  extends Invalid("orgName" -> orgName, "error" -> "Organization already registered")
 
 abstract class Problem(d: (String,String)*) extends OntError(d)
 
@@ -66,5 +75,14 @@ case class CannotUpdateUser(userName: String, error: String)
 
 case class CannotDeleteUser(userName: String, error: String)
   extends Problem("userName" -> userName, "error" -> error)
+
+case class CannotInsertOrg(orgName: String, error: String)
+  extends Problem("orgName" -> orgName, "error" -> error)
+
+case class CannotUpdateOrg(orgName: String, error: String)
+  extends Problem("orgName" -> orgName, "error" -> error)
+
+case class CannotDeleteOrg(orgName: String, error: String)
+  extends Problem("orgName" -> orgName, "error" -> error)
 
 case class Bug(msg: String) extends Problem("error" -> msg)
