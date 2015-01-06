@@ -4,7 +4,7 @@ import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.slf4j.Logging
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.db.User
-import org.mmisw.orr.ont.{UserResult, PendUserResult, Setup}
+import org.mmisw.orr.ont.{db, UserResult, PendUserResult, Setup}
 
 import scala.util.{Failure, Success, Try}
 
@@ -13,6 +13,8 @@ import scala.util.{Failure, Success, Try}
  * User service
  */
 class UserService(implicit setup: Setup) extends BaseService(setup) with Logging {
+
+  createAdminIfMissing()
 
   /**
    * Gets the users satisfying the given query.
@@ -128,6 +130,30 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
 
   // TODO validate phone
   private def validatePhone(phoneOpt: Option[String]) {
+  }
+
+  /**
+   * Creates the "admin" user if not already in the database.
+   */
+  def createAdminIfMissing() {
+    val admin = "admin"
+    usersDAO.findOneById(admin) match {
+      case None =>
+        logger.debug("creating 'admin' user")
+        val password = setup.config.getString("admin.password")
+        val encPassword = userAuth.encryptPassword(password)
+        val obj = db.User(admin, "Adm", "In", encPassword)
+
+        Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
+          case Success(r) =>
+            logger.info(s"'admin' user created: ${obj.registered}")
+
+          case Failure(exc)  =>
+            logger.error(s"error creating 'admin' user", exc)
+        }
+
+      case Some(_) => // nothing
+    }
   }
 
 }
