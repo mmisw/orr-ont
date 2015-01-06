@@ -5,7 +5,6 @@ import org.mmisw.orr.ont.Setup
 
 trait BaseSpec {
   implicit val formats = org.json4s.DefaultFormats
-  com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers()
 
   // use collection names composed from the name of the test class
   implicit val setup = new Setup("/etc/orront.conf", testing = Some(getClass.getSimpleName))

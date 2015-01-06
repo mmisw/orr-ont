@@ -58,6 +58,8 @@ class Setup(configFilename: String, val testing: Option[String] = None) extends 
     }
   }
 
+  com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers()
+
   val db: Db = new Db(mongoConfig)
 
   dbOpt = Some(db)
