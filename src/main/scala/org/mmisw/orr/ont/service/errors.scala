@@ -1,7 +1,7 @@
 package org.mmisw.orr.ont.service
 
 
-abstract class OntError(val details: Seq[(String,String)]) extends Error
+abstract class OntError(val details: Seq[(String,String)]) extends Error(Map(details: _*).toString())
 
 abstract class NoSuch(d: (String,String)*) extends OntError(d)
 
