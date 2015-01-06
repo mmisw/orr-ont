@@ -30,7 +30,7 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
    */
   def createUser(userName: String, emailOpt: Option[String], phoneOpt: Option[String],
                  firstName: String, lastName: String, password: String,
-                 ontUri: Option[String]) = {
+                 ontUri: Option[String], registered: DateTime = DateTime.now()) = {
 
     usersDAO.findOneById(userName) match {
       case None =>
@@ -38,7 +38,7 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
         validateEmail(emailOpt)
         validatePhone(phoneOpt)
 
-        val user = User(userName, firstName, lastName, password, emailOpt, ontUri, phoneOpt)
+        val user = User(userName, firstName, lastName, password, emailOpt, ontUri, phoneOpt, registered)
 
         Try(usersDAO.insert(user, WriteConcern.Safe)) match {
           case Success(_) =>
