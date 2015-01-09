@@ -40,13 +40,14 @@ class UserController(implicit setup: Setup) extends BaseController
     verifyAuthenticatedUser("admin")
     val map = body()
 
-    val userName = require(map, "userName")
+    val userName  = require(map, "userName")
     val firstName = require(map, "firstName")
-    val lastName = require(map, "lastName")
-    val password = require(map, "password")
-    val ontUri = getString(map, "ontUri")
+    val lastName  = require(map, "lastName")
+    val password  = require(map, "password")
+    val email     = require(map, "email")
+    val ontUri    = getString(map, "ontUri")
 
-    Created(createUser(userName, firstName, lastName, password, ontUri))
+    Created(createUser(userName, firstName, lastName, password, email, ontUri))
   }
 
   post("/chkpw") {
@@ -125,14 +126,14 @@ class UserController(implicit setup: Setup) extends BaseController
     grater[PendUserResult].toCompactJSON(res)
   }
 
-  def createUser(userName: String, firstName: String, lastName: String, password: String,
+  def createUser(userName: String, firstName: String, lastName: String, password: String, email: String,
                  ontUri: Option[String] = None) = {
 
     val encPassword = userAuth.encryptPassword(password)
 
     usersDAO.findOneById(userName) match {
       case None =>
-        val obj = db.User(userName, firstName, lastName, encPassword, ontUri)
+        val obj = db.User(userName, firstName, lastName, encPassword, email, ontUri)
 
         Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
           case Success(r) => UserResult(userName, registered = Some(obj.registered))
@@ -156,7 +157,7 @@ class UserController(implicit setup: Setup) extends BaseController
         logger.debug("creating 'admin' user")
         val password = setup.config.getString("admin.password")
         val encPassword = userAuth.encryptPassword(password)
-        val obj = db.User(admin, "Adm", "In", encPassword)
+        val obj = db.User(admin, "Adm", "In", encPassword, setup.config.getString("admin.email"))
 
         Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
           case Success(r) =>

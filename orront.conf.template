@@ -5,6 +5,7 @@
 
 admin {
   password = admin
+  email    = "admin@example.org"
 }
 
 mongo {

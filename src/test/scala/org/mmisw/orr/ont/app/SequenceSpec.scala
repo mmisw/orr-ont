@@ -63,6 +63,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
   val map = Map(
     "userName"  -> userName,
+    "email"     -> "foo@example.net",
     "firstName" -> "myFirstName",
     "lastName"  -> "myLastName",
     "password"  -> password)
@@ -90,6 +91,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
     val map2 = Map(
       "userName"  -> userName2,
+      "email"     -> "foo@example.net",
       "firstName" -> "myFirstName",
       "lastName"  -> "myLastName",
       "password"  -> password2)

@@ -8,7 +8,6 @@ import org.mmisw.orr.ont.{db, UserResult, PendUserResult, Setup}
 
 import scala.util.{Failure, Success, Try}
 
-
 /**
  * User service
  */
@@ -27,20 +26,26 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
     }
   }
 
+  def existsUser(userName: String): Boolean = usersDAO.findOneById(userName).isDefined
+
   /**
    * Creates a new user.
    */
-  def createUser(userName: String, emailOpt: Option[String], phoneOpt: Option[String],
-                 firstName: String, lastName: String, password: String,
+  def createUser(userName: String, email: String, phoneOpt: Option[String],
+                 firstName: String, lastName: String, password: Either[String,String],
                  ontUri: Option[String], registered: DateTime = DateTime.now()) = {
 
     usersDAO.findOneById(userName) match {
       case None =>
         validateUserName(userName)
-        validateEmail(emailOpt)
+        validateEmail(email)
         validatePhone(phoneOpt)
 
-        val user = User(userName, firstName, lastName, password, emailOpt, ontUri, phoneOpt, registered)
+        val encPassword = password.fold(
+          clearPass => userAuth.encryptPassword(clearPass),
+          encPass   => encPass
+        )
+        val user = User(userName, firstName, lastName, encPassword, email, ontUri, phoneOpt, registered)
 
         Try(usersDAO.insert(user, WriteConcern.Safe)) match {
           case Success(_) =>
@@ -57,11 +62,12 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
   /**
    * Updates a user.
    */
-  def updateUserVersion(userName: String, map: Map[String,String]) = {
+  def updateUser(userName: String, map: Map[String,String], updated: Option[DateTime] = None) = {
+
     var update = getUser(userName)
 
     if (map.contains("email")) {
-      update = update.copy(email = map.get("email"))
+      update = update.copy(email = map.get("email").get)
     }
     if (map.contains("phone")) {
       update = update.copy(phone = map.get("phone"))
@@ -72,17 +78,21 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
     if (map.contains("lastName")) {
       update = update.copy(lastName = map.get("lastName").get)
     }
+
     if (map.contains("password")) {
-      val password = map.get("password").get
-      val encPassword = userAuth.encryptPassword(password)
+      val encPassword = userAuth.encryptPassword(map.get("password").get)
       update = update.copy(password = encPassword)
     }
+    else if (map.contains("encPassword")) {
+      update = update.copy(password = map.get("encPassword").get)
+    }
+
     if (map.contains("ontUri")) {
       update = update.copy(ontUri = map.get("ontUri"))
     }
-    val updated = Some(DateTime.now())
-    update = update.copy(updated = updated)
-    logger.info(s"updating user with: $update")
+
+    updated foreach {u => update = update.copy(updated = Some(u))}
+    //logger.debug(s"updating user with: $update")
 
     Try(usersDAO.update(MongoDBObject("_id" -> userName), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
@@ -125,7 +135,7 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
   }
 
   // TODO validate email
-  private def validateEmail(emailOpt: Option[String]) {
+  private def validateEmail(email: String) {
   }
 
   // TODO validate phone
@@ -140,9 +150,10 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
     usersDAO.findOneById(admin) match {
       case None =>
         logger.debug("creating 'admin' user")
-        val password = setup.config.getString("admin.password")
+        val password    = setup.config.getString("admin.password")
         val encPassword = userAuth.encryptPassword(password)
-        val obj = db.User(admin, "Adm", "In", encPassword)
+        val email       = setup.config.getString("admin.email")
+        val obj = db.User(admin, "Adm", "In", encPassword, email)
 
         Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
           case Success(r) =>
