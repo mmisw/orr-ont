@@ -26,10 +26,23 @@ object Aqua extends App {
 
   println(s"Loaded ${onts.size} ontologies")
 
+  println("USER ONTOLOGIES:")
   val userOnts = TreeMap(onts.groupBy(_._2.user_id).toArray: _*)
 
   userOnts foreach { case (user_id, elems) =>
     println(f"    user $user_id - ${users(user_id).username}%-20s - ${elems.size}%3d submissions")
+  }
+
+  println("ALL ONTOLOGIES/VERSIONS:")
+  onts.values foreach(o => println(o))
+
+  val byUri = onts.groupBy(_._2.uri)
+
+  val uriVersionCounter = byUri.toArray.map{case (uri, versions) => (uri, versions.size)}.sortBy(-_._2)
+
+  println(s"${uriVersionCounter.size} ONTOLOGY URIs:")
+  uriVersionCounter foreach { case (uri, versionCounter) =>
+    println(f"    $uri%-60s - $versionCounter%3d versions")
   }
 
   setup.destroy()
@@ -106,7 +119,7 @@ object Aqua extends App {
       val map: Map[String,String] = {
         val gotRowCols: Seq[String] = (row \ "td") map(_.text.trim)
         assert(gotRowCols.length == fieldNames.length)
-        val values = fixDates(fieldNames, gotRowCols, "date_created")
+        val values = fixDates(fieldNames, gotRowCols, Seq("date_created"))
         Map(fieldNames zip values: _*)
       }
 
@@ -178,7 +191,7 @@ object Aqua extends App {
                            // documentation
                            // publication
 
-                           urn:               String,
+                           uri:               String,
 
                            // coding_scheme
                            //is_foundry
@@ -215,7 +228,7 @@ object Aqua extends App {
         "is_foundry"
     )
 
-    val ignoreFieldNames = List(
+    val dropFieldNames = List(
         "internal_version_number",
         "is_remote",
         "is_reviewed",
@@ -231,14 +244,14 @@ object Aqua extends App {
         "is_foundry"
     )
 
-    val fieldNames = allFieldNames.filterNot(ignoreFieldNames.contains(_))
+    val fieldNames = allFieldNames.filterNot(dropFieldNames.contains)
 
     def apply(row: Node): VNcboOntology = {
       val map: Map[String,String] = {
         val gotRowCols: Seq[String] = (row \ "td") map(_.text.trim)
         assert(gotRowCols.length == allFieldNames.length)
-        val values = ignore(allFieldNames, gotRowCols, ignoreFieldNames:_*)
-        val valuesFixed = fixDates(allFieldNames, values, "date_created")
+        val values = dropFields(allFieldNames, gotRowCols, dropFieldNames)
+        val valuesFixed = fixDates(fieldNames, values, Seq("date_created"))
         Map(fieldNames zip valuesFixed: _*)
       }
 
@@ -256,22 +269,25 @@ object Aqua extends App {
         urn
       ) = fieldNames.map(map.get(_).get)
 
+      // remove version_number for the uri:
+      val uri = urn.replace(s"/$version_number/", "/")
+
       VNcboOntology(
         id,
         ontology_id,
         user_id,
         version_number,
-        version_status,
+        if (version_status == "null") "" else version_status,
         file_path,
         status_id,
         date_created,
         display_label,
         contact_name,
-        urn,
+        uri,
 
         // map for ontService
         Map(
-          "uri" -> urn // more TODO
+          "uri" -> uri // more TODO
         )
       )
     }
@@ -284,15 +300,15 @@ object Aqua extends App {
     }
   }
 
-  /** returns the vals but without the values corresponding to ignoreCols */
-  private def ignore(header: Seq[String], vals: Seq[String], ignoreCols: String*): Seq[String] = {
-    val z: Seq[(String,String)] = header zip vals
-    z.filterNot { case (h, value) => ignoreCols.contains(h) } map (_._2)
+  /** returns the values but without the ones corresponding to dropFieldNames */
+  private def dropFields(header: Seq[String], values: Seq[String], dropFieldNames: Seq[String]): Seq[String] = {
+    val z: Seq[(String,String)] = header zip values
+    z.filterNot { case (h, value) => dropFieldNames.contains(h) } map (_._2)
   }
 
   /** fix the given dates so they can get parsed to DateTime */
-  private def fixDates(header: Seq[String], vals: Seq[String], dates: String*): Seq[String] = {
-    val z: Seq[(String,String)] = header zip vals
+  private def fixDates(header: Seq[String], values: Seq[String], dates: Seq[String]): Seq[String] = {
+    val z: Seq[(String,String)] = header zip values
     z.map { case (h, value) => if (dates.contains(h)) value.replaceAll(" ", "T") + "Z" else value }
   }
 
