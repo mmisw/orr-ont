@@ -64,10 +64,10 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     }
 
     // ok, go ahead with registration
-    val (fileItem, format) = getFileAndFormat
+    val (contents, format) = getContentsAndFormat
     val (version, date) = getVersion
 
-    Created(createOntology(uri, name, version, date, fileItem, orgName))
+    Created(createOntology(uri, name, version, date, contents, orgName))
   }
 
   /*
@@ -137,10 +137,14 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
 
   ///////////////////////////////////////////////////////////////////////////
 
-  private def createOntology(uri: String, name: String, version: String, date: String,
-                             fileItem: FileItem, orgName: String) = {
+  private case class Contents(fileItem: FileItem) extends AnyRef with OntContents {
+    override def write(destFile: File) { fileItem.write(destFile)}
+  }
 
-    Try(ontService.createOntology(uri, name, version, date, user.userName, orgName, fileItem, format)) match {
+  private def createOntology(uri: String, name: String, version: String, date: String,
+                             contents: Contents, orgName: String) = {
+
+    Try(ontService.createOntology(uri, name, version, date, user.userName, orgName, contents, format)) match {
       case Success(ontologyResult) => ontologyResult
 
       case Failure(exc: InvalidUri) => error(400, exc.details)
@@ -206,7 +210,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     }
   }
 
-  private def getFileAndFormat = {
+  private def getContentsAndFormat = {
     val fileItem = fileParams.getOrElse("file", missing("file"))
 
     // todo make format param optional
@@ -216,7 +220,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     //val fileContents = new String(fileItem.get(), fileItem.charset.getOrElse("utf8"))
     //val contentType = file.contentType.getOrElse("application/octet-stream")
 
-    (fileItem, format)
+    (Contents(fileItem), format)
   }
 
   private def getVersion = {
@@ -232,10 +236,10 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
    */
   private def createOntologyVersion(uri: String, user: db.User) = {
     val nameOpt = params.get("name")
-    val (fileItem, format) = getFileAndFormat
+    val (contents, format) = getContentsAndFormat
     val (version, date) = getVersion
 
-    Try(ontService.createOntologyVersion(uri, nameOpt, user.userName, version, date, fileItem, format)) match {
+    Try(ontService.createOntologyVersion(uri, nameOpt, user.userName, version, date, contents, format)) match {
       case Success(ontologyResult) => ontologyResult
 
       case Failure(exc: NoSuch)                       => error(404, exc.details)
