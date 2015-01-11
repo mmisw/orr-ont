@@ -25,11 +25,13 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
     }
   }
 
+  def existsOrg(orgName: String): Boolean = orgsDAO.findOneById(orgName).isDefined
+
   /**
    * Creates a new org.
    */
   def createOrg(orgName: String, name: String, members: List[String],
-                  ontUri: Option[String]) = {
+                  ontUri: Option[String] = None) = {
 
     orgsDAO.findOneById(orgName) match {
       case None =>
