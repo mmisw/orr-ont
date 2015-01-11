@@ -60,7 +60,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
         error(400, s"'$orgName' invalid organization")
 
       case Some(org) =>
-        verifyAuthenticatedUser(org.members :+ "admin": _*)
+        verifyAuthenticatedUser(org.members + "admin")
     }
 
     // ok, go ahead with registration
@@ -87,7 +87,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
             bug(s"org '$orgName' should exist")
 
           case Some(org) =>
-            verifyAuthenticatedUser(org.members :+ "admin": _*)
+            verifyAuthenticatedUser(org.members + "admin")
         }
 
       case None =>
@@ -117,7 +117,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
         orgsDAO.findOneById(orgName) match {
           case None => bug(s"org '$orgName' should exist")
 
-          case Some(org) => verifyAuthenticatedUser(org.members :+ "admin": _*)
+          case Some(org) => verifyAuthenticatedUser(org.members + "admin")
         }
 
       case None =>

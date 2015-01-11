@@ -19,7 +19,7 @@ case class OrgResult(
             registered:  Option[DateTime] = None,
             updated:     Option[DateTime] = None,
             removed:     Option[DateTime] = None,
-            members:     List[String] = List.empty)
+            members:     Set[String] = Set.empty)
 
 case class PendOrgResult(
             orgName:     String,

@@ -34,6 +34,6 @@ case class Organization(
             @Key("_id") orgName:   String,
             name:                  String,
             ontUri:                Option[String] = None,
-            members:               List[String] = List.empty,
+            members:               Set[String] = Set.empty,
             registered:            DateTime = DateTime.now(),
             updated:               Option[DateTime] = None)

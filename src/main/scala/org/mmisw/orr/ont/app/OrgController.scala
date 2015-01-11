@@ -51,7 +51,7 @@ class OrgController(implicit setup: Setup) extends BaseController
     val orgName = require(map, "orgName")
     val name = require(map, "name")
     val ontUri = getString(map, "ontUri")
-    val members = getSeq(map, "members")
+    val members = getSeq(map, "members").toSet
 
     Created(createOrg(orgName, name, members, ontUri))
   }
@@ -64,7 +64,7 @@ class OrgController(implicit setup: Setup) extends BaseController
     val orgName = require(params, "orgName")
     val org = getOrg(orgName)
 
-    verifyAuthenticatedUser(org.members :+ "admin": _*)
+    verifyAuthenticatedUser(org.members + "admin")
 
     val map = body()
     var update = org
@@ -76,7 +76,7 @@ class OrgController(implicit setup: Setup) extends BaseController
       update = update.copy(ontUri = Some(require(map, "ontUri")))
     }
     if (map.contains("members")) {
-      val members = getSeq(map, "members")
+      val members = getSeq(map, "members").toSet
       members foreach verifyUser
       update = update.copy(members = members)
     }
@@ -107,7 +107,7 @@ class OrgController(implicit setup: Setup) extends BaseController
 
   ///////////////////////////////////////////////////////////////////////////
 
-  def createOrg(orgName: String, name: String, members: List[String], ontUri: Option[String] = None) = {
+  def createOrg(orgName: String, name: String, members: Set[String], ontUri: Option[String] = None) = {
     orgsDAO.findOneById(orgName) match {
       case None =>
         members foreach verifyUser

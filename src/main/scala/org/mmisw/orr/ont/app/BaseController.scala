@@ -18,6 +18,11 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
     if (!userNames.contains(user.userName)) halt(403, s"unauthorized")
   }
 
+  protected def verifyAuthenticatedUser(userNames: Set[String]) {
+    basicAuth
+    if (!userNames.contains(user.userName)) halt(403, s"unauthorized")
+  }
+
   protected def getUser(userName: String): db.User = {
     usersDAO.findOneById(userName).getOrElse(
       error(404, s"'$userName' user is not registered"))
