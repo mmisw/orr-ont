@@ -249,7 +249,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
       case Some(org) =>
         if (!org.members.contains(userName)) throw NotAMember(userName, orgName)
 
-      case None => throw Bug(s"'$orgName' organization must exist")
+      case None => throw NoSuchOrg(orgName)
     }
   }
 
