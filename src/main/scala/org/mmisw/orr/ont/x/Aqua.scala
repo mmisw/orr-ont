@@ -4,7 +4,7 @@ import java.io.File
 
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.Setup
-import org.mmisw.orr.ont.service.UserService
+import org.mmisw.orr.ont.service.{OrgService, OntContents, OntService, UserService}
 
 import scala.collection.immutable.TreeMap
 import scala.xml.{NodeSeq, Node, XML}
@@ -17,24 +17,28 @@ object Aqua extends App {
 
   implicit val setup = new Setup("/etc/orront.conf")
   val userService = new UserService
+  val orgService = new OrgService
+  val ontService = new OntService
 
-//  val users = NcboUser.getUsers
-  val users = NcboUser.loadEntities("src/main/resources/ncbo_user.html")
+//  val users = AquaUser.getUsers
+  val users = AquaUser.loadEntities("src/main/resources/ncbo_user.html")
   //processUsers(users)
 
-  val onts = VNcboOntology.loadEntities("src/main/resources/v_ncbo_ontology.html")
+  val onts = VAquaOntology.loadEntities("src/main/resources/v_ncbo_ontology.html")
 
   println(s"Loaded ${onts.size} ontologies")
 
-  println("USER ONTOLOGIES:")
   val userOnts = TreeMap(onts.groupBy(_._2.user_id).toArray: _*)
 
-  userOnts foreach { case (user_id, elems) =>
-    println(f"    user $user_id - ${users(user_id).username}%-20s - ${elems.size}%3d submissions")
-  }
+  println("USER ONTOLOGIES:")
+//  userOnts foreach { case (user_id, elems) =>
+//    println(f"    user $user_id - ${users(user_id).username}%-20s - ${elems.size}%3d submissions")
+//  }
 
+/*
   println("ALL ONTOLOGIES/VERSIONS:")
   onts.values foreach(o => println(o))
+*/
 
   val byUri = onts.groupBy(_._2.uri)
 
@@ -45,12 +49,21 @@ object Aqua extends App {
     println(f"    $uri%-60s - $versionCounter%3d versions")
   }
 
+  val orgName = "mmitest"
+  val uri = "http://mmisw.org/ont/mmitest/parenthesis"
+  val uriOnts = byUri(uri)
+  if (!orgService.existsOrg(orgName)) {
+    orgService.createOrg(orgName, orgName, List("carueda"))
+  }
+
+  processOntUri(uri, orgName, uriOnts)
+
   setup.destroy()
 
   ///////////////////////////////////////////////////////////////////////////
 
   /** creates/updates the given users */
-  private def processUsers(users: Map[String,NcboUser]) = {
+  private def processUsers(users: Map[String,AquaUser]) = {
     var (created, updated) = (0, 0)
     users foreach { case (id,u) =>
       if (u.username != "admin") {
@@ -71,8 +84,42 @@ object Aqua extends App {
     println(s"==> ${users.size} users processed: $created created, $updated updated")
   }
 
+  /** creates/updates the submissions of a given ont URI */
+  private def processOntUri(uri: String, orgName: String, onts: Map[String,VAquaOntology]) = {
+
+    val contents: OntContents = new OntContents { override def write(destFile: File) { println(s"(fake contents write to ${destFile.getAbsolutePath}")} }
+    val format = "TODO-format"
+
+    val byVersion = Map(onts.map{case(_,o) => (o.version_number, o)}.toArray: _*)
+    val sortedVersions = byVersion.keys.toSeq.sorted
+    println(s"Processing ${byVersion.size} submissions of URI=$uri.  versions=$sortedVersions")
+
+    // register entry (first submission)
+    sortedVersions.headOption foreach { version =>
+      val o = byVersion(version)
+      println(f"registering ontology version=${o.version_number} - '${o.display_label}'")
+      ontService.createOntology(
+        o.uri, o.display_label, o.version_number, o.date_created,
+        users.get(o.user_id).get.username, orgName,
+        contents, format)
+    }
+
+    // register the other submissions
+    sortedVersions.drop(1) foreach { version =>
+      val o = byVersion(version)
+      println(f"registering ontology version=$version - '${o.display_label}'")
+      val date = o.date_created
+
+      ontService.createOntologyVersion(
+        o.uri, Some(o.display_label), users.get(o.user_id).get.username,
+        o.version_number, o.date_created, contents, format
+        )
+    }
+    println(s"==> ${byVersion.size} submissions processed")
+  }
+
   trait EntityLoader {
-    type EntityType <: NcboEntity
+    type EntityType <: AquaEntity
     val allFieldNames: List[String]
     def apply(row: Node): EntityType
 
@@ -95,10 +142,10 @@ object Aqua extends App {
     }
   }
 
-  sealed abstract class NcboEntity {
+  sealed abstract class AquaEntity {
     val id: String
   }
-  case class NcboUser(id:           String,
+  case class AquaUser(id:           String,
                       username:     String,
                       password:     String,
                       email:        String,
@@ -107,15 +154,15 @@ object Aqua extends App {
                       phone:        String,
                       date_created: String,
 
-                      map:          Map[String,String])  extends NcboEntity
+                      map:          Map[String,String])  extends AquaEntity
 
-  object NcboUser extends EntityLoader {
-    type EntityType = NcboUser
+  object AquaUser extends EntityLoader {
+    type EntityType = AquaUser
 
     val allFieldNames = List("id", "username", "password", "email", "firstname", "lastname", "phone", "date_created")
     val fieldNames = allFieldNames
 
-    def apply(row: Node): NcboUser = {
+    def apply(row: Node): AquaUser = {
       val map: Map[String,String] = {
         val gotRowCols: Seq[String] = (row \ "td") map(_.text.trim)
         assert(gotRowCols.length == fieldNames.length)
@@ -125,7 +172,7 @@ object Aqua extends App {
 
       val List(id, username, password, email, firstname, lastname, phone, date_created) = fieldNames.map(map.get(_).get)
 
-      NcboUser(
+      AquaUser(
         id,
         username,
         password,
@@ -148,7 +195,7 @@ object Aqua extends App {
       )
     }
 
-    def getUsers: Map[String,NcboUser] = {
+    def getUsers: Map[String,AquaUser] = {
 
       val xmlIn = XML.loadFile("src/main/resources/ncbo_user.html")
 
@@ -156,11 +203,11 @@ object Aqua extends App {
       assert(gotHeaderCols == fieldNames)
 
       val valueRows: NodeSeq = (xmlIn \\ "tr").drop(1)  // drop the header of course
-      TreeMap(valueRows map NcboUser.apply map (u => (u.id, u)):_*)
+      TreeMap(valueRows map AquaUser.apply map (u => (u.id, u)):_*)
     }
   }
 
-  case class VNcboOntology(id:                String,
+  case class VAquaOntology(id:                String,
                            ontology_id:       String,
                            user_id:           String,
 
@@ -196,10 +243,10 @@ object Aqua extends App {
                            // coding_scheme
                            //is_foundry
 
-                           map:               Map[String,String]) extends NcboEntity
+                           map:               Map[String,String]) extends AquaEntity
 
-  object VNcboOntology extends EntityLoader {
-    type EntityType = VNcboOntology
+  object VAquaOntology extends EntityLoader {
+    type EntityType = VAquaOntology
 
     val allFieldNames = List(
         "id",
@@ -246,7 +293,7 @@ object Aqua extends App {
 
     val fieldNames = allFieldNames.filterNot(dropFieldNames.contains)
 
-    def apply(row: Node): VNcboOntology = {
+    def apply(row: Node): VAquaOntology = {
       val map: Map[String,String] = {
         val gotRowCols: Seq[String] = (row \ "td") map(_.text.trim)
         assert(gotRowCols.length == allFieldNames.length)
@@ -272,7 +319,7 @@ object Aqua extends App {
       // remove version_number for the uri:
       val uri = urn.replace(s"/$version_number/", "/")
 
-      VNcboOntology(
+      VAquaOntology(
         id,
         ontology_id,
         user_id,
