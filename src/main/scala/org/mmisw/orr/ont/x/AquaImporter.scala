@@ -20,42 +20,24 @@ object AquaImporter extends App {
   val orgService = new OrgService
   val ontService = new OntService
 
-  val users = AquaUser.loadEntities("src/main/resources/ncbo_user.html")
-  //processUsers(users)
+  userService.deleteAll()
+  orgService.deleteAll()
+  ontService.deleteAll()
 
+  val users = AquaUser.loadEntities("src/main/resources/ncbo_user.html")
   val onts = VAquaOntology.loadEntities("src/main/resources/v_ncbo_ontology.html")
 
-  println(s"Loaded ${onts.size} ontologies")
-
-  val userOnts = TreeMap(onts.groupBy(_._2.user_id).toArray: _*)
-
-  println("USER ONTOLOGIES:")
-//  userOnts foreach { case (user_id, elems) =>
-//    println(f"    user $user_id - ${users(user_id).username}%-20s - ${elems.size}%3d submissions")
-//  }
-
-/*
-  println("ALL ONTOLOGIES/VERSIONS:")
-  onts.values foreach(o => println(o))
-*/
-
   val byUri = onts.groupBy(_._2.uri)
+  val orgNames = getOrgNames(byUri.keys)
+  val orgFirstSubmissions = Map(orgNames.map(o => (o, scala.collection.mutable.HashSet[DateTime]())).toArray: _*)
 
-  val uriVersionCounter = byUri.toArray.map{case (uri, versions) => (uri, versions.size)}.sortBy(-_._2)
+  println(s"Loaded: users=${users.size} onts=${onts.size}")
+  println(s"Extracted ${orgNames.size} orgNames")
 
-  println(s"${uriVersionCounter.size} ONTOLOGY URIs:")
-  uriVersionCounter foreach { case (uri, versionCounter) =>
-    println(f"    $uri%-60s - $versionCounter%3d versions")
-  }
-
-  val orgName = "mmitest"
-  val uri = "http://mmisw.org/ont/mmitest/parenthesis"
-  val uriOnts = byUri(uri)
-  if (!orgService.existsOrg(orgName)) {
-    orgService.createOrg(orgName, orgName, List("carueda"))
-  }
-
-  processOntUri(uri, orgName, uriOnts)
+  processUsers(users)
+  processOrgs(orgNames)
+  processOnts(byUri)
+  postProcessOrgs()
 
   setup.destroy()
 
@@ -63,40 +45,101 @@ object AquaImporter extends App {
 
   /** creates/updates the given users */
   private def processUsers(users: Map[String,AquaUser]) = {
-    var (created, updated) = (0, 0)
+    println("USERS:")
     users foreach { case (id,u) =>
       if (u.username != "admin") {
+        println(f"\t${u.username}%-20s - ${u.email}")
         if (userService.existsUser(u.username)) {
-          println(f"updating ${u.id}%-5s - ${u.username}%-20s - ${u.email}")
           userService.updateUser(u.username, u.map)  // don't set any 'updated'
-          updated += 1
         }
         else {
-          println(f"creating ${u.id}%-5s - ${u.username}%-20s - ${u.email}")
           userService.createUser(
             u.username, u.email, Some(u.phone), u.firstname, u.lastname,
             Right(u.password), None, DateTime.parse(u.date_created))
-          created += 1
         }
       }
     }
-    println(s"==> ${users.size} users processed: $created created, $updated updated")
   }
 
-  /** creates/updates the submissions of a given ont URI */
-  private def processOntUri(uri: String, orgName: String, onts: Map[String,VAquaOntology]) = {
+  private def getOrgNameFromUri(uri: String): String = {
+    val re = """http://mmisw\.org/ont/([^/]+)/.*""".r
+    uri match {
+      case re(orgName) => orgName
+      case _ => "-"
+    }
+  }
 
-    val contents: OntContents = new OntContents { override def write(destFile: File) { println(s"(fake contents write to ${destFile.getAbsolutePath}")} }
+  private def getOrgNames(uris: Iterable[String]): Seq[String] = {
+    val re = """http://mmisw\.org/ont/([^/]+)/.*""".r
+    uris.foldLeft(Set[String]()) { case (a, u) => a + getOrgNameFromUri(u) }.toSeq.sorted
+  }
+
+  private def processOrgs(orgNames: Seq[String]) {
+    println("ORGS:")
+    orgNames foreach { orgName =>
+      if (!orgService.existsOrg(orgName)) {
+        println(s"\t$orgName")
+        orgService.createOrg(orgName, orgName)
+      }
+    }
+  }
+
+  /**
+   * Resets the registration date of each org to reflect the earliest
+   * ont submission against that org.
+   */
+  private def postProcessOrgs(): Unit = {
+    orgFirstSubmissions foreach {
+      case (orgName, firstSubmissions) if firstSubmissions.nonEmpty =>
+        val earliest = firstSubmissions.minBy(dt => dt.getMillis)
+        orgService.updateOrg(orgName, registered = Some(earliest))
+    }
+  }
+
+  private def addOrgMembers(orgName: String, userNames: Set[String]) {
+    orgService.getOrgOpt(orgName) match {
+      case Some(org) => orgService.updateOrg(orgName, Some(org.members.toSet ++ userNames))
+      case None => println(s"WARNING: '$orgName': organization not found")
+    }
+  }
+
+  private def processOnts(byUri: Map[String, Map[String,VAquaOntology]]): Unit = {
+    println("ONTS:")
+    byUri.keys.toSeq.sorted foreach {uri =>
+      val uriOnts = byUri(uri)
+      val orgName = getOrgNameFromUri(uri)
+      val members = uriOnts.values.map {o:VAquaOntology => users.get(o.user_id).get.username}.toSet
+      addOrgMembers(orgName, members)
+
+      println(s"\t$uri")
+      processOntUri(uri, orgName, uriOnts) foreach (firstSubmission => orgFirstSubmissions(orgName) += firstSubmission)
+    }
+  }
+
+  /** 
+   * Creates all submissions of a given ont URI.
+   * Returns the time of the earliest submission
+   */
+  private def processOntUri(uri: String, orgName: String, onts: Map[String,VAquaOntology]): Option[DateTime] = {
+
+    // TODO process ont files
+    val contents: OntContents = new OntContents {
+      override def write(destFile: File) {
+        //println(s"(fake contents write to ${destFile.getAbsolutePath}")
+      }
+    }
     val format = "TODO-format"
 
     val byVersion = Map(onts.map{case(_,o) => (o.version_number, o)}.toArray: _*)
     val sortedVersions = byVersion.keys.toSeq.sorted
-    println(s"Processing ${byVersion.size} submissions of URI=$uri.  versions=$sortedVersions")
 
+    var firstSubmission: Option[DateTime] = None
+    
     // register entry (first submission)
     sortedVersions.headOption foreach { version =>
       val o = byVersion(version)
-      println(f"registering ontology version=${o.version_number} - '${o.display_label}'")
+      val dateCreated = DateTime.parse(o.date_created)
+      firstSubmission = Some(dateCreated)
       ontService.createOntology(
         o.uri, o.display_label, o.version_number, o.date_created,
         users.get(o.user_id).get.username, orgName,
@@ -106,7 +149,6 @@ object AquaImporter extends App {
     // register the other submissions
     sortedVersions.drop(1) foreach { version =>
       val o = byVersion(version)
-      println(f"registering ontology version=$version - '${o.display_label}'")
       val date = o.date_created
 
       ontService.createOntologyVersion(
@@ -114,9 +156,9 @@ object AquaImporter extends App {
         o.version_number, o.date_created, contents, format
         )
     }
-    println(s"==> ${byVersion.size} submissions processed")
-  }
 
+    firstSubmission
+  }
 }
 
 trait EntityLoader {

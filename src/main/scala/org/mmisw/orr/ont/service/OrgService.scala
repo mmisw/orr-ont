@@ -27,11 +27,16 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
   def existsOrg(orgName: String): Boolean = orgsDAO.findOneById(orgName).isDefined
 
+  def getOrg(orgName: String): Organization = orgsDAO.findOneById(orgName).getOrElse(throw NoSuchOrg(orgName))
+
+  def getOrgOpt(orgName: String): Option[Organization] = orgsDAO.findOneById(orgName)
+
   /**
    * Creates a new org.
    */
-  def createOrg(orgName: String, name: String, members: List[String],
-                  ontUri: Option[String] = None) = {
+  def createOrg(orgName: String, name: String,
+                members: Set[String] = Set.empty,
+                ontUri: Option[String] = None) = {
 
     orgsDAO.findOneById(orgName) match {
       case None =>
@@ -52,9 +57,14 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
   }
 
   /**
-   * Updates a org.
+   * Updates an org.
    */
-  def updateOrgVersion(orgName: String, membersOpt: Option[List[String]], map: Map[String,String]) = {
+  def updateOrg(orgName: String,
+                membersOpt: Option[Set[String]] = None,
+                map: Map[String,String] = Map.empty,
+                registered: Option[DateTime] = None,
+                updated: Option[DateTime] = None) = {
+
     var update = getOrg(orgName)
 
     membersOpt foreach { members =>
@@ -67,9 +77,9 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
     if (map.contains("ontUri")) {
       update = update.copy(ontUri = map.get("ontUri"))
     }
-    val updated = Some(DateTime.now())
-    update = update.copy(updated = updated)
-    logger.info(s"updating org with: $update")
+
+    registered foreach {d => update = update.copy(registered = d)}
+    updated    foreach {d => update = update.copy(updated = Some(d))}
 
     Try(orgsDAO.update(MongoDBObject("_id" -> orgName), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
@@ -80,7 +90,7 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
   }
 
   /**
-   * Deletes a whole org entry.
+   * Deletes an org.
    */
   def deleteOrg(orgName: String) = {
     val org = getOrg(orgName)
@@ -100,14 +110,9 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
   ///////////////////////////////////////////////////////////////////////////
 
-  private def getOrg(orgName: String): Organization = orgsDAO.findOneById(orgName).getOrElse(throw NoSuchOrg(orgName))
-
   private def validateOrgName(orgName: String) {
-    if (orgName.length == 0
-      || !orgName.forall(Character.isJavaIdentifierPart)
-      || !Character.isJavaIdentifierStart(orgName(0))) {
-      throw InvalidOrgName(orgName)
-    }
+    val re = """(\w|-)+""".r
+    re.findFirstIn(orgName).headOption.getOrElse(InvalidOrgName(orgName))
   }
 
 }
