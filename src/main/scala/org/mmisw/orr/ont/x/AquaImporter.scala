@@ -24,8 +24,9 @@ object AquaImporter extends App {
   orgService.deleteAll()
   ontService.deleteAll()
 
-  val users = AquaUser.loadEntities("src/main/resources/ncbo_user.html")
-  val onts = VAquaOntology.loadEntities("src/main/resources/v_ncbo_ontology.html")
+  val users    = AquaUser.loadEntities("src/main/resources/ncbo_user.html")
+  val onts     = VAquaOntology.loadEntities("src/main/resources/v_ncbo_ontology.html")
+  val ontFiles = AquaOntologyFile.loadEntities("src/main/resources/ncbo_ontology_file.html")
 
   val byUri = onts.groupBy(_._2.uri)
   val orgNames = getOrgNames(byUri.keys)
@@ -116,18 +117,26 @@ object AquaImporter extends App {
     }
   }
 
+  private def getOntContents(uri: String, version: String, ont: VAquaOntology): OntContents = {
+    val ontFile = ontFiles.values.find(_.ontology_version_id == ont.id)
+    new OntContents {
+      override def write(destFile: File) {
+        ontFile match {
+          case Some(a) =>
+            println(f"\t\t${ont.file_path}/${a.filename}%-20s --> ${destFile.getAbsolutePath}")
+          case None =>
+            println(s"\t\tWARNING: no ontology file for ${ont.id} version=$version")
+        }
+      }
+    }
+  }
+
   /** 
    * Creates all submissions of a given ont URI.
    * Returns the time of the earliest submission
    */
   private def processOntUri(uri: String, orgName: String, onts: Map[String,VAquaOntology]): Option[DateTime] = {
 
-    // TODO process ont files
-    val contents: OntContents = new OntContents {
-      override def write(destFile: File) {
-        //println(s"(fake contents write to ${destFile.getAbsolutePath}")
-      }
-    }
     val format = "TODO-format"
 
     val byVersion = Map(onts.map{case(_,o) => (o.version_number, o)}.toArray: _*)
@@ -143,7 +152,7 @@ object AquaImporter extends App {
       ontService.createOntology(
         o.uri, o.display_label, o.version_number, o.date_created,
         users.get(o.user_id).get.username, orgName,
-        contents, format)
+        getOntContents(uri, version, o), format)
     }
 
     // register the other submissions
@@ -153,7 +162,7 @@ object AquaImporter extends App {
 
       ontService.createOntologyVersion(
         o.uri, Some(o.display_label), users.get(o.user_id).get.username,
-        o.version_number, o.date_created, contents, format
+        o.version_number, o.date_created, getOntContents(uri, version, o), format
         )
     }
 
@@ -200,6 +209,7 @@ trait EntityLoader {
 sealed abstract class AquaEntity {
   val id: String
 }
+
 case class AquaUser(id:           String,
                     username:     String,
                     password:     String,
@@ -397,5 +407,30 @@ object VAquaOntology extends EntityLoader {
     xml
   }
 }
+
+case class AquaOntologyFile(id:                   String,
+                            ontology_version_id:  String,
+                            filename:             String)  extends AquaEntity
+
+object AquaOntologyFile extends EntityLoader {
+  type EntityType = AquaOntologyFile
+
+  val allFieldNames = List("id", "ontology_version_id", "filename")
+  val fieldNames = allFieldNames
+
+  def apply(row: Node): AquaOntologyFile = {
+    val map: Map[String,String] = {
+      val gotRowCols: Seq[String] = (row \ "td") map(_.text.trim)
+      assert(gotRowCols.length == fieldNames.length)
+      val values = fixDates(fieldNames, gotRowCols, Seq("date_created"))
+      Map(fieldNames zip values: _*)
+    }
+
+    val List(id, ontology_version_id, filename) = fieldNames.map(map.get(_).get)
+
+    AquaOntologyFile(id, ontology_version_id, filename)
+  }
+}
+
 
 
