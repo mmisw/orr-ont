@@ -142,9 +142,9 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
   }
 
   private def createOntology(uri: String, name: String, version: String, date: String,
-                             contents: FileWriter, orgName: String) = {
+                             ontFileWriter: OntFileWriter, orgName: String) = {
 
-    Try(ontService.createOntology(uri, name, version, date, user.userName, orgName, contents, format)) match {
+    Try(ontService.createOntology(uri, name, version, date, user.userName, orgName, ontFileWriter)) match {
       case Success(ontologyResult) => ontologyResult
 
       case Failure(exc: InvalidUri) => error(400, exc.details)
@@ -239,7 +239,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
     val contents = getContentsAndFormat
     val (version, date) = getVersion
 
-    Try(ontService.createOntologyVersion(uri, nameOpt, user.userName, version, date, contents, contents.format)) match {
+    Try(ontService.createOntologyVersion(uri, nameOpt, user.userName, version, date, contents)) match {
       case Success(ontologyResult) => ontologyResult
 
       case Failure(exc: NoSuch)                       => error(404, exc.details)

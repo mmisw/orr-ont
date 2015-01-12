@@ -113,15 +113,15 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
    * Creates a new ontology entry.
    */
   def createOntology(uri: String, name: String, version: String, date: String,
-                    userName: String, orgName: String, ontFileWriter: OntFileWriter, format: String) = {
+                    userName: String, orgName: String, ontFileWriter: OntFileWriter) = {
 
     ontDAO.findOneById(uri) match {
       case None =>
         validateUri(uri)
 
-        writeOntologyFile(uri, version, ontFileWriter, format)
+        writeOntologyFile(uri, version, ontFileWriter)
 
-        val ontVersion = OntologyVersion(name, userName, format, new DateTime(date))
+        val ontVersion = OntologyVersion(name, userName, ontFileWriter.format, new DateTime(date))
         val ont = Ontology(uri, Some(orgName),
           versions = Map(version -> ontVersion))
 
@@ -142,7 +142,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
    */
   def createOntologyVersion(uri: String, nameOpt: Option[String], userName: String,
                             version: String, date: String,
-                            ontFileWriter: OntFileWriter, format: String) = {
+                            ontFileWriter: OntFileWriter) = {
 
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
 
@@ -150,13 +150,13 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     var update = ont
 
-    var ontVersion = OntologyVersion("", userName, format, new DateTime(date))
+    var ontVersion = OntologyVersion("", userName, ontFileWriter.format, new DateTime(date))
 
     nameOpt foreach (name => ontVersion = ontVersion.copy(name = name))
     update = update.copy(versions = ont.versions ++ Map(version -> ontVersion))
 
     logger.info(s"update: $update")
-    writeOntologyFile(uri, version, ontFileWriter, format)
+    writeOntologyFile(uri, version, ontFileWriter)
 
     Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
@@ -263,7 +263,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   }
 
   private def writeOntologyFile(uri: String, version: String,
-                                ontFileWriter: OntFileWriter, format: String) = {
+                                ontFileWriter: OntFileWriter) = {
     require(!uri.contains("|"))
 
     val uriEnc = uri.replace('/', '|')
@@ -272,7 +272,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     if (!versionDir.isDirectory && !versionDir.mkdirs()) {
       throw CannotCreateDirectory(versionDir.getAbsolutePath)
     }
-    val destFilename = s"file.$format"
+    val destFilename = s"file.${ontFileWriter.format}"
     val dest = new File(versionDir, destFilename)
 
     ontFileWriter.write(dest)

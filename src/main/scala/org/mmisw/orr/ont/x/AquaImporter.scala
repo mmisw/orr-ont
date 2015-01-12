@@ -131,7 +131,7 @@ object AquaImporter extends App {
       source.close()
     }
   }
-  private def getOntContents(uri: String, version: String, ont: VAquaOntology): OntFileWriter = {
+  private def getOntFileWriter(uri: String, version: String, ont: VAquaOntology): OntFileWriter = {
 
     val filename = ontFiles.values.find(_.ontology_version_id == ont.id).get.filename
 
@@ -165,23 +165,22 @@ object AquaImporter extends App {
     // register entry (first submission)
     sortedVersions.headOption foreach { version =>
       val o = byVersion(version)
-      val ontContents = getOntContents(uri, version, o)
+      val ontFileWriter = getOntFileWriter(uri, version, o)
       val dateCreated = DateTime.parse(o.date_created)
       firstSubmission = Some(dateCreated)
       ontService.createOntology(
         o.uri, o.display_label, o.version_number, o.date_created,
-        users.get(o.user_id).get.username, orgName,
-        ontContents, ontContents.format)
+        users.get(o.user_id).get.username, orgName, ontFileWriter)
     }
 
     // register the other submissions
     sortedVersions.drop(1) foreach { version =>
       val o = byVersion(version)
-      val ontContents = getOntContents(uri, version, o)
+      val ontFileWriter = getOntFileWriter(uri, version, o)
 
       ontService.createOntologyVersion(
         o.uri, Some(o.display_label), users.get(o.user_id).get.username,
-        o.version_number, o.date_created, ontContents, ontContents.format)
+        o.version_number, o.date_created, ontFileWriter)
     }
 
     firstSubmission
