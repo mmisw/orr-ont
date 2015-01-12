@@ -122,16 +122,22 @@ object AquaImporter extends App {
     }
   }
 
-  private case class MyOntFileWriter(format: String, source: Source) extends OntFileWriter {
+  private case class MyOntFileWriter(format: String, source: Source, version: String, orgName: String) extends OntFileWriter {
     override def write(destFile: File) {
       println(f"\t\twriting contents to ${destFile.getAbsolutePath}")
       val out = new PrintWriter(destFile)
-      source.getLines foreach(line => out.println(line))
+      source.getLines foreach { line =>
+        // trick to convert contents from "versioned" to "unversioned": remove the
+        // version piece from fragments that look like the versioned URI of the ontology:
+        val stripped = line.replaceAll(s"/ont/$orgName/$version/", s"/ont/$orgName/")
+        out.println(stripped)
+      }
       out.close()
       source.close()
     }
   }
-  private def getOntFileWriter(uri: String, version: String, ont: VAquaOntology): OntFileWriter = {
+
+  private def getOntFileWriter(uri: String, version: String, orgName: String, ont: VAquaOntology): OntFileWriter = {
 
     val filename = ontFiles.values.find(_.ontology_version_id == ont.id).get.filename
 
@@ -148,7 +154,7 @@ object AquaImporter extends App {
         io.Source.fromURL(s"$aquaOnt?uri=$uri&version=$version&form=$format")
     }
 
-    MyOntFileWriter(format, source)
+    MyOntFileWriter(format, source, version, orgName)
   }
 
   /** 
@@ -165,7 +171,7 @@ object AquaImporter extends App {
     // register entry (first submission)
     sortedVersions.headOption foreach { version =>
       val o = byVersion(version)
-      val ontFileWriter = getOntFileWriter(uri, version, o)
+      val ontFileWriter = getOntFileWriter(uri, version, orgName, o)
       val dateCreated = DateTime.parse(o.date_created)
       firstSubmission = Some(dateCreated)
       ontService.createOntology(
@@ -176,7 +182,7 @@ object AquaImporter extends App {
     // register the other submissions
     sortedVersions.drop(1) foreach { version =>
       val o = byVersion(version)
-      val ontFileWriter = getOntFileWriter(uri, version, o)
+      val ontFileWriter = getOntFileWriter(uri, version, orgName, o)
 
       ontService.createOntologyVersion(
         o.uri, Some(o.display_label), users.get(o.user_id).get.username,
