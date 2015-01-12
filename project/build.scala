@@ -1,7 +1,8 @@
 import sbt._
 import Keys._
 import org.scalatra.sbt._
-
+import com.earldouglas.xsbtwebplugin.PluginKeys.port
+import com.earldouglas.xsbtwebplugin.WebPlugin.container
 
 object build extends Build {
   val Organization = "org.mmisw"
@@ -49,7 +50,8 @@ object build extends Build {
 
         "org.eclipse.jetty.orbit"    % "javax.servlet"        % "3.0.0.v201112011016" % "container;provided;test" artifacts (Artifact("javax.servlet", "jar", "jar"))
       ),
-      scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature", "-language:_")
+      scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature", "-language:_"),
+      port in container.Configuration := 8081
     )
   )
 }
