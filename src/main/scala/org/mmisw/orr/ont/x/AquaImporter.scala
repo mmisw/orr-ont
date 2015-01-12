@@ -141,8 +141,7 @@ object AquaImporter extends App {
       case Some(aquaUploadsDir) =>
         val fullPath = s"$aquaUploadsDir${ont.file_path}/$filename"
         println(f"\t\tLoading $fullPath")
-        //io.Source.fromFile(fullPath)
-        io.Source.fromString("TODO")
+        io.Source.fromFile(fullPath)
 
       case None =>
         println(f"\t\tLoading $uri version $version")
