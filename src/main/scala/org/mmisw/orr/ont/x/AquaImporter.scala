@@ -1,12 +1,14 @@
 package org.mmisw.orr.ont.x
 
-import java.io.File
+import java.io.{PrintWriter, FileInputStream, FileOutputStream, File}
+import java.net.URL
 
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.Setup
-import org.mmisw.orr.ont.service.{OrgService, OntContents, OntService, UserService}
+import org.mmisw.orr.ont.service.{OrgService, OntFileWriter, OntService, UserService}
 
 import scala.collection.immutable.TreeMap
+import scala.io.Source
 import scala.xml.{NodeSeq, Node, XML}
 
 
@@ -24,9 +26,12 @@ object AquaImporter extends App {
   orgService.deleteAll()
   ontService.deleteAll()
 
-  val users    = AquaUser.loadEntities("src/main/resources/ncbo_user.html")
-  val onts     = VAquaOntology.loadEntities("src/main/resources/v_ncbo_ontology.html")
-  val ontFiles = AquaOntologyFile.loadEntities("src/main/resources/ncbo_ontology_file.html")
+  val importConfig = setup.config.getConfig("import")
+  val users    = AquaUser.loadEntities(importConfig.getString("aquaUsers"))
+  val onts     = VAquaOntology.loadEntities(importConfig.getString("aquaOnts"))
+  val ontFiles = AquaOntologyFile.loadEntities(importConfig.getString("aquaOntFiles"))
+  val aquaUploadsDirOpt = Option(if (importConfig.hasPath("aquaUploadsDir")) importConfig.getString("aquaUploadsDir") else null)
+  val aquaOnt = importConfig.getString("aquaOnt")
 
   val byUri = onts.groupBy(_._2.uri)
   val orgNames = getOrgNames(byUri.keys)
@@ -117,18 +122,34 @@ object AquaImporter extends App {
     }
   }
 
-  private def getOntContents(uri: String, version: String, ont: VAquaOntology): OntContents = {
-    val ontFile = ontFiles.values.find(_.ontology_version_id == ont.id)
-    new OntContents {
-      override def write(destFile: File) {
-        ontFile match {
-          case Some(a) =>
-            println(f"\t\t${ont.file_path}/${a.filename}%-20s --> ${destFile.getAbsolutePath}")
-          case None =>
-            println(s"\t\tWARNING: no ontology file for ${ont.id} version=$version")
-        }
-      }
+  private case class MyOntFileWriter(format: String, source: Source) extends OntFileWriter {
+    override def write(destFile: File) {
+      println(f"\t\twriting contents to ${destFile.getAbsolutePath}")
+      val out = new PrintWriter(destFile)
+      source.getLines foreach(line => out.println(line))
+      out.close()
+      source.close()
     }
+  }
+  private def getOntContents(uri: String, version: String, ont: VAquaOntology): OntFileWriter = {
+
+    val filename = ontFiles.values.find(_.ontology_version_id == ont.id).get.filename
+
+    val format = filename.substring(filename.lastIndexOf(".") + 1)
+
+    val source: Source = aquaUploadsDirOpt match {
+      case Some(aquaUploadsDir) =>
+        val fullPath = s"$aquaUploadsDir${ont.file_path}/$filename"
+        println(f"\t\tLoading $fullPath")
+        //io.Source.fromFile(fullPath)
+        io.Source.fromString("TODO")
+
+      case None =>
+        println(f"\t\tLoading $uri version $version")
+        io.Source.fromURL(s"$aquaOnt?uri=$uri&version=$version&form=$format")
+    }
+
+    MyOntFileWriter(format, source)
   }
 
   /** 
@@ -136,8 +157,6 @@ object AquaImporter extends App {
    * Returns the time of the earliest submission
    */
   private def processOntUri(uri: String, orgName: String, onts: Map[String,VAquaOntology]): Option[DateTime] = {
-
-    val format = "TODO-format"
 
     val byVersion = Map(onts.map{case(_,o) => (o.version_number, o)}.toArray: _*)
     val sortedVersions = byVersion.keys.toSeq.sorted
@@ -147,23 +166,23 @@ object AquaImporter extends App {
     // register entry (first submission)
     sortedVersions.headOption foreach { version =>
       val o = byVersion(version)
+      val ontContents = getOntContents(uri, version, o)
       val dateCreated = DateTime.parse(o.date_created)
       firstSubmission = Some(dateCreated)
       ontService.createOntology(
         o.uri, o.display_label, o.version_number, o.date_created,
         users.get(o.user_id).get.username, orgName,
-        getOntContents(uri, version, o), format)
+        ontContents, ontContents.format)
     }
 
     // register the other submissions
     sortedVersions.drop(1) foreach { version =>
       val o = byVersion(version)
-      val date = o.date_created
+      val ontContents = getOntContents(uri, version, o)
 
       ontService.createOntologyVersion(
         o.uri, Some(o.display_label), users.get(o.user_id).get.username,
-        o.version_number, o.date_created, getOntContents(uri, version, o), format
-        )
+        o.version_number, o.date_created, ontContents, ontContents.format)
     }
 
     firstSubmission
