@@ -1,11 +1,11 @@
 package org.mmisw.orr.ont.x
 
-import java.io.{PrintWriter, FileInputStream, FileOutputStream, File}
-import java.net.URL
+import java.io.{PrintWriter, File}
 
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.Setup
 import org.mmisw.orr.ont.service.{OrgService, OntFileWriter, OntService, UserService}
+import org.mmisw.orr.ont.swld.ontUtil
 
 import scala.collection.immutable.TreeMap
 import scala.io.Source
@@ -135,7 +135,7 @@ object AquaImporter extends App {
 
     val filename = ontFiles.values.find(_.ontology_version_id == ont.id).get.filename
 
-    val format = filename.substring(filename.lastIndexOf(".") + 1)
+    val format = ontUtil.storedFormat(filename.substring(filename.lastIndexOf(".") + 1))
 
     val source: Source = aquaUploadsDirOpt match {
       case Some(aquaUploadsDir) =>
