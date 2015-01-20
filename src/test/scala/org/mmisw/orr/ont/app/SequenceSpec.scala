@@ -21,6 +21,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   addServlet(new UserController, "/user/*")
   addServlet(new OrgController,  "/org/*")
   addServlet(new OntController,  "/ont/*")
+  addServlet(new TripleStoreController,  "/ts/*")
 
   sequential
 
@@ -506,6 +507,72 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
   }
+
+  /////////////////////
+  // triple store
+  /////////////////////
+
+  "Load an ont in triple store (POST /ts)" should {
+    "fail with no credentials" in {
+      post("/ts", Map("uri" -> uri)) {
+        status must_== 401
+      }
+    }
+
+    "fail with regular user credentials" in {
+      post("/ts", Map("uri" -> uri), headers = userHeaders) {
+        status must_== 403
+      }
+    }
+
+    "succeed with admin credentials" in {
+      post("/ts", Map("uri" -> uri), headers = adminHeaders) {
+        status must_== 201
+      }
+    }
+  }
+
+  "Reload an ont in triple store (PUT /ts)" should {
+    "fail with no credentials" in {
+      put("/ts", Map("uri" -> uri)) {
+        status must_== 401
+      }
+    }
+
+    "fail with regular user credentials" in {
+      put("/ts", Map("uri" -> uri), headers = userHeaders) {
+        status must_== 403
+      }
+    }
+
+    "succeed with admin credentials" in {
+      put("/ts", Map("uri" -> uri), headers = adminHeaders) {
+        status must_== 201
+      }
+    }
+  }
+
+  "Unload an ont from triple store (DELETE /ts)" should {
+    "fail with no credentials" in {
+      delete("/ts", Map("uri" -> uri)) {
+        status must_== 401
+      }
+    }
+
+    "fail with regular user credentials" in {
+      delete("/ts", Map("uri" -> uri), headers = userHeaders) {
+        status must_== 403
+      }
+    }
+
+    "succeed with admin credentials" in {
+      delete("/ts", Map("uri" -> uri), headers = adminHeaders) {
+        status must_== 201
+      }
+    }
+  }
+
+  /// continuing with onts specifically...
 
   "Delete an ont version (DELETE /ont)" should {
     "fail with no credentials" in {

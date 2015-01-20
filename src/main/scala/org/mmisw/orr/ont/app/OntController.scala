@@ -7,7 +7,6 @@ import com.mongodb.casbah.Imports._
 import com.novus.salat._
 import com.novus.salat.global._
 import com.typesafe.scalalogging.slf4j.Logging
-import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.db
 import org.mmisw.orr.ont.service._
 import org.mmisw.orr.ont.{PendOntologyResult, Setup}
@@ -21,7 +20,7 @@ import scala.util.{Failure, Success, Try}
  * Controller for the "ont" API.
  */
 @MultipartConfig(maxFileSize = 5*1024*1024)
-class OntController(implicit setup: Setup, ontService: OntService) extends BaseController
+class OntController(implicit setup: Setup, ontService: OntService) extends BaseOntController
       with FileUploadSupport with Logging {
 
   //configureMultipartHandling(MultipartConfig(maxFileSize = Some(5 * 1024 * 1024)))
@@ -191,22 +190,6 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseC
       val (file, actualFormat) = getOntologyFile(uri, version, reqFormat)
       contentType = formats(actualFormat)
       file
-    }
-  }
-
-  private def resolveOntology(uri: String, versionOpt: Option[String]): (Ontology, OntologyVersion, String) = {
-    Try(ontService.resolveOntology(uri, versionOpt)) match {
-      case Success(res) => res
-      case Failure(exc: NoSuch) => error(404, exc.details)
-      case Failure(exc) => error(500, exc.getMessage)
-    }
-  }
-
-  private def getOntologyFile(uri: String, version: String, reqFormat: String): (File, String) = {
-    Try(ontService.getOntologyFile(uri, version, reqFormat)) match {
-      case Success(res) => res
-      case Failure(exc: NoSuchOntFormat) => error(406, exc.details)
-      case Failure(exc) => error(500, exc.getMessage)
     }
   }
 
