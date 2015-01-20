@@ -5,6 +5,7 @@ import java.io.File
 import com.typesafe.scalalogging.slf4j.Logging
 import org.json4s._
 import org.json4s.native.JsonMethods._
+import org.mmisw.orr.ont.auth.authUtil
 import org.mmisw.orr.ont.service.OntService
 import org.mmisw.orr.ont._
 import org.scalatra.test.specs2._
@@ -71,7 +72,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
   val userName2 = newUserName() // to test DELETE and other opers
   val password2 = "pass2"
-  val user2Headers = Map("Authorization" -> basicCredentials(userName2, password2))
+  val user2Headers = Map("Authorization" -> authUtil.basicCredentials(userName2, password2))
 
   "Create new users (POST /user)" should {
     "fail with no credentials" in {
@@ -134,7 +135,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
   }
 
-  val userCredentials = basicCredentials(userName, password)
+  val userCredentials = authUtil.basicCredentials(userName, password)
   val userHeaders = Map("Authorization" -> userCredentials)
 
   "Update a user (PUT /user/:userName)" should {
@@ -269,7 +270,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
 
     "fail with non-member credentials" in {
-      val userCredentials = basicCredentials(userName2, password2)
+      val userCredentials = authUtil.basicCredentials(userName2, password2)
       val headers = Map("content-type" -> "application/json", "Authorization" -> userCredentials)
       put(s"/org/$orgName", body = pretty(render("ontUri" -> "updated.ontUri")),
         headers = headers) {
