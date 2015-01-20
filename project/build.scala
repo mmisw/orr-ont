@@ -16,10 +16,13 @@ object build extends Build {
   val salatVersion      = "1.9.5"
   val jenaVersion       = "2.11.1"
 
+  private val graphSettings = net.virtualvoid.sbt.graph.Plugin.graphSettings
+
   lazy val project = Project (
     "orr-ont",
     file("."),
-    settings = Defaults.defaultSettings ++ ScalatraPlugin.scalatraWithJRebel ++ Seq(
+    settings = Defaults.defaultSettings ++ ScalatraPlugin.scalatraWithJRebel ++ graphSettings ++
+      Seq(
       organization := Organization,
       name := Name,
       version := Version,
