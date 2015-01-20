@@ -46,6 +46,8 @@ object build extends Build {
 
         "org.jasypt"                 % "jasypt"               % "1.9.1",
 
+        "net.databinder.dispatch"   %% "dispatch-core"        % "0.11.2",
+
         "ch.qos.logback"             % "logback-classic"      % "1.0.6" % "runtime",
 
         // if creating standalone, uncomment code in JettyLauncher and set "container;compile" here:

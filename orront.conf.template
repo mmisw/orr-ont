@@ -25,3 +25,11 @@ mongo {
 files {
     baseDirectory = /Users/carueda/orr-ont-base-directory
 }
+
+agraph {
+  orrEndpoint = ".../repositories/mmiorr"
+  userName    = "?"
+  password    = "?"
+}
+
+

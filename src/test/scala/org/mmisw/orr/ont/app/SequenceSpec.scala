@@ -528,7 +528,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
     "succeed with admin credentials" in {
       post("/ts", Map("uri" -> uri), headers = adminHeaders) {
-        status must_== 201
+        status must_== 200
       }
     }
   }
@@ -548,7 +548,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
     "succeed with admin credentials" in {
       put("/ts", Map("uri" -> uri), headers = adminHeaders) {
-        status must_== 201
+        status must_== 200
       }
     }
   }
@@ -568,7 +568,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
     "succeed with admin credentials" in {
       delete("/ts", Map("uri" -> uri), headers = adminHeaders) {
-        status must_== 201
+        status must_== 200
       }
     }
   }
