@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.slf4j.Logging
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.mmisw.orr.ont.auth.authUtil
-import org.mmisw.orr.ont.service.OntService
+import org.mmisw.orr.ont.service.{TripleStoreServiceAgRest, OntService}
 import org.mmisw.orr.ont._
 import org.scalatra.test.specs2._
 
@@ -18,6 +18,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   import org.json4s.JsonDSL._
 
   implicit val ontService = new OntService
+  implicit val tsService = new TripleStoreServiceAgRest
 
   addServlet(new UserController, "/user/*")
   addServlet(new OrgController,  "/org/*")

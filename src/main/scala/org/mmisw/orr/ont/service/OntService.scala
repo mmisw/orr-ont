@@ -30,7 +30,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
    * @param versionOpt  optional version. If None, latest version is returned
    * @return            (ont, ontVersion, version)
    */
-  def resolveOntology(uri: String, versionOpt: Option[String]): (Ontology, OntologyVersion, String) = {
+  def resolveOntology(uri: String, versionOpt: Option[String] = None): (Ontology, OntologyVersion, String) = {
 
     val ont = getOnt(uri)
 

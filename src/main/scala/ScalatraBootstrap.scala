@@ -2,7 +2,7 @@ import com.typesafe.scalalogging.slf4j.Logging
 import java.util.ServiceConfigurationError
 import org.mmisw.orr.ont._
 import org.mmisw.orr.ont.app._
-import org.mmisw.orr.ont.service.OntService
+import org.mmisw.orr.ont.service.{TripleStoreService, TripleStoreServiceAgRest, OntService}
 import org.scalatra._
 import javax.servlet.ServletContext
 
@@ -22,6 +22,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
 
     implicit val setup = new Setup(configFilename)
     implicit val ontService = new OntService
+    implicit val tsService: TripleStoreService = new TripleStoreServiceAgRest
 
     context.mount(new OrgController,           "/api/v0/org/*")
     context.mount(new UserController,          "/api/v0/user/*")
