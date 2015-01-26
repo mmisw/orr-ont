@@ -105,7 +105,7 @@ with Logging {
     val (k, v) = if (setup.config.hasPath("import.aquaUploadsDir"))
       ("file", file.getAbsolutePath)
     else
-      ("uri", uri)
+      ("url", uri)
 
     val userName = setup.config.getString("agraph.userName")
     val password = setup.config.getString("agraph.password")
