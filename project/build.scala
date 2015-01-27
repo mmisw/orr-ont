@@ -31,20 +31,24 @@ object build extends Build {
       libraryDependencies ++= Seq(
         "org.mongodb"               %% "casbah"               % casbahVersion,
         "com.novus"                 %% "salat"                % salatVersion,
+
         "org.scalatra"              %% "scalatra"             % ScalatraVersion,
         "org.scalatra"              %% "scalatra-specs2"      % ScalatraVersion % "test",
         "org.scalatra"              %% "scalatra-json"        % ScalatraVersion,
         "org.scalatra"              %% "scalatra-auth"        % ScalatraVersion,
+
         "org.json4s"                %% "json4s-native"        % json4Version,
         "org.json4s"                %% "json4s-ext"           % json4Version,
-        "org.json4s"                 % "json4s-jackson_2.10"  % json4Version,
-        "org.json4s"                 % "json4s-mongo_2.10"    % json4Version,
+        "org.json4s"                %% "json4s-jackson"       % json4Version,
+        "org.json4s"                %% "json4s-mongo"         % json4Version,
+
         "org.apache.jena"            % "jena-core"            % jenaVersion,
         "com.github.jsonld-java"     % "jsonld-java-jena"     % "0.3",
-        "com.typesafe"               % "config"               % "1.2.0",
+
+        "com.typesafe"               % "config"               % "1.2.1",
         "com.typesafe"              %% "scalalogging-slf4j"   % "1.0.1",
 
-        "org.jasypt"                 % "jasypt"               % "1.9.1",
+        "org.jasypt"                 % "jasypt"               % "1.9.2",
 
         "net.databinder.dispatch"   %% "dispatch-core"        % "0.11.2",
 
