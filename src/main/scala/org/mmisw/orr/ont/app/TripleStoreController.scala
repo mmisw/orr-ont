@@ -1,5 +1,6 @@
 package org.mmisw.orr.ont.app
 
+import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.slf4j.Logging
 import org.mmisw.orr.ont.Setup
 import org.mmisw.orr.ont.service.{OntService, TripleStoreService}
@@ -21,7 +22,7 @@ with Logging {
   get("/") {
     println(s"params=$params")
     if (setup.testing.isDefined) "9999"
-    else tsService.getSize(params.get("context"))
+    else tsService.getSize(params.get("uri").orElse(params.get("context")))
   }
 
   /*
@@ -29,11 +30,9 @@ with Logging {
    */
   post("/") {
     if (setup.testing.isDefined) "9999"
-    else params.get("uri") match {
-      case Some(uri) => tsService.loadUri(uri, Map(formats.toSeq: _*))
-
-      case None => // TODO load all ontologies?
-        BadRequest(reason = "not loading all ontologies")
+    else {
+      val uri = require(params, "uri")
+      tsService.loadUri(uri, Map(formats.toSeq: _*))
     }
   }
 
@@ -43,23 +42,22 @@ with Logging {
   put("/") {
     if (setup.testing.isDefined) "9999"
     else params.get("uri") match {
-      case Some(uri) => tsService.reloadUri(uri)
-
-      case None => // TODO reload all ontologies?
-        BadRequest(reason = "not reloading all ontologies")
+      case Some(uri) => tsService.reloadUri(uri, Map(formats.toSeq: _*))
+      case None      =>
+        val query = MongoDBObject()  // todo: capture query params
+        var uris = ontService.getOntologyUris(query)
+        tsService.reloadAll(Map(formats.toSeq: _*))
     }
   }
 
   /*
-   * Unloads an ontology.
+   * Unloads an ontology, or the whole triple store.
    */
   delete("/") {
     if (setup.testing.isDefined) "9999"
     else params.get("uri") match {
-      case Some(uri) => tsService.unloadUri(uri)
-
-      case None => // TODO clear the triple store?
-        BadRequest(reason = "not clearing triple store")
+      case Some(uri) => tsService.unloadUri(uri, Map(formats.toSeq: _*))
+      case None      => tsService.unloadAll(Map(formats.toSeq: _*))
     }
   }
 

@@ -65,6 +65,25 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     }
   }
 
+  /**
+   * Gets the ontologies satisfying the given query.
+   * @param query  Query
+   * @return       iterator
+   */
+  def getOntologyUris(query: MongoDBObject): Iterator[String] = {
+    for (ont <- ontDAO.find(query))
+      yield ont.uri
+  }
+
+  /**
+   * Gets all ontologies.
+   * @return       iterator
+   */
+  def getAllOntologyUris: Iterator[String] = {
+    for (ont <- ontDAO.find(MongoDBObject()))
+      yield ont.uri
+  }
+
   private def getOnt(uri: String) = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
 
   private def getLatestVersion(ont: Ontology): Option[(OntologyVersion,String)] = {
