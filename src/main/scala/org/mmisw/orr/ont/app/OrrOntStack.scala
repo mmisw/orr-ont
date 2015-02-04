@@ -9,7 +9,7 @@ import org.scalatra._
 import org.scalatra.json.NativeJsonSupport
 
 
-trait OrrOntStack extends ScalatraServlet with NativeJsonSupport {
+trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSupport {
 
   protected implicit val jsonFormats: Formats = DefaultFormats ++ JodaTimeSerializers.all
 
@@ -67,5 +67,9 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport {
 
   before() {
     contentType = formats("json")
+  }
+
+  options("/*"){
+    response.setHeader("Access-Control-Allow-Headers", request.getHeader("Access-Control-Request-Headers"))
   }
 }
