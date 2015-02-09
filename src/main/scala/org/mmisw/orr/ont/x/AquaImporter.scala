@@ -137,24 +137,26 @@ object AquaImporter extends App {
     }
   }
 
-  private def getOntFileWriter(uri: String, version: String, orgName: String, ont: VAquaOntology): OntFileWriter = {
+  private def getOntFileWriter(uri: String, version: String, orgName: String, ont: VAquaOntology): Option[OntFileWriter] = {
+    ontFiles.values.find(_.ontology_version_id == ont.id).headOption match {
+      case Some(entity) =>
+        val filename = entity.filename
+        val format = ontUtil.storedFormat(filename.substring(filename.lastIndexOf(".") + 1))
 
-    val filename = ontFiles.values.find(_.ontology_version_id == ont.id).get.filename
+        val source: Source = aquaUploadsDirOpt match {
+          case Some(aquaUploadsDir) =>
+            val fullPath = s"$aquaUploadsDir${ont.file_path}/$filename"
+            println(f"\t\tLoading $fullPath")
+            io.Source.fromFile(fullPath)
 
-    val format = ontUtil.storedFormat(filename.substring(filename.lastIndexOf(".") + 1))
+          case None =>
+            println(f"\t\tLoading $uri version $version")
+            io.Source.fromURL(s"$aquaOnt?uri=$uri&version=$version&form=$format")
+        }
+        Some(MyOntFileWriter(format, source, version, orgName))
 
-    val source: Source = aquaUploadsDirOpt match {
-      case Some(aquaUploadsDir) =>
-        val fullPath = s"$aquaUploadsDir${ont.file_path}/$filename"
-        println(f"\t\tLoading $fullPath")
-        io.Source.fromFile(fullPath)
-
-      case None =>
-        println(f"\t\tLoading $uri version $version")
-        io.Source.fromURL(s"$aquaOnt?uri=$uri&version=$version&form=$format")
+      case None => None
     }
-
-    MyOntFileWriter(format, source, version, orgName)
   }
 
   /** 
@@ -171,22 +173,23 @@ object AquaImporter extends App {
     // register entry (first submission)
     sortedVersions.headOption foreach { version =>
       val o = byVersion(version)
-      val ontFileWriter = getOntFileWriter(uri, version, orgName, o)
-      val dateCreated = DateTime.parse(o.date_created)
-      firstSubmission = Some(dateCreated)
-      ontService.createOntology(
-        o.uri, o.display_label, o.version_number, o.date_created,
-        users.get(o.user_id).get.username, orgName, ontFileWriter)
+      for(ontFileWriter <- getOntFileWriter(uri, version, orgName, o)) {
+        val dateCreated = DateTime.parse(o.date_created)
+        firstSubmission = Some(dateCreated)
+        ontService.createOntology(
+          o.uri, o.display_label, o.version_number, o.date_created,
+          users.get(o.user_id).get.username, orgName, ontFileWriter)
+      }
     }
 
     // register the other submissions
     sortedVersions.drop(1) foreach { version =>
       val o = byVersion(version)
-      val ontFileWriter = getOntFileWriter(uri, version, orgName, o)
-
-      ontService.createOntologyVersion(
-        o.uri, Some(o.display_label), users.get(o.user_id).get.username,
-        o.version_number, o.date_created, ontFileWriter)
+      for (ontFileWriter <- getOntFileWriter(uri, version, orgName, o)) {
+        ontService.createOntologyVersion(
+          o.uri, Some(o.display_label), users.get(o.user_id).get.username,
+          o.version_number, o.date_created, ontFileWriter)
+      }
     }
 
     firstSubmission
@@ -199,7 +202,7 @@ trait EntityLoader {
   def apply(row: Node): EntityType
 
   def getXml(p: String) = {
-    val source = scala.io.Source.fromFile(new File(p))
+    val source = scala.io.Source.fromFile(new File(p), "ISO-8859-1")
     val xml = source.mkString
     source.close()
     xml
@@ -424,7 +427,7 @@ object VAquaOntology extends EntityLoader {
   }
 
   override def getXml(p: String) = {
-    val source = scala.io.Source.fromFile(new File(p))
+    val source = scala.io.Source.fromFile(new File(p), "ISO-8859-1")
     val xml = source.getLines().map(_.replaceAll(" & ", " &amp; ")).mkString
     source.close()
     xml
