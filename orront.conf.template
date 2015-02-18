@@ -32,4 +32,14 @@ agraph {
   password    = "?"
 }
 
+// temporary: see AquaImporter
+import {
+  aquaUsers    = "query request for users"
+  aquaOnts     = "query request for ontologies"
+  aquaOntFiles = "query request for ontology files"
+
+  aquaUploadsDir = "/opt/MMI-ORR/workspace/bioportal/resources/uploads"
+
+  aquaOnt = "http://mmisw.org/ont"
+}
 

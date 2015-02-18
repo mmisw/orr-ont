@@ -13,7 +13,7 @@ import scala.xml.{NodeSeq, Node, XML}
 
 
 /**
- * Preliminary code to import data from previous database.
+ * Imports data from previous database.
  */
 object AquaImporter extends App {
 
@@ -202,7 +202,8 @@ trait EntityLoader {
   def apply(row: Node): EntityType
 
   def getXml(p: String) = {
-    val source = scala.io.Source.fromFile(new File(p), "ISO-8859-1")
+    println(s"getXml: p=$p")
+    val source = scala.io.Source.fromURL(p, "ISO-8859-1")
     val xml = source.mkString
     source.close()
     xml
@@ -427,7 +428,8 @@ object VAquaOntology extends EntityLoader {
   }
 
   override def getXml(p: String) = {
-    val source = scala.io.Source.fromFile(new File(p), "ISO-8859-1")
+    println(s"getXml: p=$p")
+    val source = scala.io.Source.fromURL(p, "ISO-8859-1")
     val xml = source.getLines().map(_.replaceAll(" & ", " &amp; ")).mkString
     source.close()
     xml
