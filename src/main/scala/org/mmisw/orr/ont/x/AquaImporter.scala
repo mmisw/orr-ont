@@ -190,7 +190,8 @@ object AquaImporter extends App {
       for (ontFileWriter <- getOntFileWriter(uri, version, orgName, o)) {
         ontService.createOntologyVersion(
           o.uri, Some(o.display_label), users.get(o.user_id).get.username,
-          o.version_number, o.date_created, ontFileWriter)
+          o.version_number, o.version_status, o.contact_name,
+          o.date_created, ontFileWriter)
       }
     }
 

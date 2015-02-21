@@ -230,7 +230,14 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
     val contents = getContentsAndFormat
     val (version, date) = getVersion
 
-    Try(ontService.createOntologyVersion(uri, nameOpt, user.userName, version, date, contents)) match {
+    // TODO capture version_status from parameter
+    val version_status: Option[String] = None
+
+    // TODO capture contact_name (from parameter, or by parsing ontology metadata)
+    val contact_name: Option[String] = None
+
+    Try(ontService.createOntologyVersion(uri, nameOpt, user.userName, version,
+            version_status, contact_name, date, contents)) match {
       case Success(ontologyResult) => ontologyResult
 
       case Failure(exc: NoSuch)                       => error(404, exc.details)

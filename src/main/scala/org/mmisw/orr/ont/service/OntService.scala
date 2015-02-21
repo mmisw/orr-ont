@@ -171,7 +171,8 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
    * Creates a version.
    */
   def createOntologyVersion(uri: String, nameOpt: Option[String], userName: String,
-                            version: String, date: String,
+                            version: String, version_status: Option[String],
+                            contact_name: Option[String], date: String,
                             ontFileWriter: OntFileWriter) = {
 
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
@@ -180,7 +181,8 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     var update = ont
 
-    var ontVersion = OntologyVersion("", userName, ontFileWriter.format, new DateTime(date))
+    var ontVersion = OntologyVersion("", userName, ontFileWriter.format, new DateTime(date),
+                                     version_status, contact_name)
 
     nameOpt foreach (name => ontVersion = ontVersion.copy(name = name))
     update = update.copy(versions = ont.versions ++ Map(version -> ontVersion))
