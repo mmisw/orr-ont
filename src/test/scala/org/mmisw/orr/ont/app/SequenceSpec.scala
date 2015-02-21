@@ -318,7 +318,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     "succeed" in {
       get("/ont") {
         status must_== 200
-        val res = parse(body).extract[List[PendOntologyResult]]
+        val res = parse(body).extract[List[OntologySummaryResult]]
         res.length must be >= 0
       }
     }
@@ -412,7 +412,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       logger.info(s"get: $map")
       get("/ont", map) {
         status must_== 200
-        val res = parse(body).extract[List[PendOntologyResult]]
+        val res = parse(body).extract[List[OntologySummaryResult]]
         res.exists(_.orgName == Some(orgName)) must beTrue
       }
     }

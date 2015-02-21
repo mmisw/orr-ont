@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.slf4j.Logging
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.swld.ontUtil
-import org.mmisw.orr.ont.{OntologyResult, PendOntologyResult, Setup}
+import org.mmisw.orr.ont.{OntologySummaryResult, OntologyResult, Setup}
 
 import scala.util.{Failure, Success, Try}
 
@@ -50,17 +50,25 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
    * @param query  Query
    * @return       iterator
    */
-  def getOntologies(query: MongoDBObject): Iterator[PendOntologyResult] = {
+  def getOntologies(query: MongoDBObject): Iterator[OntologySummaryResult] = {
     ontDAO.find(query) map { ont =>
       getLatestVersion(ont) match {
         case Some((ontVersion, version)) =>
-          PendOntologyResult(ont.uri, ontVersion.name, ont.orgName, ont.sortedVersionKeys)
+          OntologySummaryResult(
+            ont.uri,
+            version,
+            ontVersion.name,
+            ontVersion.userName,
+            ont.orgName,
+            ontVersion.author,
+            ontVersion.status
+          )
 
         case None =>
           // This will be case when all versions have been deleted.
           // TODO perhaps allow ontology entry with no versions?
           logger.warn(s"bug: '${ont.uri}', no versions registered")
-          PendOntologyResult(ont.uri, "?", ont.orgName, List.empty)
+          OntologySummaryResult(ont.uri, "version?", "name?", "submitter?")
       }
     }
   }
@@ -131,8 +139,10 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   /**
    * Creates a new ontology entry.
    */
-  def createOntology(uri: String, name: String, version: String, date: String,
-                    userName: String, orgName: String, ontFileWriter: OntFileWriter) = {
+  def createOntology(uri: String, name: String, version: String, version_status: Option[String],
+                     contact_name: Option[String],
+                     date: String, userName: String, orgName: String,
+                     ontFileWriter: OntFileWriter) = {
 
     ontDAO.findOneById(uri) match {
       case None =>
@@ -140,7 +150,8 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
         writeOntologyFile(uri, version, ontFileWriter)
 
-        val ontVersion = OntologyVersion(name, userName, ontFileWriter.format, new DateTime(date))
+        val ontVersion = OntologyVersion(name, userName, ontFileWriter.format, new DateTime(date),
+                                         version_status, contact_name)
         val ont = Ontology(uri, Some(orgName),
           versions = Map(version -> ontVersion))
 

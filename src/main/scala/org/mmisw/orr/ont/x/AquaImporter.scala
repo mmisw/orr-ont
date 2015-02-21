@@ -159,7 +159,7 @@ object AquaImporter extends App {
     }
   }
 
-  /** 
+  /**
    * Creates all submissions of a given ont URI.
    * Returns the time of the earliest submission
    */
@@ -169,7 +169,7 @@ object AquaImporter extends App {
     val sortedVersions = byVersion.keys.toSeq.sorted
 
     var firstSubmission: Option[DateTime] = None
-    
+
     // register entry (first submission)
     sortedVersions.headOption foreach { version =>
       val o = byVersion(version)
@@ -177,8 +177,10 @@ object AquaImporter extends App {
         val dateCreated = DateTime.parse(o.date_created)
         firstSubmission = Some(dateCreated)
         ontService.createOntology(
-          o.uri, o.display_label, o.version_number, o.date_created,
-          users.get(o.user_id).get.username, orgName, ontFileWriter)
+          o.uri, o.display_label, o.version_number, o.version_status,
+          o.contact_name,
+          o.date_created, users.get(o.user_id).get.username, orgName,
+          ontFileWriter)
       }
     }
 
@@ -303,7 +305,7 @@ case class VAquaOntology(id:                String,
                          //internal_version_number
 
                          version_number:    String,
-                         version_status:    String,
+                         version_status:    Option[String],
                          file_path:         String,
 
                          // is_remote
@@ -320,7 +322,7 @@ case class VAquaOntology(id:                String,
                          display_label:     String,
 
                          // format
-                         contact_name:      String,
+                         contact_name:      Option[String],
 
                          // contact_email
                          // homepage
@@ -412,12 +414,12 @@ object VAquaOntology extends EntityLoader {
       ontology_id,
       user_id,
       version_number,
-      if (version_status == "null") "" else version_status,
+      if (version_status == "null") None else Some(version_status),
       file_path,
       status_id,
       date_created,
       display_label,
-      contact_name,
+      if (contact_name.trim == "") None else Some(contact_name),
       uri,
 
       // map for ontService

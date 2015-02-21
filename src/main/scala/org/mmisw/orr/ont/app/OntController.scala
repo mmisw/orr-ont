@@ -7,9 +7,8 @@ import com.mongodb.casbah.Imports._
 import com.novus.salat._
 import com.novus.salat.global._
 import com.typesafe.scalalogging.slf4j.Logging
-import org.mmisw.orr.ont.db
+import org.mmisw.orr.ont.{OntologySummaryResult, db, PendOntologyResult, Setup}
 import org.mmisw.orr.ont.service._
-import org.mmisw.orr.ont.{PendOntologyResult, Setup}
 import org.scalatra.Created
 import org.scalatra.servlet.{FileItem, FileUploadSupport, SizeConstraintExceededException}
 
@@ -39,7 +38,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
       case None =>
         val query = getQueryFromParams(params.keySet)
         // TODO what exactly to report for the list of ontologies?
-        ontService.getOntologies(query) map grater[PendOntologyResult].toCompactJSON
+        ontService.getOntologies(query) map grater[OntologySummaryResult].toCompactJSON
     }
   }
 
@@ -62,11 +61,17 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
         verifyAuthenticatedUser(org.members + "admin")
     }
 
+    // TODO capture version_status from parameter
+    val version_status: Option[String] = None
+
+    // TODO capture contact_name (from parameter, or by parsing ontology metadata)
+    val contact_name: Option[String] = None
+
     // ok, go ahead with registration
     val contents = getContentsAndFormat
     val (version, date) = getVersion
 
-    Created(createOntology(uri, name, version, date, contents, orgName))
+    Created(createOntology(uri, name, version, version_status, contact_name, date, contents, orgName))
   }
 
   /*
@@ -140,10 +145,13 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
     override def write(destFile: File) { fileItem.write(destFile)}
   }
 
-  private def createOntology(uri: String, name: String, version: String, date: String,
+  private def createOntology(uri: String, name: String, version: String, version_status: Option[String],
+                             contact_name: Option[String],
+                             date: String,
                              ontFileWriter: OntFileWriter, orgName: String) = {
 
-    Try(ontService.createOntology(uri, name, version, date, user.userName, orgName, ontFileWriter)) match {
+    Try(ontService.createOntology(uri, name, version, version_status,
+          contact_name, date, user.userName, orgName, ontFileWriter)) match {
       case Success(ontologyResult) => ontologyResult
 
       case Failure(exc: InvalidUri) => error(400, exc.details)

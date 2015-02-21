@@ -34,6 +34,16 @@ case class OntologyResult(
             updated:     Option[DateTime] = None,
             removed:     Option[DateTime] = None)
 
+case class OntologySummaryResult(
+            uri:         String,
+            version:     String,
+            name:        String,
+            submitter:   String,
+            orgName:     Option[String] = None,
+            author:      Option[String] = None,
+            status:      Option[String] = None
+            )
+
 case class PendOntologyResult(
             uri:            String,
             name:           String,

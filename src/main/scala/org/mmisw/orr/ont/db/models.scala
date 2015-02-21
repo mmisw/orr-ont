@@ -15,9 +15,12 @@ case class Ontology(
 
 case class OntologyVersion(
             name:            String,
-            userName:        String,
+            userName:        String, // submitter
             format:          String,
-            date:            DateTime)
+            date:            DateTime,
+            status:          Option[String] = None,
+            author:          Option[String] = None    // content creator
+            )
 
 case class User(
             @Key("_id") userName:  String,
