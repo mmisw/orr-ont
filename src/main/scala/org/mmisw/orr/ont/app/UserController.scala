@@ -25,11 +25,12 @@ class UserController(implicit setup: Setup) extends BaseController
   }
 
   /*
-   * Gets a user
+   * Gets a user.
+   * TODO restrict reported info
    */
   get("/:userName") {
     val userName = require(params, "userName")
-    getUserJson(getUser(userName))
+    getAUserJson(getUser(userName))
   }
 
   /*
@@ -124,6 +125,20 @@ class UserController(implicit setup: Setup) extends BaseController
     // TODO what exactly to report?
     val res = PendUserResult(user.userName, user.ontUri, registered = Some(user.registered))
     grater[PendUserResult].toCompactJSON(res)
+  }
+
+  def getAUserJson(user: db.User) = {
+    val res = UserResult(
+      userName   = user.userName,
+      firstName  = Some(user.firstName),
+      lastName   = Some(user.lastName),
+      email      = Some(user.email),
+      ontUri     = user.ontUri,
+      phone      = user.phone,
+      registered = Some(user.registered),
+      updated    = user.updated
+    )
+    grater[UserResult].toCompactJSON(res)
   }
 
   def createUser(userName: String, firstName: String, lastName: String, password: String, email: String,

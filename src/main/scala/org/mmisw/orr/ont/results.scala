@@ -5,6 +5,11 @@ import org.joda.time.DateTime
 
 case class UserResult(
             userName:    String,
+            firstName:   Option[String] = None,
+            lastName:    Option[String] = None,
+            email:       Option[String] = None,
+            ontUri:      Option[String] = None,
+            phone:       Option[String] = None,
             registered:  Option[DateTime] = None,
             updated:     Option[DateTime] = None,
             removed:     Option[DateTime] = None)
