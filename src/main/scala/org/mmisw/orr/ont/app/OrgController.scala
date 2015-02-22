@@ -28,14 +28,19 @@ class OrgController(implicit setup: Setup) extends BaseController
   get("/:orgName") {
     val orgName = require(params, "orgName")
     val org = getOrg(orgName)
-    OrgResult(
+    var res = OrgResult(
       orgName     = orgName,
       name        = Some(org.name),
-      ontUri      = org.ontUri,
-      registered  = Some(org.registered),
-      updated     = org.updated,
-      members     = org.members
+      ontUri      = org.ontUri
     )
+    if (isAuthenticated && (org.members.contains(user.userName) || user.userName == "admin")) {
+      res = res.copy(
+        registered  = Some(org.registered),
+        updated     = org.updated,
+        members     = org.members
+      )
+    }
+    res
   }
 
   /*

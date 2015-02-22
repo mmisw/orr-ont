@@ -127,17 +127,21 @@ class UserController(implicit setup: Setup) extends BaseController
     grater[PendUserResult].toCompactJSON(res)
   }
 
-  def getAUserJson(user: db.User) = {
-    val res = UserResult(
-      userName   = user.userName,
-      firstName  = Some(user.firstName),
-      lastName   = Some(user.lastName),
-      email      = Some(user.email),
-      ontUri     = user.ontUri,
-      phone      = user.phone,
-      registered = Some(user.registered),
-      updated    = user.updated
+  def getAUserJson(dbUser: db.User) = {
+    var res = UserResult(
+      userName   = dbUser.userName,
+      firstName  = Some(dbUser.firstName),
+      lastName   = Some(dbUser.lastName),
+      ontUri     = dbUser.ontUri
     )
+    if (isAuthenticated && (user.userName == dbUser.userName || user.userName == "admin")) {
+      res = res.copy(
+        email      = Some(dbUser.email),
+        phone      = dbUser.phone,
+        registered = Some(dbUser.registered),
+        updated    = dbUser.updated
+      )
+    }
     grater[UserResult].toCompactJSON(res)
   }
 
