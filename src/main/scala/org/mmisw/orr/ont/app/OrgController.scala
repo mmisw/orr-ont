@@ -27,11 +27,20 @@ class OrgController(implicit setup: Setup) extends BaseController
    */
   get("/:orgName") {
     val orgName = require(params, "orgName")
-    getOrgJson(getOrg(orgName))
+    val org = getOrg(orgName)
+    OrgResult(
+      orgName     = orgName,
+      name        = Some(org.name),
+      ontUri      = org.ontUri,
+      registered  = Some(org.registered),
+      updated     = org.updated,
+      members     = org.members
+    )
   }
 
   /*
    * Gets members of an organization
+   * TODO remove this
    */
   get("/:orgName/members") {
     val orgName = require(params, "orgName")

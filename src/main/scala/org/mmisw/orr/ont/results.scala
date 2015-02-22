@@ -21,6 +21,8 @@ case class PendUserResult(
 
 case class OrgResult(
             orgName:     String,
+            name:        Option[String] = None,
+            ontUri:      Option[String] = None,
             registered:  Option[DateTime] = None,
             updated:     Option[DateTime] = None,
             removed:     Option[DateTime] = None,
