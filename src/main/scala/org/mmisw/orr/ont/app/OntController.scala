@@ -7,7 +7,7 @@ import com.mongodb.casbah.Imports._
 import com.novus.salat._
 import com.novus.salat.global._
 import com.typesafe.scalalogging.slf4j.Logging
-import org.mmisw.orr.ont.{OntologySummaryResult, db, PendOntologyResult, Setup}
+import org.mmisw.orr.ont._
 import org.mmisw.orr.ont.service._
 import org.scalatra.Created
 import org.scalatra.servlet.{FileItem, FileUploadSupport, SizeConstraintExceededException}
@@ -183,7 +183,8 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
   private val versionFormatter = new java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss")
 
   private def resolveUri(uri: String) = {
-    val (ont, ontVersion, version) = resolveOntology(uri, params.get("version"))
+    val versionOpt: Option[String] = params.get("version")
+    val (ont, ontVersion, version) = resolveOntology(uri, versionOpt)
 
     // format is the one given if any, or the one in the db:
     val reqFormat = params.get("format").getOrElse(ontVersion.format)
@@ -191,8 +192,23 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
     // todo: determine mechanism to request for file contents or metadata:  format=!md is preliminary
 
     if (reqFormat == "!md") {
-      val ores = PendOntologyResult(ont.uri, ontVersion.name, ont.orgName, ont.sortedVersionKeys)
-      grater[PendOntologyResult].toCompactJSON(ores)
+      versionOpt match {
+        case Some(_) =>  // particular version requested.
+          val ores = OntologySummaryResult(
+            ont.uri,
+            version,
+            ontVersion.name,
+            ontVersion.userName,
+            ont.orgName,
+            ontVersion.author,
+            ontVersion.status
+          )
+          grater[OntologySummaryResult].toCompactJSON(ores)
+
+        case None =>
+          val ores = PendOntologyResult(ont.uri, ontVersion.name, ont.orgName, ont.sortedVersionKeys)
+          grater[PendOntologyResult].toCompactJSON(ores)
+      }
     }
     else {
       val (file, actualFormat) = getOntologyFile(uri, version, reqFormat)
