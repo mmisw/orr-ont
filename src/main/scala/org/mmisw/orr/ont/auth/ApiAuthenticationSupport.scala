@@ -11,13 +11,18 @@ trait ApiAuthenticationSupport extends {
 
   protected val secretKey: String
 
+  val sigParamName = "sgn"
+
   /**
    * Returns true iff the request has been properly signed.
    * Allows to restrict or expand on the reported information depending
    * on whether the request has been properly signed.
    */
   protected def isSignedRequest: Boolean = {
-    apiAuthenticator(secretKey, signMe, params.get("sig"))
+    val str = signMe
+    val signed = apiAuthenticator(secretKey, str, params.get(sigParamName))
+    println(s"$str -> signed=$signed")
+    signed
   }
 
   /**

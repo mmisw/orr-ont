@@ -50,7 +50,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
    * @param query  Query
    * @return       iterator
    */
-  def getOntologies(query: MongoDBObject): Iterator[OntologySummaryResult] = {
+  def getOntologies(query: MongoDBObject, signedRequest: Boolean): Iterator[OntologySummaryResult] = {
     ontDAO.find(query) map { ont =>
       getLatestVersion(ont) match {
         case Some((ontVersion, version)) =>
@@ -58,7 +58,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
             ont.uri,
             version,
             ontVersion.name,
-            ontVersion.userName,
+            submitter = if (signedRequest) Some(ontVersion.userName) else None,
             ont.orgName,
             ontVersion.author,
             ontVersion.status
@@ -68,7 +68,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
           // This will be case when all versions have been deleted.
           // TODO perhaps allow ontology entry with no versions?
           logger.warn(s"bug: '${ont.uri}', no versions registered")
-          OntologySummaryResult(ont.uri, "version?", "name?", "submitter?")
+          OntologySummaryResult(ont.uri, "version?", "name?")
       }
     }
   }

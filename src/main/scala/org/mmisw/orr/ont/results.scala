@@ -45,7 +45,7 @@ case class OntologySummaryResult(
             uri:         String,
             version:     String,
             name:        String,
-            submitter:   String,
+            submitter:   Option[String] = None,
             orgName:     Option[String] = None,
             author:      Option[String] = None,
             status:      Option[String] = None
