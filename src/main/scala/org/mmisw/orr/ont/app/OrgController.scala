@@ -46,16 +46,6 @@ class OrgController(implicit setup: Setup) extends BaseController
   }
 
   /*
-   * Gets members of an organization
-   * TODO remove this
-   */
-  get("/:orgName/members") {
-    val orgName = require(params, "orgName")
-    val org = getOrg(orgName)
-    OrgResult(orgName, members = Some(org.members))
-  }
-
-  /*
    * Registers a new organization.
    * Only "admin" can do this.
    */

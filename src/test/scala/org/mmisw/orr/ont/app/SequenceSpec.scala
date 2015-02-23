@@ -243,14 +243,6 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
   }
 
-  "Get members of an org (GET /org/:orgName/members)" should {
-    "succeed" in {
-      get(s"/org/$orgName/members") {
-        status must_== 200
-      }
-    }
-  }
-
   "Update an org (PUT /org/:orgName)" should {
     "fail with no credentials" in {
       val headers = Map("content-type" -> "application/json")
