@@ -1,11 +1,14 @@
 package org.mmisw.orr.ont.app
 
-import org.mmisw.orr.ont.auth.AuthenticationSupport
+import org.mmisw.orr.ont.auth.{ApiAuthenticationSupport, AuthenticationSupport}
 import org.mmisw.orr.ont.{Setup, db}
 
 
 abstract class BaseController(implicit setup: Setup) extends OrrOntStack
-  with AuthenticationSupport with SimpleMongoDbJsonConversion {
+  with ApiAuthenticationSupport with AuthenticationSupport with SimpleMongoDbJsonConversion {
+
+  val secretKey = setup.config.getString("api.secret")
+  var signedRequest = false
 
   protected val orgsDAO     = setup.db.orgsDAO
   protected val usersDAO    = setup.db.usersDAO

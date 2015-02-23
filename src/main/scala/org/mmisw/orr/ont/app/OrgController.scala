@@ -19,6 +19,7 @@ class OrgController(implicit setup: Setup) extends BaseController
    * Gets all organizations
    */
   get("/") {
+    signedRequest = isSignedRequest
     orgsDAO.find(MongoDBObject()) map getOrgJson
   }
 
@@ -26,6 +27,7 @@ class OrgController(implicit setup: Setup) extends BaseController
    * Gets an organization
    */
   get("/:orgName") {
+    signedRequest = isSignedRequest
     val orgName = require(params, "orgName")
     val org = getOrg(orgName)
     var res = OrgResult(
@@ -33,11 +35,11 @@ class OrgController(implicit setup: Setup) extends BaseController
       name        = Some(org.name),
       ontUri      = org.ontUri
     )
-    if (isAuthenticated && (org.members.contains(user.userName) || user.userName == "admin")) {
+    if (signedRequest) {
       res = res.copy(
         registered  = Some(org.registered),
         updated     = org.updated,
-        members     = org.members
+        members     = Some(org.members)
       )
     }
     res
@@ -50,7 +52,7 @@ class OrgController(implicit setup: Setup) extends BaseController
   get("/:orgName/members") {
     val orgName = require(params, "orgName")
     val org = getOrg(orgName)
-    OrgResult(orgName, members = org.members)
+    OrgResult(orgName, members = Some(org.members))
   }
 
   /*

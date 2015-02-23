@@ -6,7 +6,7 @@ import com.novus.salat.global._
 import com.typesafe.scalalogging.slf4j.Logging
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.db
-import org.mmisw.orr.ont.{PendUserResult, Setup, UserResult}
+import org.mmisw.orr.ont.{Setup, UserResult}
 import org.scalatra.Created
 
 import scala.util.{Failure, Success, Try}
@@ -21,16 +21,17 @@ class UserController(implicit setup: Setup) extends BaseController
    * Gets all users
    */
   get("/") {
+    signedRequest = isSignedRequest
     usersDAO.find(MongoDBObject()) map getUserJson
   }
 
   /*
    * Gets a user.
-   * TODO restrict reported info
    */
   get("/:userName") {
+    signedRequest = isSignedRequest
     val userName = require(params, "userName")
-    getAUserJson(getUser(userName))
+    getUserJson(getUser(userName))
   }
 
   /*
@@ -121,20 +122,14 @@ class UserController(implicit setup: Setup) extends BaseController
 
   ///////////////////////////////////////////////////////////////////////////
 
-  def getUserJson(user: db.User) = {
-    // TODO what exactly to report?
-    val res = PendUserResult(user.userName, user.ontUri, registered = Some(user.registered))
-    grater[PendUserResult].toCompactJSON(res)
-  }
-
-  def getAUserJson(dbUser: db.User) = {
+  def getUserJson(dbUser: db.User) = {
     var res = UserResult(
       userName   = dbUser.userName,
       firstName  = Some(dbUser.firstName),
       lastName   = Some(dbUser.lastName),
       ontUri     = dbUser.ontUri
     )
-    if (isAuthenticated && (user.userName == dbUser.userName || user.userName == "admin")) {
+    if (signedRequest) {
       res = res.copy(
         email      = Some(dbUser.email),
         phone      = dbUser.phone,

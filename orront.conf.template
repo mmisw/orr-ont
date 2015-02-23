@@ -32,6 +32,10 @@ agraph {
   password    = "?"
 }
 
+api {
+  secret = "?"
+}
+
 // temporary: see AquaImporter
 import {
   aquaUsers    = "query request for users"
