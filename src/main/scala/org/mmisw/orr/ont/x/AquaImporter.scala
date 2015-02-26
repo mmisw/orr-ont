@@ -170,6 +170,9 @@ object AquaImporter extends App {
 
     var firstSubmission: Option[DateTime] = None
 
+    // status to propagate to newer versions not having an explicit version_status themselves
+    var version_status: Option[String] = None
+
     // register entry (first submission)
     sortedVersions.headOption foreach { version =>
       val o = byVersion(version)
@@ -181,6 +184,7 @@ object AquaImporter extends App {
           o.contact_name,
           o.date_created, users.get(o.user_id).get.username, orgName,
           ontFileWriter)
+        version_status  = o.version_status
       }
     }
 
@@ -188,9 +192,12 @@ object AquaImporter extends App {
     sortedVersions.drop(1) foreach { version =>
       val o = byVersion(version)
       for (ontFileWriter <- getOntFileWriter(uri, version, orgName, o)) {
+        if (o.version_status.isDefined) {
+          version_status = o.version_status  // update to use here and propagate
+        }
         ontService.createOntologyVersion(
           o.uri, Some(o.display_label), users.get(o.user_id).get.username,
-          o.version_number, o.version_status, o.contact_name,
+          o.version_number, version_status, o.contact_name,
           o.date_created, ontFileWriter)
       }
     }
