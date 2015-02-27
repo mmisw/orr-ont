@@ -12,7 +12,9 @@ case class UserResult(
             phone:       Option[String] = None,
             registered:  Option[DateTime] = None,
             updated:     Option[DateTime] = None,
-            removed:     Option[DateTime] = None)
+            removed:     Option[DateTime] = None,
+            role:        Option[String] = None  // todo
+            )
 
 case class PendUserResult(
             userName:    String,

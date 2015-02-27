@@ -17,6 +17,11 @@ class UserController(implicit setup: Setup) extends BaseController
 
   createAdminIfMissing()
 
+  val extra: List[String] = if (setup.config.hasPath("admin.extra")) {
+    import scala.collection.JavaConversions.collectionAsScalaIterable
+    collectionAsScalaIterable(setup.config.getStringList("admin.extra")).toList
+  } else List.empty
+
   /*
    * Gets all users
    */
@@ -58,7 +63,8 @@ class UserController(implicit setup: Setup) extends BaseController
     val password  = require(map, "password")
     val user = getUser(userName)
 
-    if (userAuth.checkPassword(password, user)) UserResult(userName)
+    if (userAuth.checkPassword(password, user)) UserResult(userName,
+      role = if (extra.contains(userName)) Some("extra") else None)
     else error(401, "bad password")
   }
 
