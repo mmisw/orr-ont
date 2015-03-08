@@ -33,13 +33,13 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
    * General ontology request
    */
   get("/") {
-    signedRequest = isSignedRequest
     params.get("uri") match {
       case Some(uri) => resolveUri(uri)
       case None =>
-        val query = getQueryFromParams(params.keySet - sigParamName)
+        val query = getQueryFromParams(params.keySet) // - sigParamName)
+        val onts = ontService.getOntologies(query, checkIsAdminOrExtra)
         // TODO what exactly to report for the list of ontologies?
-        ontService.getOntologies(query, signedRequest) map grater[OntologySummaryResult].toCompactJSON
+        onts map grater[OntologySummaryResult].toCompactJSON
     }
   }
 
@@ -199,7 +199,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
             ont.uri,
             version,
             ontVersion.name,
-            submitter = if (signedRequest) Some(ontVersion.userName) else None,
+            submitter = if (checkIsAdminOrExtra) Some(ontVersion.userName) else None,
             ont.orgName,
             ontVersion.author,
             ontVersion.status

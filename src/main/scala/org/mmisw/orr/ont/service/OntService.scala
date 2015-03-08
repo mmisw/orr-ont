@@ -47,10 +47,11 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
   /**
    * Gets the ontologies satisfying the given query.
-   * @param query  Query
-   * @return       iterator
+   * @param query       Query
+   * @param privileged  True to include privileged information
+   * @return            iterator
    */
-  def getOntologies(query: MongoDBObject, signedRequest: Boolean): Iterator[OntologySummaryResult] = {
+  def getOntologies(query: MongoDBObject, privileged: Boolean): Iterator[OntologySummaryResult] = {
     ontDAO.find(query) map { ont =>
       getLatestVersion(ont) match {
         case Some((ontVersion, version)) =>
@@ -58,7 +59,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
             ont.uri,
             version,
             ontVersion.name,
-            submitter = if (signedRequest) Some(ontVersion.userName) else None,
+            submitter = if (privileged) Some(ontVersion.userName) else None,
             ont.orgName,
             ontVersion.author,
             ontVersion.status

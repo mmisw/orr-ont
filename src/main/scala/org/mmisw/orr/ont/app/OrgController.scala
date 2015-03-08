@@ -19,7 +19,6 @@ class OrgController(implicit setup: Setup) extends BaseController
    * Gets all organizations
    */
   get("/") {
-    signedRequest = isSignedRequest
     orgsDAO.find(MongoDBObject()) map getOrgJson
   }
 
@@ -27,22 +26,9 @@ class OrgController(implicit setup: Setup) extends BaseController
    * Gets an organization
    */
   get("/:orgName") {
-    signedRequest = isSignedRequest
     val orgName = require(params, "orgName")
     val org = getOrg(orgName)
-    var res = OrgResult(
-      orgName     = orgName,
-      name        = Some(org.name),
-      ontUri      = org.ontUri
-    )
-    if (signedRequest) {
-      res = res.copy(
-        registered  = Some(org.registered),
-        updated     = org.updated,
-        members     = Some(org.members)
-      )
-    }
-    res
+    getOrgJson(org)
   }
 
   /*
@@ -139,8 +125,19 @@ class OrgController(implicit setup: Setup) extends BaseController
   }
 
   def getOrgJson(org: Organization) = {
-    // TODO what exactly to report?
-    val res = PendOrgResult(org.orgName, org.name, org.ontUri, registered = Some(org.registered))
-    grater[PendOrgResult].toCompactJSON(res)
+    var res = OrgResult(
+      orgName     = org.orgName,
+      name        = Some(org.name),
+      ontUri      = org.ontUri
+    )
+    if (checkUser(org.members + "admin")) {
+      res = res.copy(
+        registered  = Some(org.registered),
+        updated     = org.updated,
+        members     = Some(org.members)
+      )
+    }
+    grater[OrgResult].toCompactJSON(res)
+
   }
 }

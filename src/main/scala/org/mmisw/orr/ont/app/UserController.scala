@@ -17,16 +17,10 @@ class UserController(implicit setup: Setup) extends BaseController
 
   createAdminIfMissing()
 
-  val extra: List[String] = if (setup.config.hasPath("admin.extra")) {
-    import scala.collection.JavaConversions.collectionAsScalaIterable
-    collectionAsScalaIterable(setup.config.getStringList("admin.extra")).toList
-  } else List.empty
-
   /*
    * Gets all users
    */
   get("/") {
-    signedRequest = isSignedRequest
     usersDAO.find(MongoDBObject()) map getUserJson
   }
 
@@ -34,7 +28,6 @@ class UserController(implicit setup: Setup) extends BaseController
    * Gets a user.
    */
   get("/:userName") {
-    signedRequest = isSignedRequest
     val userName = require(params, "userName")
     getUserJson(getUser(userName))
   }
@@ -67,6 +60,36 @@ class UserController(implicit setup: Setup) extends BaseController
       role = if (extra.contains(userName)) Some("extra") else None)
     else error(401, "bad password")
   }
+
+//  ////////////////////////////////////////////////////////////////////////
+//  /*
+//   * Creates a user session.
+//   * userName and password can be given as parameters:
+//   *    http post :8081/api/v0/user/session\?userName=uuu\&password=ppp
+//   * or via basic authentication:
+//   *    http -a uuu:ppp post :8081/api/v0/user/auth
+//   * ...
+//   *    Set-Cookie: JSESSIONID=1e8r7k3thzddy1sc28m1gdub09;...
+//   */
+//  post("/session") {
+//    val userNameOpt = params.get("userName")
+//    val passwordOpt = params.get("password")
+//    val userName = createSession(userNameOpt, passwordOpt)
+//    val role = if (extra.contains(userName)) Some("extra") else None
+//    UserResult(userName, role = role)
+//  }
+//
+//  /*
+//   * route for testing the authentication verification:
+//   *   http post :8081/api/v0/user/chksession/uuu 'Cookie:JSESSIONID=1e8r7k3thzddy1sc28m1gdub09'
+//   */
+//  post("/chksession/:userName") {
+//    val userName = require(params, "userName")
+//    verifySession(userName)
+//    UserResult(userName)
+//  }
+//
+  ////////////////////////////////////////////////////////////////////////
 
   /*
    * Updates a user account.
@@ -135,7 +158,7 @@ class UserController(implicit setup: Setup) extends BaseController
       lastName   = Some(dbUser.lastName),
       ontUri     = dbUser.ontUri
     )
-    if (signedRequest) {
+    if (checkUser(dbUser.userName, "admin")) {
       res = res.copy(
         email      = Some(dbUser.email),
         phone      = dbUser.phone,
@@ -149,10 +172,9 @@ class UserController(implicit setup: Setup) extends BaseController
   def createUser(userName: String, firstName: String, lastName: String, password: String, email: String,
                  ontUri: Option[String] = None) = {
 
-    val encPassword = userAuth.encryptPassword(password)
-
     usersDAO.findOneById(userName) match {
       case None =>
+        val encPassword = userAuth.encryptPassword(password)
         val obj = db.User(userName, firstName, lastName, encPassword, email, ontUri)
 
         Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
