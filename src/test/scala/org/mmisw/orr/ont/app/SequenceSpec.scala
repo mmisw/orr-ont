@@ -121,15 +121,15 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
   }
 
-  "Check password (POST /user/chkpw)" should {
+  "Check password (POST /user/auth)" should {
     "return 200 with correct password" in {
-      post("/user/chkpw", body = pretty(render(Map("userName" -> userName, "password" -> password))),
+      post("/user/auth", body = pretty(render(Map("userName" -> userName, "password" -> password))),
         headers = Map("content-type" -> "application/json")) {
         status must_== 200
       }
     }
     "return 401 with bad password" in {
-      post("/user/chkpw", body = pretty(render(Map("userName" -> userName, "password" -> "wrong"))),
+      post("/user/auth", body = pretty(render(Map("userName" -> userName, "password" -> "wrong"))),
         headers = Map("content-type" -> "application/json")) {
         status must_== 401
       }
