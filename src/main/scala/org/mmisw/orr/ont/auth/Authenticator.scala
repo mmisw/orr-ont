@@ -1,6 +1,6 @@
 package org.mmisw.orr.ont.auth
 
-import org.mmisw.orr.ont.db.User
+import org.mmisw.orr.ont.db
 import org.jasypt.util.password.StrongPasswordEncryptor
 import org.scalatra.ScalatraBase
 import org.scalatra.auth.strategy.BasicAuthStrategy
@@ -17,7 +17,7 @@ object userAuth {
     authenticator
   }
 
-  def apply(usersDAO: SalatDAO[User, String]) = {
+  def apply(usersDAO: SalatDAO[db.User, String]) = {
     require(authenticator == null, "authenticator must not have been created already")
     authenticator = new Authenticator(usersDAO)
     authenticator
@@ -26,7 +26,7 @@ object userAuth {
 
 case class AuthUser(userName: String)
 
-class Authenticator(usersDAO: SalatDAO[User, String]) {
+class Authenticator(usersDAO: SalatDAO[db.User, String]) {
 
   private val encryptor = new StrongPasswordEncryptor
 
@@ -34,9 +34,9 @@ class Authenticator(usersDAO: SalatDAO[User, String]) {
 
   def checkPassword(password: String, encPassword: String) = encryptor.checkPassword(password, encPassword)
 
-  def checkPassword(password: String, user: User) = encryptor.checkPassword(password, user.password)
+  def checkPassword(password: String, user: db.User) = encryptor.checkPassword(password, user.password)
 
-  def authenticateUser(userName: String, password: String): Option[User] =
+  def authenticateUser(userName: String, password: String): Option[db.User] =
     usersDAO.findOneById(userName) match {
       case Some(user) => if (checkPassword(password, user)) Some(user) else None
       case None => None
@@ -51,8 +51,10 @@ class OurBasicAuthStrategy(protected override val app: ScalatraBase, realm: Stri
   protected def validate(userName: String, password: String)
                         (implicit req: HttpServletRequest, res: HttpServletResponse) = {
 
-    if (authenticator.authenticateUser(userName, password).isDefined) Some(AuthUser(userName))
-    else None
+    authenticator.authenticateUser(userName, password) match {
+      case Some(user) => Some(AuthUser(userName))
+      case None => None
+    }
   }
 
   protected def getUserId(user: AuthUser)
