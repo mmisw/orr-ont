@@ -130,7 +130,7 @@ class OrgController(implicit setup: Setup) extends BaseController
       name        = Some(org.name),
       ontUri      = org.ontUri
     )
-    if (checkUser(org.members + "admin")) {
+    if (checkIsUserOrAdminOrExtra(org.members)) {
       res = res.copy(
         registered  = Some(org.registered),
         updated     = org.updated,

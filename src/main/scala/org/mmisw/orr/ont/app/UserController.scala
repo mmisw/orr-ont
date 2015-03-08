@@ -158,7 +158,7 @@ class UserController(implicit setup: Setup) extends BaseController
       lastName   = Some(dbUser.lastName),
       ontUri     = dbUser.ontUri
     )
-    if (checkUser(dbUser.userName, "admin")) {
+    if (checkIsUserOrAdminOrExtra(dbUser.userName)) {
       res = res.copy(
         email      = Some(dbUser.email),
         phone      = dbUser.phone,

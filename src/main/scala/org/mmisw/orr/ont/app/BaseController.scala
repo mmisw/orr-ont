@@ -35,26 +35,24 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
     }
   }
 
-  /**
-   * True only if the authenticated user (if any) is one of the given user names.
-   */
-  protected def checkUser(userNames: String*): Boolean = authenticatedUser match {
-    case Some(u) => userNames.contains(u.userName)
-    case None    => false
-  }
-  protected def checkUser(userNames: Set[String]): Boolean = authenticatedUser match {
-    case Some(u) => userNames.contains(u.userName)
-    case None    => false
-  }
-
-  protected def checkIsAdmin = checkUser("admin")
-
   protected def checkIsExtra = authenticatedUser match {
     case Some(u) => extra.contains(u.userName)
     case None    => false
   }
   protected def checkIsAdminOrExtra = authenticatedUser match {
     case Some(u) => "admin" == u.userName || extra.contains(u.userName)
+    case None    => false
+  }
+  /**
+   * True only if the authenticated user (if any) is one of the given user names,
+   * or is "admin", or is one of the extras.
+   */
+  protected def checkIsUserOrAdminOrExtra(userNames: String*) = authenticatedUser match {
+    case Some(u) => userNames.contains(u.userName) || "admin" == u.userName || extra.contains(u.userName)
+    case None    => false
+  }
+  protected def checkIsUserOrAdminOrExtra(userNames: Set[String]) = authenticatedUser match {
+    case Some(u) => userNames.contains(u.userName) || "admin" == u.userName || extra.contains(u.userName)
     case None    => false
   }
 
