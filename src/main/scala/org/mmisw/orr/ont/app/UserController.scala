@@ -50,7 +50,7 @@ class UserController(implicit setup: Setup) extends BaseController
     Created(createUser(userName, firstName, lastName, password, email, ontUri))
   }
 
-  post("/chkpw") {
+  post("/auth") {
     val map = body()
     val userName  = require(map, "userName")
     val password  = require(map, "password")
@@ -67,7 +67,7 @@ class UserController(implicit setup: Setup) extends BaseController
 //   * userName and password can be given as parameters:
 //   *    http post :8081/api/v0/user/session\?userName=uuu\&password=ppp
 //   * or via basic authentication:
-//   *    http -a uuu:ppp post :8081/api/v0/user/auth
+//   *    http -a uuu:ppp post :8081/api/v0/user/session
 //   * ...
 //   *    Set-Cookie: JSESSIONID=1e8r7k3thzddy1sc28m1gdub09;...
 //   */
