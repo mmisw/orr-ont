@@ -80,22 +80,22 @@ object ontUtil extends AnyRef with Logging {
   private def extractSomeProps(ontology: Ontology): Map[String,String] = {
     var map = Map[String, String]()
 
-    listPropertyValues(ontology, OmvMmi.hasResourceType) match {
-      case values if values.size > 0 =>
-        val resourceType = values.head
+    val values1 = listPropertyValues(ontology, OmvMmi.hasResourceType)
+    if (values1.size > 0) {
+        val resourceType = values1.head
         map = map.updated("resourceType", resourceType)
     }
 
-    listPropertyValues(ontology, Omv.usedOntologyEngineeringTool) match {
-      case values if values.size > 0 =>
-        val usedOntologyEngineeringTool = values.head
-        val ontologyType = if (usedOntologyEngineeringTool == OmvMmi.voc2rdf.getURI)
-          "vocabulary"
-        else if (usedOntologyEngineeringTool == OmvMmi.vine.getURI)
-          "mapping"
-        else ""
-        if (ontologyType.length > 0)
-          map = map.updated("ontologyType", ontologyType)
+    val values2 = listPropertyValues(ontology, Omv.usedOntologyEngineeringTool)
+    if (values2.size > 0) {
+      val usedOntologyEngineeringTool = values2.head
+      val ontologyType = if (usedOntologyEngineeringTool == OmvMmi.voc2rdf.getURI)
+        "vocabulary"
+      else if (usedOntologyEngineeringTool == OmvMmi.vine.getURI)
+        "mapping"
+      else ""
+      if (ontologyType.length > 0)
+        map = map.updated("ontologyType", ontologyType)
     }
 
     map
