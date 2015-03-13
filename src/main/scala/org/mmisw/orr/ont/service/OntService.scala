@@ -149,12 +149,16 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
       case None =>
         validateUri(uri)
 
-        writeOntologyFile(uri, version, ontFileWriter)
+        val map = writeOntologyFile(uri, version, ontFileWriter)
+        val ontologyTypeOpt = map.get("ontologyType")
+        val resourceTypeOpt = map.get("resourceType")
 
         val ontVersion = OntologyVersion(name, userName, ontFileWriter.format, new DateTime(date),
-                                         version_status, contact_name)
-        val ont = Ontology(uri, Some(orgName),
-          versions = Map(version -> ontVersion))
+                                         version_status, contact_name,
+                                         ontologyType = ontologyTypeOpt,
+                                         resourceType = resourceTypeOpt)
+
+        val ont = Ontology(uri, Some(orgName), versions = Map(version -> ontVersion))
 
         Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
           case Success(_) =>
@@ -169,7 +173,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   }
 
   /**
-   * Creates a version.
+   * Creates a version for an existing ontology.
    */
   def createOntologyVersion(uri: String, nameOpt: Option[String], userName: String,
                             version: String, version_status: Option[String],
@@ -180,16 +184,21 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     verifyOwner(userName, ont)
 
-    var update = ont
+    val map = writeOntologyFile(uri, version, ontFileWriter)
+    val ontologyTypeOpt = map.get("ontologyType")
+    val resourceTypeOpt = map.get("resourceType")
 
     var ontVersion = OntologyVersion("", userName, ontFileWriter.format, new DateTime(date),
-                                     version_status, contact_name)
+                                     version_status, contact_name,
+                                     ontologyType = ontologyTypeOpt,
+                                     resourceType = resourceTypeOpt)
 
     nameOpt foreach (name => ontVersion = ontVersion.copy(name = name))
+
+    var update = ont
     update = update.copy(versions = ont.versions ++ Map(version -> ontVersion))
 
     logger.info(s"update: $update")
-    writeOntologyFile(uri, version, ontFileWriter)
 
     Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
@@ -296,7 +305,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   }
 
   private def writeOntologyFile(uri: String, version: String,
-                                ontFileWriter: OntFileWriter) = {
+                                ontFileWriter: OntFileWriter): Map[String,String] = {
     require(!uri.contains("|"))
 
     val uriEnc = uri.replace('/', '|')
@@ -309,6 +318,8 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     val dest = new File(versionDir, destFilename)
 
     ontFileWriter.write(dest)
+
+    ontUtil.getPropsFromOntMetadata(uri, dest, ontFileWriter.format)
   }
 
 

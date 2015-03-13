@@ -19,7 +19,9 @@ case class OntologyVersion(
             format:          String,
             date:            DateTime,
             status:          Option[String] = None,
-            author:          Option[String] = None    // content creator
+            author:          Option[String] = None,    // content creator
+            ontologyType:    Option[String] = None,
+            resourceType:    Option[String] = None
             )
 
 case class User(

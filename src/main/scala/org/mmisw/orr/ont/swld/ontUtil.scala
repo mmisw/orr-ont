@@ -1,10 +1,12 @@
 package org.mmisw.orr.ont.swld
 
-import com.hp.hpl.jena.rdf.model.ModelFactory
+import com.hp.hpl.jena.ontology.{Ontology, OntDocumentManager, OntModelSpec, OntModel}
+import com.hp.hpl.jena.rdf.model.{Property, ModelFactory}
 import java.io.{FileWriter, File}
 import com.typesafe.scalalogging.slf4j.Logging
 
 import com.github.jsonldjava.jena.JenaJSONLD
+import org.mmisw.orr.ont.vocabulary.{Omv, OmvMmi}
 
 
 object ontUtil extends AnyRef with Logging {
@@ -53,6 +55,92 @@ object ontUtil extends AnyRef with Logging {
     case "json" | "jsonld"  => "jsonld"
     case "ttl"  | "n3"      => "n3"
     case f => f
+  }
+
+  def getPropsFromOntMetadata(uri: String, file: File, format: String): Map[String,String] = {
+    getOntology(uri, file, format) match {
+      case Some(ontology) =>
+        try extractSomeProps(ontology)
+        catch {
+          case ex: Throwable =>
+            ex.printStackTrace()
+            Map[String, String]()
+        }
+
+      case _ => Map[String, String]()
+    }
+  }
+
+  ///////////////////////////////////////////////////////////////////////////
+  // private
+
+  /**
+   * ad hoc initial mechanism to report some of the ontology metadata.
+   */
+  private def extractSomeProps(ontology: Ontology): Map[String,String] = {
+    var map = Map[String, String]()
+
+    listPropertyValues(ontology, OmvMmi.hasResourceType) match {
+      case values if values.size > 0 =>
+        val resourceType = values.head
+        map = map.updated("resourceType", resourceType)
+    }
+
+    listPropertyValues(ontology, Omv.usedOntologyEngineeringTool) match {
+      case values if values.size > 0 =>
+        val usedOntologyEngineeringTool = values.head
+        val ontologyType = if (usedOntologyEngineeringTool == OmvMmi.voc2rdf.getURI)
+          "vocabulary"
+        else if (usedOntologyEngineeringTool == OmvMmi.vine.getURI)
+          "mapping"
+        else ""
+        if (ontologyType.length > 0)
+          map = map.updated("ontologyType", ontologyType)
+    }
+
+    map
+  }
+
+  private def listPropertyValues(ontology: Ontology, prop: Property): List[String] = {
+    val values = collection.mutable.ListBuffer[String]()
+    val it = ontology.listPropertyValues(prop)
+    if ( it != null) {
+      while (it.hasNext) {
+        val node = it.next()
+        val value = if (node.isLiteral) node.asLiteral().getString else node.asResource().getURI
+        values += value
+      }
+    }
+    values.toList
+  }
+
+  /**
+   * Gets the Jena Ontology object of the given uri from the given file.
+   * @param uri
+   * @param file
+   * @param format
+   * @param processImports
+   * @return
+   */
+  private def getOntology(uri: String, file: File, format: String, processImports: Boolean = false):
+    Option[Ontology] = {
+
+    logger.debug(s"Loading uri='$uri' file=$file with processImports=$processImports")
+    val path = file.getAbsolutePath
+    logger.debug(s"path='$path'")
+    val source = io.Source.fromFile(path)
+    val lang = format2lang(storedFormat(format)).getOrElse(throw new IllegalArgumentException)
+    val ontModel = createDefaultOntModel
+    ontModel.setDynamicImports(false)
+    ontModel.getDocumentManager.setProcessImports(processImports)
+    ontModel.read(source.reader(), uri, lang)
+    Option(ontModel.getOntology(uri))
+  }
+
+  private def createDefaultOntModel: OntModel = {
+    val spec: OntModelSpec = new OntModelSpec(OntModelSpec.OWL_MEM)
+    spec.setDocumentManager(new OntDocumentManager)
+    ModelFactory.createOntologyModel(spec, null)
   }
 
   // https://jena.apache.org/documentation/io/

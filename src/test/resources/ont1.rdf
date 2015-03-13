@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<rdf:RDF
+        xml:base    = "http://example.org/ont1"
+        xmlns       = "http://example.org/ont1/"
+        xmlns:ont1  = "http://example.org/ont1/"
+        xmlns:rdfs  = "http://www.w3.org/2000/01/rdf-schema#"
+        xmlns:rdf   = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+        xmlns:owl   = "http://www.w3.org/2002/07/owl#"
+        xmlns:omv   = "http://omv.ontoware.org/2005/05/ontology#"
+        xmlns:omvmmi= "http://mmisw.org/ont/mmi/20081020/ontologyMetadata/"
+        >
+    <owl:Ontology rdf:about="">
+        <omv:name>Test ontology</omv:name>
+        <omv:description>Description of test ontology</omv:description>
+        <omvmmi:hasResourceType>parameter</omvmmi:hasResourceType>
+        <omv:acronym>ont-test-acronym</omv:acronym>
+        <omv:hasCreator>Onto Loger</omv:hasCreator>
+        <omvmmi:hasContentCreator>Count Kreator</omvmmi:hasContentCreator>
+        <omv:keywords>parameter, test</omv:keywords>
+        <omv:usedOntologyEngineeringTool rdf:resource="http://mmisw.org/ont/mmi/20081020/ontologyMetadata/voc2rdf"/>
+    </owl:Ontology>
+
+    <owl:Class rdf:about="http://example.org/ont1/Parameter">
+        <rdfs:label>operator</rdfs:label>
+    </owl:Class>
+
+    <owl:DatatypeProperty rdf:about="http://example.org/ont1/name">
+        <rdfs:domain rdf:resource="http://example.org/ont1/Parameter"/>
+        <rdfs:label>name</rdfs:label>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="http://example.org/ont1/definition">
+        <rdfs:domain rdf:resource="http://example.org/ont1/Parameter"/>
+        <rdfs:label>definition</rdfs:label>
+    </owl:DatatypeProperty>
+
+    <Parameter rdf:about="ont1:parA">
+        <name>Name of parA</name>
+        <definition>Definition of parA</definition>
+    </Parameter>
+
+    <Parameter rdf:about="ont1:parB">
+        <name>Name of parB</name>
+        <definition>Definition of parB</definition>
+    </Parameter>
+
+</rdf:RDF>

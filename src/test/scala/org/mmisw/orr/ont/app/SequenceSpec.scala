@@ -325,10 +325,10 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
   }
 
-  val uri  = newOntUri()
-  val file = new File("src/test/resources/test.rdf")
+  val ont1Uri  = "http://example.org/ont1"
+  val ont1File = new File("src/test/resources/ont1.rdf")
   val format = "rdf"
-  val map1 = Map("uri" -> uri,
+  val map1 = Map("uri" -> ont1Uri,
     "name" -> "some ont name",
     "orgName" -> orgName,
     "userName" -> userName,
@@ -338,29 +338,29 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
   "Register a new ont (POST /ont)" should {
     "fail with no credentials" in {
-      post("/ont", map1, Map("file" -> file)) {
+      post("/ont", map1, Map("file" -> ont1File)) {
         status must_== 401
       }
     }
 
     "fail with user not member of org" in {
-      post("/ont", map1, Map("file" -> file), headers = user2Headers) {
+      post("/ont", map1, Map("file" -> ont1File), headers = user2Headers) {
         status must_== 403
       }
     }
 
     "succeed with org member credentials" in {
-      post("/ont", map1, Map("file" -> file), headers = userHeaders) {
+      post("/ont", map1, Map("file" -> ont1File), headers = userHeaders) {
         status must_== 201
         val res = parse(body).extract[OntologyResult]
-        res.uri must_== uri
+        res.uri must_== ont1Uri
         registeredVersion = res.version
         logger.debug(s"registeredVersion=$registeredVersion")
       }
     }
 
     "fail with duplicate uri if resubmitted as new" in {
-      post("/ont", map1, Map("file" -> file), headers = userHeaders) {
+      post("/ont", map1, Map("file" -> ont1File), headers = userHeaders) {
         status must_== 409
       }
     }
@@ -373,7 +373,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
         "userName" -> userName,
         "format" -> format
       )
-      post("/ont", map2, Map("file" -> file), headers = adminHeaders) {
+      post("/ont", map2, Map("file" -> ont1File), headers = adminHeaders) {
         status must_== 201
         val res = parse(body).extract[OntologyResult]
         res.uri must_== map2("uri")
@@ -385,13 +385,13 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
   "Get an ont with given uri (GET /ont)" should {
     "return the latest version" in {
-      val map = Map("uri" -> uri, "format" -> "!md")
+      val map = Map("uri" -> ont1Uri, "format" -> "!md")
       logger.info(s"get: $map")
       get("/ont", map) {
         logger.info(s"get new entry reply: $body")
         status must_== 200
         val res = parse(body).extract[PendOntologyResult]
-        res.uri must_== uri
+        res.uri must_== ont1Uri
         val latestVersion = res.versions.sorted(Ordering[String].reverse).head
         latestVersion must_== registeredVersion.get
       }
@@ -415,23 +415,23 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     //val body2 = pretty(render(Extraction.decompose(map2)))
 
     "fail with no credentials" in {
-      put("/ont", params = map2, files = Map("file" -> file)) {
+      put("/ont", params = map2, files = Map("file" -> ont1File)) {
         status must_== 401
       }
     }
 
     "fail with non-member of corresponding org" in {
-      put("/ont", params = map2, files = Map("file" -> file), headers = user2Headers) {
+      put("/ont", params = map2, files = Map("file" -> ont1File), headers = user2Headers) {
         status must_== 403
       }
     }
 
     "succeed with member of corresponding org" in {
       Thread.sleep(1500) // so automatically assigned new version is diff.
-      put("/ont", params = map2, files = Map("file" -> file), headers = userHeaders) {
+      put("/ont", params = map2, files = Map("file" -> ont1File), headers = userHeaders) {
         status must_== 200
         val res = parse(body).extract[OntologyResult]
-        res.uri must_== uri
+        res.uri must_== ont1Uri
         registeredVersion = res.version
         logger.debug(s"registeredVersion=$registeredVersion")
       }
@@ -439,10 +439,10 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
     "succeed with admin credentials" in {
       Thread.sleep(1500) // so automatically assigned new version is diff.
-      put("/ont", params = map2, files = Map("file" -> file), headers = adminHeaders) {
+      put("/ont", params = map2, files = Map("file" -> ont1File), headers = adminHeaders) {
         status must_== 200
         val res = parse(body).extract[OntologyResult]
-        res.uri must_== uri
+        res.uri must_== ont1Uri
         registeredVersion = res.version
         logger.debug(s"registeredVersion=$registeredVersion")
       }
@@ -451,13 +451,13 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
   "Get an ont with given uri (GET /ont)" should {
     "return the new latest version" in {
-      val map = Map("uri" -> uri, "format" -> "!md")
+      val map = Map("uri" -> ont1Uri, "format" -> "!md")
       logger.info(s"get: $map")
       get("/ont", map) {
         logger.info(s"get new entry reply: $body")
         status must_== 200
         val res = parse(body).extract[PendOntologyResult]
-        res.uri must_== uri
+        res.uri must_== ont1Uri
         val latestVersion = res.versions.sorted(Ordering[String].reverse).head
         latestVersion must_== registeredVersion.get
       }
@@ -472,32 +472,32 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     // is actually defined from previous checks.
 
     "fail with no credentials" in {
-      put("/ont", params = map2 + ("version" -> registeredVersion.get), files = Map("file" -> file)) {
+      put("/ont", params = map2 + ("version" -> registeredVersion.get), files = Map("file" -> ont1File)) {
         status must_== 401
       }
     }
 
     "fail with non-member of corresponding org" in {
-      put("/ont", params = map2 + ("version" -> registeredVersion.get), files = Map("file" -> file), headers = user2Headers) {
+      put("/ont", params = map2 + ("version" -> registeredVersion.get), files = Map("file" -> ont1File), headers = user2Headers) {
         status must_== 403
       }
     }
 
     "succeed with member of corresponding org" in {
       Thread.sleep(1500) // so automatically assigned new version is diff.
-      put("/ont", params = map2 + ("version" -> registeredVersion.get), files = Map("file" -> file), headers = userHeaders) {
+      put("/ont", params = map2 + ("version" -> registeredVersion.get), files = Map("file" -> ont1File), headers = userHeaders) {
         status must_== 200
         val res = parse(body).extract[OntologyResult]
-        res.uri must_== uri
+        res.uri must_== ont1Uri
       }
     }
 
     "succeed with admin credentials" in {
       Thread.sleep(1500) // so automatically assigned new version is diff.
-      put("/ont", params = map2, files = Map("file" -> file), headers = adminHeaders) {
+      put("/ont", params = map2, files = Map("file" -> ont1File), headers = adminHeaders) {
         status must_== 200
         val res = parse(body).extract[OntologyResult]
-        res.uri must_== uri
+        res.uri must_== ont1Uri
       }
     }
   }
@@ -508,19 +508,19 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
   "Load an ont in triple store (POST /ts)" should {
     "fail with no credentials" in {
-      post("/ts", Map("uri" -> uri)) {
+      post("/ts", Map("uri" -> ont1Uri)) {
         status must_== 401
       }
     }
 
     "fail with regular user credentials" in {
-      post("/ts", Map("uri" -> uri), headers = userHeaders) {
+      post("/ts", Map("uri" -> ont1Uri), headers = userHeaders) {
         status must_== 403
       }
     }
 
     "succeed with admin credentials" in {
-      post("/ts", Map("uri" -> uri), headers = adminHeaders) {
+      post("/ts", Map("uri" -> ont1Uri), headers = adminHeaders) {
         status must_== 200
       }
     }
@@ -528,19 +528,19 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
   "Reload an ont in triple store (PUT /ts)" should {
     "fail with no credentials" in {
-      put("/ts", Map("uri" -> uri)) {
+      put("/ts", Map("uri" -> ont1Uri)) {
         status must_== 401
       }
     }
 
     "fail with regular user credentials" in {
-      put("/ts", Map("uri" -> uri), headers = userHeaders) {
+      put("/ts", Map("uri" -> ont1Uri), headers = userHeaders) {
         status must_== 403
       }
     }
 
     "succeed with admin credentials" in {
-      put("/ts", Map("uri" -> uri), headers = adminHeaders) {
+      put("/ts", Map("uri" -> ont1Uri), headers = adminHeaders) {
         status must_== 200
       }
     }
@@ -548,19 +548,19 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
   "Unload an ont from triple store (DELETE /ts)" should {
     "fail with no credentials" in {
-      delete("/ts", Map("uri" -> uri)) {
+      delete("/ts", Map("uri" -> ont1Uri)) {
         status must_== 401
       }
     }
 
     "fail with regular user credentials" in {
-      delete("/ts", Map("uri" -> uri), headers = userHeaders) {
+      delete("/ts", Map("uri" -> ont1Uri), headers = userHeaders) {
         status must_== 403
       }
     }
 
     "succeed with admin credentials" in {
-      delete("/ts", Map("uri" -> uri), headers = adminHeaders) {
+      delete("/ts", Map("uri" -> ont1Uri), headers = adminHeaders) {
         status must_== 200
       }
     }
@@ -570,7 +570,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
   "Delete an ont version (DELETE /ont)" should {
     "fail with no credentials" in {
-      val map = Map("uri" -> uri,
+      val map = Map("uri" -> ont1Uri,
         "version" -> registeredVersion.get,
         "userName" -> userName
       )
@@ -580,7 +580,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
 
     "fail with non-member of corresponding org" in {
-      val map = Map("uri" -> uri,
+      val map = Map("uri" -> ont1Uri,
         "version" -> registeredVersion.get,
         "userName" -> userName2
       )
@@ -590,21 +590,21 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
 
     "succeed with member credentials" in {
-      val map = Map("uri" -> uri,
+      val map = Map("uri" -> ont1Uri,
         "version" -> registeredVersion.get,
         "userName" -> userName
       )
       delete("/ont", map, headers = userHeaders) {
         status must_== 200
         val res = parse(body).extract[OntologyResult]
-        res.uri must_== uri
+        res.uri must_== ont1Uri
       }
     }
   }
 
   "Delete a whole ont entry (DELETE /org/)" should {
     "fail with no credentials" in {
-      val map = Map("uri" -> uri,
+      val map = Map("uri" -> ont1Uri,
         "userName" -> userName
       )
       delete("/ont", map) {
@@ -613,7 +613,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
 
     "fail with non-member of corresponding org" in {
-      val map = Map("uri" -> uri,
+      val map = Map("uri" -> ont1Uri,
         "userName" -> userName2
       )
       delete("/ont", map, headers = user2Headers) {
@@ -622,13 +622,13 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
 
     "succeed with member credentials" in {
-      val map = Map("uri" -> uri,
+      val map = Map("uri" -> ont1Uri,
         "userName" -> userName
       )
       delete("/ont", map, headers = userHeaders) {
         status must_== 200
         val res = parse(body).extract[OntologyResult]
-        res.uri must_== uri
+        res.uri must_== ont1Uri
       }
     }
 

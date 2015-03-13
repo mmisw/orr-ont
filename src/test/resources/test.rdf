@@ -1,8 +1,0 @@
-<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-         xmlns:myont="http://localhost:8080/ont/myorg/myont/">
-    <Character rdf:about="myont:calvin">
-        <myont:hasFriend rdf:resource="myont:hobbes" />
-    </Character>
-    <Character rdf:about="myont:hobbes">
-    </Character>
-</rdf:RDF>
