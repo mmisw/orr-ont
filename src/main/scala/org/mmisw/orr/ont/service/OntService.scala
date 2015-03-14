@@ -55,17 +55,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     ontDAO.find(query) map { ont =>
       getLatestVersion(ont) match {
         case Some((ontVersion, version)) =>
-          OntologySummaryResult(
-            ont.uri,
-            version,
-            ontVersion.name,
-            submitter = if (privileged) Some(ontVersion.userName) else None,
-            orgName = ont.orgName,
-            author = ontVersion.author,
-            status = ontVersion.status,
-            ontologyType = ontVersion.ontologyType,
-            resourceType = ontVersion.resourceType
-          )
+          getOntologySummaryResult(ont, ontVersion, version, privileged)
 
         case None =>
           // This will be case when all versions have been deleted.
@@ -74,6 +64,26 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
           OntologySummaryResult(ont.uri, "version?", "name?")
       }
     }
+  }
+
+  def getOntologySummaryResult(ont: Ontology, ontVersion: OntologyVersion, version: String,
+                               privileged: Boolean,
+                               versionsOpt: Option[List[String]] = None
+  ): OntologySummaryResult = {
+
+    val resourceTypeOpt = ontVersion.resourceType map ontUtil.simplifyResourceType
+    OntologySummaryResult(
+      ont.uri,
+      version,
+      ontVersion.name,
+      submitter = if (privileged) Some(ontVersion.userName) else None,
+      orgName = ont.orgName,
+      author = ontVersion.author,
+      status = ontVersion.status,
+      ontologyType = ontVersion.ontologyType,
+      resourceType = resourceTypeOpt,
+      versions = versionsOpt
+    )
   }
 
   /**

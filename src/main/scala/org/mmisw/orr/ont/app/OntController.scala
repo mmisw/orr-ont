@@ -198,18 +198,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
         case None    => Some(ont.sortedVersionKeys)
         case Some(_) => None
       }
-      val ores = OntologySummaryResult(
-        ont.uri,
-        version,
-        ontVersion.name,
-        submitter = if (checkIsAdminOrExtra) Some(ontVersion.userName) else None,
-        ont.orgName,
-        ontVersion.author,
-        ontVersion.status,
-        ontologyType = ontVersion.ontologyType,
-        resourceType = ontVersion.resourceType,
-        versions = versionsOpt
-      )
+      val ores = ontService.getOntologySummaryResult(ont, ontVersion, version, checkIsAdminOrExtra, versionsOpt)
       grater[OntologySummaryResult].toCompactJSON(ores)
     }
     else {

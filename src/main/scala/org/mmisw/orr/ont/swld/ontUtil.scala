@@ -1,7 +1,7 @@
 package org.mmisw.orr.ont.swld
 
 import com.hp.hpl.jena.ontology.{Ontology, OntDocumentManager, OntModelSpec, OntModel}
-import com.hp.hpl.jena.rdf.model.{Property, ModelFactory}
+import com.hp.hpl.jena.rdf.model.{RDFNode, Property, ModelFactory}
 import java.io.{FileWriter, File}
 import com.typesafe.scalalogging.slf4j.Logging
 
@@ -71,6 +71,14 @@ object ontUtil extends AnyRef with Logging {
     }
   }
 
+  // resourceType not always captured as a resource but as a literal having
+  // the form of a URI; this ad hoc method extracts the suffix after separator.
+  def simplifyResourceType(resourceType: String): String = {
+    val idx = resourceType.lastIndexOf('/')
+    if (idx >= 0 && idx < resourceType.length - 1) resourceType.substring(idx + 1)
+    else resourceType
+  }
+
   ///////////////////////////////////////////////////////////////////////////
   // private
 
@@ -81,10 +89,7 @@ object ontUtil extends AnyRef with Logging {
     var map = Map[String, String]()
 
     val values1 = listPropertyValues(ontology, OmvMmi.hasResourceType)
-    if (values1.size > 0) {
-        val resourceType = values1.head
-        map = map.updated("resourceType", resourceType)
-    }
+    if (values1.size > 0) map = map.updated("resourceType", values1.head)
 
     val values2 = listPropertyValues(ontology, Omv.usedOntologyEngineeringTool)
     if (values2.size > 0) {
@@ -101,14 +106,18 @@ object ontUtil extends AnyRef with Logging {
     map
   }
 
-  private def listPropertyValues(ontology: Ontology, prop: Property): List[String] = {
-    val values = collection.mutable.ListBuffer[String]()
+  private def listPropertyValues(ont: Ontology, prop: Property): List[String] =
+    listPropertyValueNodes(ont, prop) map { n =>
+      if (n.isResource) n.asResource().getURI
+      else n.asLiteral().getString
+    }
+
+  private def listPropertyValueNodes(ontology: Ontology, prop: Property): List[RDFNode] = {
+    val values = collection.mutable.ListBuffer[RDFNode]()
     val it = ontology.listPropertyValues(prop)
     if ( it != null) {
       while (it.hasNext) {
-        val node = it.next()
-        val value = if (node.isLiteral) node.asLiteral().getString else node.asResource().getURI
-        values += value
+        values += it.next()
       }
     }
     values.toList
