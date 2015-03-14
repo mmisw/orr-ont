@@ -390,9 +390,10 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       get("/ont", map) {
         logger.info(s"get new entry reply: $body")
         status must_== 200
-        val res = parse(body).extract[PendOntologyResult]
+        val res = parse(body).extract[OntologySummaryResult]
         res.uri must_== ont1Uri
-        val latestVersion = res.versions.sorted(Ordering[String].reverse).head
+        res.versions.isDefined must beTrue
+        val latestVersion = res.versions.head.sorted(Ordering[String].reverse).head
         latestVersion must_== registeredVersion.get
       }
     }
@@ -456,9 +457,10 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       get("/ont", map) {
         logger.info(s"get new entry reply: $body")
         status must_== 200
-        val res = parse(body).extract[PendOntologyResult]
+        val res = parse(body).extract[OntologySummaryResult]
         res.uri must_== ont1Uri
-        val latestVersion = res.versions.sorted(Ordering[String].reverse).head
+        res.versions.isDefined must beTrue
+        val latestVersion = res.versions.head.sorted(Ordering[String].reverse).head
         latestVersion must_== registeredVersion.get
       }
     }

@@ -7,7 +7,7 @@ import com.novus.salat.global._
 import com.typesafe.scalalogging.slf4j.Logging
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.service.{NoSuch, NoSuchOntFormat, OntService}
-import org.mmisw.orr.ont.{PendOntologyResult, Setup}
+import org.mmisw.orr.ont.{OntologySummaryResult, Setup}
 
 import scala.util.{Failure, Success, Try}
 
@@ -90,10 +90,16 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
     val reqFormat = params.get("format").getOrElse(ontVersion.format)
 
     // TODO determine mechanism to request for file contents or metadata:  format=!md is preliminary
+    // TODO review common dispatch from ontService to avoid code duplication
 
     if (reqFormat == "!md") {
-      val ores = PendOntologyResult(ont.uri, ontVersion.name, ont.orgName, ont.sortedVersionKeys)
-      grater[PendOntologyResult].toCompactJSON(ores)
+      val ores = OntologySummaryResult(
+        ont.uri,
+        version,
+        ontVersion.name,
+        orgName = ont.orgName,
+        versions = Some(ont.sortedVersionKeys))
+      grater[OntologySummaryResult].toCompactJSON(ores)
     }
     else {
       val (file, actualFormat) = getOntologyFile(uri, version, reqFormat)

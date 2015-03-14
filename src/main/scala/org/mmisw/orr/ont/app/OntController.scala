@@ -193,23 +193,24 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
     // todo: determine mechanism to request for file contents or metadata:  format=!md is preliminary
 
     if (reqFormat == "!md") {
-      versionOpt match {
-        case Some(_) =>  // particular version requested.
-          val ores = OntologySummaryResult(
-            ont.uri,
-            version,
-            ontVersion.name,
-            submitter = if (checkIsAdminOrExtra) Some(ontVersion.userName) else None,
-            ont.orgName,
-            ontVersion.author,
-            ontVersion.status
-          )
-          grater[OntologySummaryResult].toCompactJSON(ores)
-
-        case None =>
-          val ores = PendOntologyResult(ont.uri, ontVersion.name, ont.orgName, ont.sortedVersionKeys)
-          grater[PendOntologyResult].toCompactJSON(ores)
+      // include 'versions' if no particular version requested.
+      val versionsOpt = versionOpt match {
+        case None    => Some(ont.sortedVersionKeys)
+        case Some(_) => None
       }
+      val ores = OntologySummaryResult(
+        ont.uri,
+        version,
+        ontVersion.name,
+        submitter = if (checkIsAdminOrExtra) Some(ontVersion.userName) else None,
+        ont.orgName,
+        ontVersion.author,
+        ontVersion.status,
+        ontologyType = ontVersion.ontologyType,
+        resourceType = ontVersion.resourceType,
+        versions = versionsOpt
+      )
+      grater[OntologySummaryResult].toCompactJSON(ores)
     }
     else {
       val (file, actualFormat) = getOntologyFile(uri, version, reqFormat)

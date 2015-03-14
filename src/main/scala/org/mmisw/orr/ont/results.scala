@@ -44,24 +44,14 @@ case class OntologyResult(
             removed:     Option[DateTime] = None)
 
 case class OntologySummaryResult(
-            uri:         String,
-            version:     String,
-            name:        String,
-            submitter:   Option[String] = None,
-            orgName:     Option[String] = None,
-            author:      Option[String] = None,
-            status:      Option[String] = None
-            )
-
-case class PendOntologyResult(
             uri:            String,
+            version:        String,
             name:           String,
+            submitter:      Option[String] = None,
             orgName:        Option[String] = None,
-            versions:       List[String])
-
-case class VersionInfo(
-           uri:         String,
-           name:        String,
-           version:     String,
-           date:        String,
-           metadata:    Map[String,AnyRef] = Map())
+            author:         Option[String] = None,
+            status:         Option[String] = None,
+            ontologyType:   Option[String] = None,
+            resourceType:   Option[String] = None,
+            versions:       Option[List[String]] = None
+            )

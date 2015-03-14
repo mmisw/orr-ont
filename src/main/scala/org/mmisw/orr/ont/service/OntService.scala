@@ -60,9 +60,11 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
             version,
             ontVersion.name,
             submitter = if (privileged) Some(ontVersion.userName) else None,
-            ont.orgName,
-            ontVersion.author,
-            ontVersion.status
+            orgName = ont.orgName,
+            author = ontVersion.author,
+            status = ontVersion.status,
+            ontologyType = ontVersion.ontologyType,
+            resourceType = ontVersion.resourceType
           )
 
         case None =>
