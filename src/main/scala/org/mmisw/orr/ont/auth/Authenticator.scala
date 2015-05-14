@@ -18,7 +18,7 @@ object userAuth {
   }
 
   def apply(usersDAO: SalatDAO[db.User, String]) = {
-    require(authenticator == null, "authenticator must not have been created already")
+    //require(authenticator == null, "authenticator must not have been created already")
     authenticator = new Authenticator(usersDAO)
     authenticator
   }

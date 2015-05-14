@@ -1,7 +1,10 @@
 package org.mmisw.orr.ont.x
 
 import java.io.{PrintWriter, File}
+import java.util.ServiceConfigurationError
 
+import com.typesafe.config.ConfigFactory
+import com.typesafe.scalalogging.slf4j.Logging
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.Setup
 import org.mmisw.orr.ont.service.{OrgService, OntFileWriter, OntService, UserService}
@@ -15,9 +18,18 @@ import scala.xml.{NodeSeq, Node, XML}
 /**
  * Imports data from previous database.
  */
-object AquaImporter extends App {
+object AquaImporter extends App with Logging {
+  val config = {  // todo refactor config loading
+    val configFilename = "/etc/orront.conf"
+    logger.info(s"Loading configuration from $configFilename")
+    val configFile = new File(configFilename)
+    if (!configFile.canRead) {
+      throw new ServiceConfigurationError("Could not read configuration file " + configFile)
+    }
+    ConfigFactory.parseFile(configFile)
+  }
 
-  implicit val setup = new Setup("/etc/orront.conf")
+  implicit val setup = new Setup(config)
   val userService = new UserService
   val orgService = new OrgService
   val ontService = new OntService

@@ -1,8 +1,12 @@
+import java.io.File
+
+import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.slf4j.Logging
 import java.util.ServiceConfigurationError
 import org.mmisw.orr.ont._
 import org.mmisw.orr.ont.app._
 import org.mmisw.orr.ont.service.{TripleStoreService, TripleStoreServiceAgRest, OntService}
+import org.mmisw.orr.ont.x.AquaImporter._
 import org.scalatra._
 import javax.servlet.ServletContext
 
@@ -20,7 +24,16 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       throw new ServiceConfigurationError("Could not retrieve configuration parameter: configFile.  Check web.xml")
     }
 
-    implicit val setup = new Setup(configFilename)
+    val config = {  // todo refactor config loading
+      logger.info(s"Loading configuration from $configFilename")
+      val configFile = new File(configFilename)
+      if (!configFile.canRead) {
+        throw new ServiceConfigurationError("Could not read configuration file " + configFile)
+      }
+      ConfigFactory.parseFile(configFile)
+    }
+
+    implicit val setup = new Setup(config)
     implicit val ontService = new OntService
     implicit val tsService: TripleStoreService = new TripleStoreServiceAgRest
 

@@ -1,8 +1,7 @@
 package org.mmisw.orr.ont
 
 import com.typesafe.scalalogging.slf4j.Logging
-import java.io.File
-import java.util.ServiceConfigurationError
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import org.mmisw.orr.ont.db.Db
 
@@ -10,20 +9,13 @@ import org.mmisw.orr.ont.db.Db
 /**
  * Sets up the application according to configuration.
  *
- * @param configFilename
+ * @param config   Base configuration
  * @param testing  optional string for testing purposes
  */
-class Setup(configFilename: String, val testing: Option[String] = None) extends AnyRef with Logging {
+class Setup(val config: Config, val testing: Option[String] = None) extends AnyRef with Logging {
 
   private[this] var dbOpt: Option[Db] = None
 
-  logger.info(s"Loading configuration from $configFilename")
-  val configFile = new File(configFilename)
-  if (!configFile.canRead) {
-    throw new ServiceConfigurationError("Could not read configuration file " + configFile)
-  }
-
-  val config = ConfigFactory.parseFile(configFile)
   // todo omit/obfuscate any passwords in output logging
   logger.debug(s"Loaded configuration: $config")
 
