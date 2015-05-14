@@ -1,0 +1,14 @@
+language: scala
+scala:
+  - "2.10.3"
+
+jdk: oraclejdk7
+
+services:
+  - mongodb
+
+before_script:
+  - sleep 15
+
+notifications:
+  slack: mmisw:yEUK01ro6HVvhRbkq9a2Y3df
