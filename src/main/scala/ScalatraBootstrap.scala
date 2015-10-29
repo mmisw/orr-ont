@@ -6,7 +6,6 @@ import java.util.ServiceConfigurationError
 import org.mmisw.orr.ont._
 import org.mmisw.orr.ont.app._
 import org.mmisw.orr.ont.service.{TripleStoreService, TripleStoreServiceAgRest, OntService}
-import org.mmisw.orr.ont.x.AquaImporter._
 import org.scalatra._
 import javax.servlet.ServletContext
 

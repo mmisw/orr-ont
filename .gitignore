@@ -1,5 +1,7 @@
 orront.conf
 
+orr-ont-base-directory-test/
+
 .DS_Store
 .idea
 .idea_modules
@@ -24,4 +26,3 @@ src_managed/
 project/boot/
 project/build/target/
 project/plugins/project/
-
