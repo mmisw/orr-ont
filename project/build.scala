@@ -6,7 +6,7 @@ import com.earldouglas.xsbtwebplugin.WebPlugin.container
 
 object build extends Build {
   val Organization = "org.mmisw"
-  val Name = "ORR Ont"
+  val Name = "orr-ont"
   val Version = "0.1.0-SNAPSHOT"
 
   val ScalaVersion      = "2.11.6"
