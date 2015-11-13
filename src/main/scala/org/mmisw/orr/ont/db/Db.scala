@@ -28,7 +28,7 @@ class Db(mongoConfig: Config) extends AnyRef with Logging {
     val user = mongoConfig.getString("user")
     val pw   = mongoConfig.getString("pw")
     logger.info(s"connecting to $host:$port/$db using credentials ...")
-    val credential = MongoCredential(user, db, pw.toCharArray)
+    val credential = MongoCredential.createMongoCRCredential(user, db, pw.toCharArray)
     MongoClient(serverAddress, List(credential))
   }
   else {
