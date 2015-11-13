@@ -2,7 +2,7 @@ package org.mmisw.orr.ont.app
 
 import java.io.File
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.mmisw.orr.ont.auth.authUtil
@@ -353,9 +353,9 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       post("/ont", map1, Map("file" -> ont1File), headers = userHeaders) {
         status must_== 201
         val res = parse(body).extract[OntologyResult]
-        res.uri must_== ont1Uri
         registeredVersion = res.version
         logger.debug(s"registeredVersion=$registeredVersion")
+        res.uri must_== ont1Uri
       }
     }
 
@@ -432,9 +432,9 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       put("/ont", params = map2, files = Map("file" -> ont1File), headers = userHeaders) {
         status must_== 200
         val res = parse(body).extract[OntologyResult]
-        res.uri must_== ont1Uri
         registeredVersion = res.version
         logger.debug(s"registeredVersion=$registeredVersion")
+        res.uri must_== ont1Uri
       }
     }
 
@@ -443,9 +443,9 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       put("/ont", params = map2, files = Map("file" -> ont1File), headers = adminHeaders) {
         status must_== 200
         val res = parse(body).extract[OntologyResult]
-        res.uri must_== ont1Uri
         registeredVersion = res.version
         logger.debug(s"registeredVersion=$registeredVersion")
+        res.uri must_== ont1Uri
       }
     }
   }

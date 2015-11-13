@@ -9,11 +9,11 @@ object build extends Build {
   val Name = "ORR Ont"
   val Version = "0.1.0-SNAPSHOT"
 
-  val ScalaVersion      = "2.10.3"
-  val ScalatraVersion   = "2.2.2"
-  val json4Version      = "3.2.7"
-  val casbahVersion     = "2.6.5"
-  val salatVersion      = "1.9.5"
+  val ScalaVersion      = "2.11.6"
+  val ScalatraVersion   = "2.3.0"
+  val json4Version      = "3.2.10"
+  val casbahVersion     = "2.7.1"
+  val salatVersion      = "1.9.9"
   val jenaVersion       = "2.11.1"
 
   private val graphSettings = net.virtualvoid.sbt.graph.Plugin.graphSettings
@@ -46,7 +46,7 @@ object build extends Build {
         "com.github.jsonld-java"     % "jsonld-java-jena"     % "0.3",
 
         "com.typesafe"               % "config"               % "1.2.1",
-        "com.typesafe"              %% "scalalogging-slf4j"   % "1.0.1",
+        "com.typesafe.scala-logging"%% "scala-logging"        % "3.1.0",
 
         "org.jasypt"                 % "jasypt"               % "1.9.2",
 

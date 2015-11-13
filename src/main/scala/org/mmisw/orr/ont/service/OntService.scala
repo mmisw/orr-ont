@@ -4,7 +4,7 @@ import java.io.File
 import java.net.{URI, URISyntaxException}
 
 import com.mongodb.casbah.Imports._
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.swld.ontUtil

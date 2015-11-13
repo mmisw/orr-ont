@@ -3,7 +3,7 @@ package org.mmisw.orr.ont.swld
 import com.hp.hpl.jena.ontology.{Ontology, OntDocumentManager, OntModelSpec, OntModel}
 import com.hp.hpl.jena.rdf.model.{RDFNode, Property, ModelFactory}
 import java.io.{FileWriter, File}
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.{StrictLogging => Logging}
 
 import com.github.jsonldjava.jena.JenaJSONLD
 import org.mmisw.orr.ont.vocabulary.{Omv, OmvMmi}

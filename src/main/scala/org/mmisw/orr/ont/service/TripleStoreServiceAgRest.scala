@@ -1,6 +1,6 @@
 package org.mmisw.orr.ont.service
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.{StrictLogging => Logging}
 import dispatch._
 import org.mmisw.orr.ont.Setup
 import org.mmisw.orr.ont.auth.authUtil

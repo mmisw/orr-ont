@@ -1,7 +1,7 @@
 package org.mmisw.orr.ont.service
 
 import com.mongodb.casbah.Imports._
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.db.User
 import org.mmisw.orr.ont.{db, UserResult, PendUserResult, Setup}

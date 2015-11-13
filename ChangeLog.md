@@ -1,6 +1,7 @@
 ## change log ##
 
 * 2015-11-13:
+  - update some dependencies
   - application.conf
 
 * 2015-03:

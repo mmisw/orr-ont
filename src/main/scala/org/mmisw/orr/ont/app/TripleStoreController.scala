@@ -1,7 +1,7 @@
 package org.mmisw.orr.ont.app
 
 import com.mongodb.casbah.Imports._
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.mmisw.orr.ont.Setup
 import org.mmisw.orr.ont.service.{OntService, TripleStoreService}
 import org.scalatra.BadRequest

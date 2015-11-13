@@ -1,6 +1,6 @@
 package org.mmisw.orr.ont
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.{StrictLogging => Logging}
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import org.mmisw.orr.ont.db.Db

@@ -4,7 +4,7 @@ import java.io.{PrintWriter, File}
 import java.util.ServiceConfigurationError
 
 import com.typesafe.config.ConfigFactory
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.Setup
 import org.mmisw.orr.ont.service.{OrgService, OntFileWriter, OntService, UserService}

@@ -3,7 +3,7 @@ package org.mmisw.orr.ont.app
 import com.mongodb.casbah.Imports._
 import com.novus.salat._
 import com.novus.salat.global._
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.db.Organization
 import org.mmisw.orr.ont.{PendOrgResult, db, OrgResult, Setup}

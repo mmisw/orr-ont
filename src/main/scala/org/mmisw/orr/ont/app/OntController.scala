@@ -6,7 +6,7 @@ import javax.servlet.annotation.MultipartConfig
 import com.mongodb.casbah.Imports._
 import com.novus.salat._
 import com.novus.salat.global._
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.mmisw.orr.ont._
 import org.mmisw.orr.ont.service._
 import org.scalatra.Created

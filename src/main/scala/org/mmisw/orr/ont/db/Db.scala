@@ -1,6 +1,6 @@
 package org.mmisw.orr.ont.db
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.{StrictLogging => Logging}
 import com.typesafe.config.{ConfigFactory, Config}
 import com.mongodb.casbah.Imports._
 import com.mongodb.ServerAddress

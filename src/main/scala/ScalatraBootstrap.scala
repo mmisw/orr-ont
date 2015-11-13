@@ -1,7 +1,7 @@
 import java.io.File
 
 import com.typesafe.config.{Config, ConfigFactory}
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.StrictLogging
 import java.util.ServiceConfigurationError
 import org.mmisw.orr.ont._
 import org.mmisw.orr.ont.app._
@@ -10,7 +10,7 @@ import org.scalatra._
 import javax.servlet.ServletContext
 
 
-class ScalatraBootstrap extends LifeCycle with Logging {
+class ScalatraBootstrap extends LifeCycle with StrictLogging {
 
   private[this] var setupOpt: Option[Setup] = None
 

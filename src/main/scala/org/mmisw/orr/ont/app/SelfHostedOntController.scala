@@ -4,7 +4,7 @@ import java.io.File
 
 import com.novus.salat._
 import com.novus.salat.global._
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.service.{NoSuch, NoSuchOntFormat, OntService}
 import org.mmisw.orr.ont.{OntologySummaryResult, Setup}
