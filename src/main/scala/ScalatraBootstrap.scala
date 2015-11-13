@@ -1,6 +1,6 @@
 import java.io.File
 
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.slf4j.Logging
 import java.util.ServiceConfigurationError
 import org.mmisw.orr.ont._
@@ -18,9 +18,10 @@ class ScalatraBootstrap extends LifeCycle with Logging {
 
     logger.info(s"contextPath = '${context.getContextPath}'")
 
-    val configFilename = context.getInitParameter("configFile")
+    val baseAppConfig: Config = ConfigFactory.load
+    val configFilename: String = baseAppConfig.getString("configFile")
     if (configFilename == null) {
-      throw new ServiceConfigurationError("Could not retrieve configuration parameter: configFile.  Check web.xml")
+      throw new ServiceConfigurationError("Could not retrieve configuration parameter: configFile.  Check application.conf")
     }
 
     val config = {  // todo refactor config loading
