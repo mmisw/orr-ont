@@ -1,5 +1,7 @@
 package org.mmisw.orr.ont.app
 
+import javax.servlet.http.HttpServletRequest
+
 import com.mongodb.casbah.Imports._
 import org.json4s.JsonAST.{JArray, JNothing, JString, JValue}
 import org.json4s.ext.JodaTimeSerializers
@@ -64,6 +66,22 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSuppor
 
   // todo why we seem to need to re-set this default one? otherwise tests break!
   addMimeMapping("application/json", "json")
+
+  val defaultRequestedFormat = "json"
+
+  protected def getRequestedFormat(implicit request: HttpServletRequest): String = {
+    def getAcceptHeader = {
+      val ah = acceptHeader
+      println(s"accept header=$ah")
+      ah
+    }
+    params.get("format") getOrElse (getAcceptHeader match {
+      case List() => defaultRequestedFormat
+      case list =>
+        if (list contains "text/html") "html"
+        else if (mimeTypes.contains(list(0))) mimeTypes(list(0)) else defaultRequestedFormat
+    })
+  }
 
   before() {
     contentType = formats("json")

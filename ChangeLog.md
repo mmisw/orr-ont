@@ -1,5 +1,10 @@
 ## change log ##
 
+* 2016-01-03:
+  - add support method getRequestedFormat for content-negotiation: returns requested format with precedence to the "format" 
+    parameter if given, otherwise according to the Accept header
+    
+  
 * 2015-11-13:
   - remove ./sbt, which continues to fail locally and on travis with: ```
 		[info] Loading global plugins from /Users/carueda/.sbt/0.13/plugins
