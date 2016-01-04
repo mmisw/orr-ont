@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-01-04: 0.1.0:
+  - update sbt-dependency-graph plugin to 0.8.0
+  
 * 2016-01-03: 0.1.0: SelfHostedOntController: preliminaries to dispatch ORR Portal interface. 
   - this dispatch is done according to content negotiation (or explicit "format" parameter) indicating that
     HTML is to be responded (well, and also associated resources like css, js, etc)
