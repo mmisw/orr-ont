@@ -1,6 +1,16 @@
 ## change log ##
 
-* 2016-01-03:
+* 2016-01-03: 0.1.0: SelfHostedOntController: preliminaries to dispatch ORR Portal interface. 
+  - this dispatch is done according to content negotiation (or explicit "format" parameter) indicating that
+    HTML is to be responded (well, and also associated resources like css, js, etc)
+  - dispatch only done if the `/index.html` file exists under my orr-ont's application context.
+    Otherwise, usual dispatch (with preference for json response) is done.
+  - The existence of `/index.html` is assumed to indicate that all other orrportal application's resources 
+    are accessible under the orr-ont application context.
+    See orr-portal's gulp "install" target (along with `--base` and `--dest`), which installs these resources.
+  - In summary: "self-resolution" of the ORR Portal interface when the ORR Portal is installed
+    under orr-ont application context.
+  	
   - add support method getRequestedFormat for content-negotiation: returns requested format with precedence to the "format" 
     parameter if given, otherwise according to the Accept header
     

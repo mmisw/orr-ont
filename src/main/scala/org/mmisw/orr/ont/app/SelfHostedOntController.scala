@@ -1,6 +1,7 @@
 package org.mmisw.orr.ont.app
 
 import java.io.File
+import javax.servlet.http.HttpServletRequestWrapper
 
 import com.novus.salat._
 import com.novus.salat.global._
@@ -12,31 +13,83 @@ import org.mmisw.orr.ont.{OntologySummaryResult, Setup}
 import scala.util.{Failure, Success, Try}
 
 /**
- * Controller to dispatch "self-hosted ontology" requests, mainly for resolution (GET)
- * and not for updates/deletions (although these might be added later if useful).
- */
+  * Controller to dispatch "self-hosted ontology" requests, mainly for resolution (GET)
+  * and not for updates/deletions.
+  *
+  * Includes mechanism to dispatch the UI (ORR Portal) such that the
+  * application context is preserved in the browser's location address).
+  */
 class SelfHostedOntController(implicit setup: Setup, ontService: OntService) extends BaseController
     with Logging {
 
   get("/(.*)".r) {
-    multiParams("captures").headOption match {
-      case Some(suffix) => if (suffix.startsWith("api")) pass() else resolve(suffix)
-      case _ => pass()
+    val reqFormat = getRequestedFormat
+    val pathInfo = request.pathInfo
+
+    logger.debug(s"reqFormat=$reqFormat request.pathInfo=$pathInfo")
+
+    if (pathInfo.startsWith("/api")) {
+      pass()
+    }
+
+    if (!portalDispatch(pathInfo, reqFormat)) {
+      resolve(pathInfo.substring(1), reqFormat)
     }
   }
 
   ///////////////////////////////////////////////////////////////////////////
 
+  /** returns true only if the dispatch is compeleted here */
+  private def portalDispatch(pathInfo: String, reqFormat: String): Boolean = {
+    // do the special HTML dispatch below only if the "/index.html" exists under my context:
+    val hasIndexHtml = Option(request.getServletContext.getRealPath("/index.html")) match {
+      case Some(realPath) => new File(realPath).isFile
+      case _ => false
+    }
+
+    logger.debug(s"portalDispatch: hasIndexHtml=$hasIndexHtml")
+
+    if (hasIndexHtml) {
+      val isUiResource = List("/vendor", "/js", "/img", "/css") exists pathInfo.startsWith
+
+      if (isUiResource) {
+        serveStaticResource() getOrElse error(404, s"${request.getRequestURI}: resource not found")
+        true
+      }
+
+      else if (reqFormat == "html") {
+        // for HTML, always dispatch as a static resource:
+        if (pathInfo == "/") {
+          //  "/" --> "/index.html" resolution:
+          val newPathInfo = "/index.html"
+          logger.debug(s"serving $newPathInfo for $pathInfo request")
+          // similar to serveStaticResource but with adjusted request:
+          val indexRequest = new HttpServletRequestWrapper(request) {
+            override def getPathInfo = newPathInfo
+          }
+          servletContext.getNamedDispatcher("default").forward(indexRequest, response)
+          true
+        }
+        else {
+          serveStaticResource() getOrElse error(404, s"${request.getRequestURI}: resource not found")
+          true
+        }
+      }
+      else false
+    }
+    else false
+  }
+
   private val orgOrUserPattern = "ont/([^/]+)$".r
 
-  private def resolve(suffix: String) = {
-    logger.debug(s"resolve: suffix='$suffix'")
-    orgOrUserPattern.findFirstMatchIn(suffix).toList.headOption match {
-      case Some(m) => resolveOrgOrUser(m.group(1))
+  private def resolve(pathInfo: String, reqFormat: String) = {
+    logger.debug(s"resolve: pathInfo='$pathInfo'")
+    orgOrUserPattern.findFirstMatchIn(pathInfo).toList.headOption match {
+      case Some(m) => resolveOrgOrUser(m.group(1), reqFormat)
       case None =>
         val uri = request.getRequestURL.toString
         logger.debug(s"self-resolving '$uri' ...")
-        resolveUri(uri)
+        resolveUri(uri, reqFormat)
     }
   }
 
@@ -49,14 +102,14 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
    * where xyz corresponds to a userName.
    * TODO review the whole thing.
    */
-  private def resolveOrgOrUser(xyz: String) = {
+  private def resolveOrgOrUser(xyz: String, reqFormat: String) = {
     logger.debug(s"resolve: xyz='$xyz'")
     orgsDAO.findOneById(xyz) match {
       case Some(org) =>
         org.ontUri match {
           case Some(ontUri) => redirect(ontUri)
           case None =>
-            try selfResolve
+            try selfResolve(reqFormat)
             catch {
               case exc: AnyRef =>
                 logger.info(s"EXC in selfResolve: $exc")
@@ -77,17 +130,19 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
     }
   }
 
-  private def selfResolve = {
+  private def selfResolve(reqFormat: String) = {
     val uri = request.getRequestURL.toString
     logger.debug(s"self-resolving '$uri' ...")
-    resolveUri(uri)
+    resolveUri(uri, reqFormat)
   }
 
-  private def resolveUri(uri: String) = {
+  private def resolveUri(uri: String, reqFormat: String) = {
     val (ont, ontVersion, version) = resolveOntology(uri, params.get("version"))
 
     // format is the one given if any, or the one in the db:
-    val reqFormat = params.get("format").getOrElse(ontVersion.format)
+    //val reqFormat = params.get("format").getOrElse(ontVersion.format)
+    // TODO(low priority): perhaps use the saved ontVersion.format when there's no explicit requested
+    // format e.g, when there's no "format" param and the accept header only has "*/*" ?
 
     // TODO determine mechanism to request for file contents or metadata:  format=!md is preliminary
     // TODO review common dispatch from ontService to avoid code duplication
