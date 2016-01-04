@@ -9,7 +9,7 @@
     are accessible under the orr-ont application context.
     See orr-portal's gulp "install" target (along with `--base` and `--dest`), which installs these resources.
   - In summary: "self-resolution" of the ORR Portal interface when the ORR Portal is installed
-    under orr-ont application context.
+    under orr-ont application context. For HTML always dispatches /index.html for any requested path.
   	
   - add support method getRequestedFormat for content-negotiation: returns requested format with precedence to the "format" 
     parameter if given, otherwise according to the Accept header

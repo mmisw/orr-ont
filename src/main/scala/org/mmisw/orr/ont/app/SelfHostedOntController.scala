@@ -58,22 +58,13 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
       }
 
       else if (reqFormat == "html") {
-        // for HTML, always dispatch as a static resource:
-        if (pathInfo == "/") {
-          //  "/" --> "/index.html" resolution:
-          val newPathInfo = "/index.html"
-          logger.debug(s"serving $newPathInfo for $pathInfo request")
-          // similar to serveStaticResource but with adjusted request:
-          val indexRequest = new HttpServletRequestWrapper(request) {
-            override def getPathInfo = newPathInfo
-          }
-          servletContext.getNamedDispatcher("default").forward(indexRequest, response)
-          true
+        // for HTML always dispatch /index.html
+        logger.debug(s"serving '/index.html' for request: $pathInfo")
+        val indexRequest = new HttpServletRequestWrapper(request) {
+          override def getPathInfo = "/index.html"
         }
-        else {
-          serveStaticResource() getOrElse error(404, s"${request.getRequestURI}: resource not found")
-          true
-        }
+        servletContext.getNamedDispatcher("default").forward(indexRequest, response)
+        true
       }
       else false
     }
