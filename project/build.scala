@@ -3,6 +3,7 @@ import Keys._
 import org.scalatra.sbt._
 import com.earldouglas.xsbtwebplugin.PluginKeys.port
 import com.earldouglas.xsbtwebplugin.WebPlugin.container
+import sbtassembly.AssemblyPlugin.autoImport._
 
 object build extends Build {
   val Organization = "org.mmisw"
@@ -16,10 +17,17 @@ object build extends Build {
   val salatVersion      = "1.9.9"
   val jenaVersion       = "2.11.1"
 
+  //[S]
+  lazy val assemblySettings = Seq(
+    // disable tests because they will fail with a weird problem just loading the SequenceSpec class
+    test in assembly := {},
+    mainClass in assembly := Some("org.mmisw.orr.ont.JettyLauncher")
+  )
+
   lazy val project = Project (
     "orr-ont",
     file("."),
-    settings = Defaults.defaultSettings ++ ScalatraPlugin.scalatraWithJRebel ++
+    settings = Defaults.defaultSettings ++ ScalatraPlugin.scalatraWithJRebel ++ assemblySettings ++
       Seq(
       organization := Organization,
       name := Name,
@@ -30,7 +38,13 @@ object build extends Build {
         "org.mongodb"               %% "casbah"               % casbahVersion,
         "com.novus"                 %% "salat"                % salatVersion,
 
-        "org.scalatra"              %% "scalatra"             % ScalatraVersion,
+        // [S]: exclude's below needed if using the assembly plugin; otherwise deduplication errors would occur
+        // these exclude's also work ok for other tasks so no need to remove them
+
+        ("org.scalatra"              %% "scalatra"             % ScalatraVersion)
+          .exclude("org.slf4j", "slf4j-log4j12")
+        ,
+
         "org.scalatra"              %% "scalatra-specs2"      % ScalatraVersion % "test",
         "org.scalatra"              %% "scalatra-json"        % ScalatraVersion,
         "org.scalatra"              %% "scalatra-auth"        % ScalatraVersion,
@@ -40,8 +54,14 @@ object build extends Build {
         "org.json4s"                %% "json4s-jackson"       % json4Version,
         "org.json4s"                %% "json4s-mongo"         % json4Version,
 
-        "org.apache.jena"            % "jena-core"            % jenaVersion,
-        "com.github.jsonld-java"     % "jsonld-java-jena"     % "0.3",
+        ("org.apache.jena"            % "jena-core"            % jenaVersion)
+          .exclude("org.slf4j", "slf4j-log4j12")
+        ,
+
+        ("com.github.jsonld-java"     % "jsonld-java-jena"     % "0.3")
+          .exclude("commons-logging", "commons-logging")
+          .exclude("org.slf4j", "slf4j-log4j12")
+        ,
 
         "com.typesafe"               % "config"               % "1.2.1",
         "com.typesafe.scala-logging"%% "scala-logging"        % "3.1.0",
@@ -52,8 +72,9 @@ object build extends Build {
 
         "ch.qos.logback"             % "logback-classic"      % "1.0.6" % "runtime",
 
-        // if creating standalone, uncomment code in JettyLauncher and set "container;compile" here:
-        "org.eclipse.jetty"          % "jetty-webapp"         % "8.1.8.v20121106" % "container",
+        // [S] to create standalone uncomment code in JettyLauncher and use "container;compile" here:
+      //"org.eclipse.jetty"          % "jetty-webapp"         % "8.1.8.v20121106" % "container;compile", // standalone
+        "org.eclipse.jetty"          % "jetty-webapp"         % "8.1.8.v20121106" % "container",         // *no* standalone
 
         "org.eclipse.jetty.orbit"    % "javax.servlet"        % "3.0.0.v201112011016" % "container;provided;test" artifacts (Artifact("javax.servlet", "jar", "jar"))
       ),

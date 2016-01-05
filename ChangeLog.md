@@ -1,6 +1,10 @@
 ## change log ##
 
 * 2016-01-04: 0.1.0:
+  - add sbt-assembly plugin (0.14.1) to create standalone version. Generation (excluding tests)
+    and execution of resulting standalone worked OK locally but only the addition of the plugin is committed.
+    Actual generation will require some manual steps; see comments in JettyLauncher.scala and notes in build.scala.
+      
   - update sbt-dependency-graph plugin to 0.8.0
   
 * 2016-01-03: 0.1.0: SelfHostedOntController: preliminaries to dispatch ORR Portal interface. 
