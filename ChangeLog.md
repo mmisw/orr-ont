@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-01-13: 0.2.0:
+  - add route for JWT generation for firebase-based auth
+
 * 2016-01-04: 0.1.0:
   - add sbt-assembly plugin (0.14.1) to create standalone version. Generation (excluding tests)
     and execution of resulting standalone worked OK locally but only the addition of the plugin is committed.
@@ -23,7 +26,8 @@
     
   
 * 2015-11-13:
-  - remove ./sbt, which continues to fail locally and on travis with: ```
+  - remove ./sbt, which continues to fail locally and on travis with: 
+  ```
 		[info] Loading global plugins from /Users/carueda/.sbt/0.13/plugins
 		[info] Loading project definition from /Users/carueda/github/orr-ont/project
 		[info] Set current project to ORR Ont (in build file:/Users/carueda/github/orr-ont/)

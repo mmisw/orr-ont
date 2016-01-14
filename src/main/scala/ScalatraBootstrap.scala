@@ -41,6 +41,7 @@ class ScalatraBootstrap extends LifeCycle with StrictLogging {
     context.mount(new UserController,          "/api/v0/user/*")
     context.mount(new OntController,           "/api/v0/ont/*")
     context.mount(new TripleStoreController,   "/api/v0/ts/*")
+    context.mount(new FirebaseController,      "/api/v0/fb/")
     context.mount(new SelfHostedOntController, "/*")
 
     setupOpt = Some(setup)
