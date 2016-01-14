@@ -5,8 +5,6 @@ import org.mmisw.orr.ont.service.JwtUtil
 import org.mmisw.orr.ont.{Setup, db}
 import org.scalatra.auth.strategy.BasicAuthStrategy
 
-import scala.util.{Failure, Success, Try}
-
 
 abstract class BaseController(implicit setup: Setup) extends OrrOntStack
   with AuthenticationSupport with SimpleMongoDbJsonConversion {

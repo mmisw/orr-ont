@@ -36,7 +36,7 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSuppor
   }
 
   protected def body(): Map[String, JValue] = {
-    val json = parse(request.body)
+    val json = parsedBody
     if (json != JNothing) json.extract[Map[String, JValue]] else error(400, "missing json body")
   }
 
