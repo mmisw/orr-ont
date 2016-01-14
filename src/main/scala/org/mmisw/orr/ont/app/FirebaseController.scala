@@ -26,4 +26,4 @@ class FirebaseController(implicit setup: Setup) extends BaseController
   }
 }
 
-case class Token(jwt: String)
+case class Token(token: String)
