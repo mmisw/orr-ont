@@ -30,6 +30,11 @@ trait BaseSpec {
       |  tsName = mmiorr
       |  orrEndpoint = "example.org/repos/mmiorr"
       |}
+      |
+      |firebase {
+      |  secret = "dummy"
+      |}
+      |
       |""".stripMargin
   )
 
