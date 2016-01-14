@@ -71,6 +71,7 @@ object build extends Build {
         "net.databinder.dispatch"   %% "dispatch-core"        % "0.11.2",
 
         "com.firebase"               % "firebase-token-generator" % "2.0.0",
+        "com.auth0"                  % "java-jwt"                 % "2.1.0",
 
         "ch.qos.logback"             % "logback-classic"      % "1.0.6" % "runtime",
 

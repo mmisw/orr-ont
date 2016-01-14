@@ -1,8 +1,11 @@
 package org.mmisw.orr.ont.app
 
 import org.mmisw.orr.ont.auth.{AuthUser, AuthenticationSupport}
+import org.mmisw.orr.ont.service.JwtUtil
 import org.mmisw.orr.ont.{Setup, db}
 import org.scalatra.auth.strategy.BasicAuthStrategy
+
+import scala.util.{Failure, Success, Try}
 
 
 abstract class BaseController(implicit setup: Setup) extends OrrOntStack
@@ -24,14 +27,21 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
   protected val ontDAO      = setup.db.ontDAO
   protected val userAuth    = setup.db.authenticator
 
+  protected val jwtUtil = new JwtUtil(setup.config.getString("firebase.secret"))
+
   ///////////////////////////////////////////////////////////////////////////
 
   before() {
     // println("---- Authorization = " + request.getHeader("Authorization"))
     authenticatedUser = {
+      // try basic auth, then JWT, to see if we have an authenticated user
       val baReq = new BasicAuthStrategy.BasicAuthRequest(request)
-      if(baReq.providesAuth && baReq.isBasicAuth) scentry.authenticate("Basic")
-      else None
+      if (baReq.providesAuth && baReq.isBasicAuth)
+        scentry.authenticate("Basic")
+      else for {
+        jwt <- params.get("jwt")
+        authUser <- jwtUtil.verifyToken(jwt)
+      } yield authUser
     }
   }
 

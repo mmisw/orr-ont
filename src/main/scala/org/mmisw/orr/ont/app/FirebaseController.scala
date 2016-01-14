@@ -1,13 +1,12 @@
 package org.mmisw.orr.ont.app
 
 import com.typesafe.scalalogging.{StrictLogging => Logging}
-import com.firebase.security.token.TokenGenerator
 import org.mmisw.orr.ont.Setup
-import scala.collection.JavaConversions._
 
 class FirebaseController(implicit setup: Setup) extends BaseController
       with Logging {
 
+  // authenticates user returning a JWT if successful
   post("/auth") {
     val map = body()
     val userName = require(map, "username")
@@ -15,23 +14,16 @@ class FirebaseController(implicit setup: Setup) extends BaseController
     val user = getUser(userName)
 
     if (userAuth.checkPassword(password, user)) {
-      val custom: java.util.Map[String,String] = Map(
+      val custom = Map(
         "displayName" -> s"${user.firstName} ${user.lastName}",
         "email" -> user.email,
         "phone" -> user.phone.getOrElse("")
       )
-
-      val authPayload = Map(
-        "uid" -> userName,
-        "custom" -> custom
-      )
-      val generator = new TokenGenerator(setup.config.getString("firebase.secret"))
-      val token = generator.createToken(authPayload)
-      Token(token)
+      val jwt = jwtUtil.createToken(userName, custom)
+      Token(jwt)
     }
-    else error(401, "bad password")
+    else error(401, "invalid credentials")
   }
-
 }
 
-case class Token(token: String)
+case class Token(jwt: String)

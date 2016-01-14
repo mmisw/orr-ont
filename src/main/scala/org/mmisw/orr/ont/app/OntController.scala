@@ -36,7 +36,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
     params.get("uri") match {
       case Some(uri) => resolveUri(uri)
       case None =>
-        val query = getQueryFromParams(params.keySet) // - sigParamName)
+        val query = getQueryFromParams(params.keySet) - "jwt"  // - sigParamName)
         val onts = ontService.getOntologies(query, checkIsAdminOrExtra)
         // TODO what exactly to report for the list of ontologies?
         onts map grater[OntologySummaryResult].toCompactJSON

@@ -1,6 +1,7 @@
 ## change log ##
 
-* 2016-01-13: 0.2.0:
+* 2016-01-14: 0.2.0:
+  - try basic auth, then JWT for user authentication
   - add route for JWT generation for firebase-based auth
 
 * 2016-01-04: 0.1.0:
