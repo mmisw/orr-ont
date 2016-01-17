@@ -8,7 +8,7 @@ import sbtassembly.AssemblyPlugin.autoImport._
 object build extends Build {
   val Organization = "org.mmisw"
   val Name = "orr-ont"
-  val Version = "0.2.0"
+  val Version = "0.3.0"
 
   val ScalaVersion      = "2.11.6"
   val ScalatraVersion   = "2.3.0"
@@ -72,6 +72,8 @@ object build extends Build {
 
         "com.firebase"               % "firebase-token-generator" % "2.0.0",
         "com.auth0"                  % "java-jwt"                 % "2.1.0",
+
+        "javax.mail"                 % "mail"                 % "1.4.7",
 
         "ch.qos.logback"             % "logback-classic"      % "1.0.6" % "runtime",
 

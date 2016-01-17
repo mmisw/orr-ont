@@ -3,8 +3,9 @@ package org.mmisw.orr.ont.service
 import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
-import org.mmisw.orr.ont.db.User
-import org.mmisw.orr.ont.{db, UserResult, PendUserResult, Setup}
+import org.mmisw.orr.ont.db.{PwReset, User}
+import org.mmisw.orr.ont._
+import org.mmisw.orr.ont.util.Emailer
 
 import scala.util.{Failure, Success, Try}
 
@@ -14,6 +15,10 @@ import scala.util.{Failure, Success, Try}
 class UserService(implicit setup: Setup) extends BaseService(setup) with Logging {
 
   createAdminIfMissing()
+
+  private val emailer = new Emailer(setup.config.getConfig("email"))
+
+  private val pwrDAO      = setup.db.pwrDAO
 
   /**
    * Gets the users satisfying the given query.
@@ -99,6 +104,77 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
         UserResult(userName, updated = update.updated)
 
       case Failure(exc)  => throw CannotUpdateUser(userName, exc.getMessage)
+    }
+  }
+
+  /**
+   * Generates email so the user can reset her/his password.
+   */
+  def requestResetPassword(user: db.User, resetRoute: String): Unit = {
+    logger.debug(s"request password reset for userName=${user.userName} (resetRoute=$resetRoute)")
+
+    def getEmailText(resetLink: String): String = {
+      s"""
+        | Hi ${user.firstName} ${user.lastName},
+        |
+        | You have requested to reset your password at the orr-ont.
+        |
+        | Please visit this link to reset it:
+        |   $resetLink
+        |
+        | Your account:
+        |    username: ${user.userName}
+        |    email:    ${user.email}
+        |
+        | If you did not make this request, please disregard this email.
+        |
+        | The orr-ont team
+        """.stripMargin
+    }
+
+    val token = java.util.UUID.randomUUID().toString
+
+    val expiration = DateTime.now().plusHours(24)
+    val obj = PwReset(token, user.userName, expiration)
+
+    Try(pwrDAO.insert(obj, WriteConcern.Safe)) match {
+      case Success(r) =>
+        val emailText = getEmailText(s"$resetRoute$token")
+        println(s"resetPassword: PwReset: $obj emailText:\n$emailText")
+        try {
+          emailer.sendEmail(user.email,
+            "Reset your orr-ont password",
+            emailText)
+        }
+        catch {
+          case exc:Exception => exc.printStackTrace()
+        }
+
+      case Failure(exc) => exc.printStackTrace()
+    }
+  }
+
+  def notifyPasswordHasBeenReset(user: db.User): Unit = {
+    val emailText =
+      s"""
+         |Your orr-ont password has been changed.
+         |
+         | Your account:
+         |    username: ${user.userName}
+         |    email:    ${user.email}
+         |
+         | The orr-ont team
+       """.stripMargin
+    println(s"notifyPasswordReset:\n$emailText")
+
+    try {
+      emailer.sendEmail(user.email,
+        "orr-ont password change confirmation",
+        emailText
+      )
+    }
+    catch {
+      case exc:Exception => exc.printStackTrace()
     }
   }
 

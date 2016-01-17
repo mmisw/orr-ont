@@ -21,6 +21,11 @@ case class PendUserResult(
             ontUri:      Option[String] = None,
             registered:  Option[DateTime] = None)
 
+case class PasswordResetResult(
+            userName:    String,
+            email:       Option[String] = None,
+            message:     Option[String] = None)
+
 case class OrgResult(
             orgName:     String,
             name:        Option[String] = None,

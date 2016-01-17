@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-01-16: 0.3.0:
+  - first version of password reset, basic but functional
+  
 * 2016-01-14: 0.2.0:
   - try basic auth, then JWT for user authentication
   - add route for JWT generation for firebase-based auth

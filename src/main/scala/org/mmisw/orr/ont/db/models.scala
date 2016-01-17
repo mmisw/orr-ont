@@ -35,6 +35,11 @@ case class User(
             registered:            DateTime = DateTime.now(),
             updated:               Option[DateTime] = None)
 
+case class PwReset(
+            @Key("_id") token:     String,
+            userName:              String,
+            expiration:            DateTime)
+
 case class Organization(
             @Key("_id") orgName:   String,
             name:                  String,
