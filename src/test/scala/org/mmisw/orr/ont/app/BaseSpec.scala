@@ -31,6 +31,22 @@ trait BaseSpec {
       |  orrEndpoint = "example.org/repos/mmiorr"
       |}
       |
+      |email {
+      |  account {
+      |    username = "noone@example.com"
+      |    password = "nopw"
+      |  }
+      |  server {
+      |    host = "smtp.example.net"
+      |    port = 465
+      |    prot = "smtps"
+      |    debug = false
+      |  }
+      |  from    = "orr-ont <orr-ont@example.org>"
+      |  replyTo = "orr-ont@example.org"
+      |  mailer  = "orr-ont"
+      |}
+      |
       |firebase {
       |  secret = "dummy"
       |}
