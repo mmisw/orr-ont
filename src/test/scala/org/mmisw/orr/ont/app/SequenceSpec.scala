@@ -76,19 +76,10 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   val user2Headers = Map("Authorization" -> authUtil.basicCredentials(userName2, password2))
 
   "Create new users (POST /user)" should {
-    "fail with no credentials" in {
+
+    "succeed with no credentials" in {
       post("/user", body = pretty(render(map))) {
-        status must_== 401
-      }
-    }
-
-    val adminHeaders = Map("content-type" -> "application/json", "Authorization" -> adminCredentials)
-
-    "succeed with admin credentials" in {
-      post("/user", body = pretty(render(map)), headers = adminHeaders) {
         status must_== 201
-        val res = parse(body).extract[UserResult]
-        res.userName must_== userName
       }
     }
 
@@ -98,13 +89,6 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       "firstName" -> "myFirstName",
       "lastName"  -> "myLastName",
       "password"  -> password2)
-
-    "fail with regular user credentials" in {
-      // first userName (already added) trying to create a new user
-      post("/user", body = pretty(render(map2)), headers = userHeaders) {
-        status must_== 403
-      }
-    }
 
     "succeed (user2)" in {
       post("/user", body = pretty(render(map2)), headers = adminHeaders) {
@@ -149,6 +133,20 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
         status must_== 401
       }
     }
+
+    // TODO "succeed with JWT"
+//    val jwt = jwtUtil.createToken(userName, Map())
+//    "succeed with JWT" in {
+//      val headers = Map("content-type" -> "application/json")
+//      val reqBody2 = pretty(render(Map("jwt" -> jwt)))
+//      put(s"/user/$userName", body = reqBody2, headers = headers) {
+//        status must_== 200
+//        logger.debug(s"PUT user reply body=$body")
+//        val res = parse(body).extract[UserResult]
+//        res.userName must_== userName
+//      }
+//    }
+
     "succeed with user credentials" in {
       val headers = Map("content-type" -> "application/json", "Authorization" -> userCredentials)
       put(s"/user/$userName", body = reqBody, headers = headers) {

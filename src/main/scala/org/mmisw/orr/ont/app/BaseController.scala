@@ -66,7 +66,7 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
 
   protected def verifyIsAuthenticatedUser(userNames: String*): Unit = authenticatedUser match {
     case Some(u) if userNames.contains(u.userName) =>
-    case _ => halt(403, s"unauthorized")
+    case _ => halt(401, s"unauthorized")
   }
 
 //  ///////////////////////////////////////////////////////////////////////////

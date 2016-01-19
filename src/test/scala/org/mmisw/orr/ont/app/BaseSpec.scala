@@ -3,6 +3,7 @@ package org.mmisw.orr.ont.app
 import com.typesafe.config.ConfigFactory
 import org.mmisw.orr.ont.Setup
 import org.mmisw.orr.ont.auth.authUtil
+import org.mmisw.orr.ont.service.JwtUtil
 
 trait BaseSpec {
   implicit val formats = org.json4s.DefaultFormats
@@ -56,6 +57,8 @@ trait BaseSpec {
 
   // use collection names composed from the name of the test class
   implicit val setup = new Setup(config, testing = Some(getClass.getSimpleName))
+
+  val jwtUtil = new JwtUtil(config.getString("firebase.secret"))
 
   val adminCredentials = authUtil.basicCredentials("admin", setup.config.getString("admin.password"))
 
