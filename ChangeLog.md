@@ -1,6 +1,7 @@
 ## change log ##
 
-* 2016-01-16: 0.3.0:
+* 2016-01-18: 0.3.0:
+  - adjustment in registration of new user
   - first version of password reset, basic but functional
   
 * 2016-01-14: 0.2.0:

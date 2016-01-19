@@ -169,20 +169,22 @@ class UserController(implicit setup: Setup) extends BaseController
 
   /*
    * Registers a new user.
-   * Only "admin" can do this.
    */
   post("/") {
-    verifyAuthenticatedUser("admin")
+    // TODO: re-captcha to verify this is a request from a human
+    // TODO: email with account confirmation link
+
     val map = body()
 
     val userName  = require(map, "userName")
+    val email     = require(map, "email")
     val firstName = require(map, "firstName")
     val lastName  = require(map, "lastName")
     val password  = require(map, "password")
-    val email     = require(map, "email")
+    val phone     = getString(map, "phone")
     val ontUri    = getString(map, "ontUri")
 
-    Created(createUser(userName, firstName, lastName, password, email, ontUri))
+    Created(createUser(userName, email, firstName, lastName, password, phone, ontUri))
   }
 
   post("/auth") {
@@ -304,13 +306,18 @@ class UserController(implicit setup: Setup) extends BaseController
     grater[UserResult].toCompactJSON(res)
   }
 
-  def createUser(userName: String, firstName: String, lastName: String, password: String, email: String,
-                 ontUri: Option[String] = None) = {
+  def createUser(userName: String,
+                 email: String,
+                 firstName: String, lastName: String,
+                 password: String,
+                 phone: Option[String] = None,
+                 ontUri: Option[String] = None
+                ) = {
 
     usersDAO.findOneById(userName) match {
       case None =>
         val encPassword = userAuth.encryptPassword(password)
-        val obj = db.User(userName, firstName, lastName, encPassword, email, ontUri)
+        val obj = db.User(userName, firstName, lastName, encPassword, email, ontUri, phone)
 
         Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
           case Success(r) => UserResult(userName, registered = Some(obj.registered))
