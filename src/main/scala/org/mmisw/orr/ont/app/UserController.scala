@@ -236,7 +236,7 @@ class UserController(implicit setup: Setup) extends BaseController
     val userName = require(params, "userName")
     logger.debug(s"PUT userName=$userName")
     val map = body()
-    verifyAuthenticatedUser(userName, "admin")
+    verifyIsAuthenticatedUser(userName, "admin")
 
     var update = getUser(userName)
 
@@ -245,6 +245,9 @@ class UserController(implicit setup: Setup) extends BaseController
     }
     if (map.contains("lastName")) {
       update = update.copy(lastName = require(map, "lastName"))
+    }
+    if (map.contains("phone")) {
+      update = update.copy(phone = Some(require(map, "phone")))
     }
     if (map.contains("password")) {
       val password = require(map, "password")
