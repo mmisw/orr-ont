@@ -5,7 +5,7 @@ import com.novus.salat._
 import com.novus.salat.global._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
-import org.mmisw.orr.ont.{PasswordResetResult, db, Setup, UserResult}
+import org.mmisw.orr.ont._
 import org.mmisw.orr.ont.service.UserService
 import org.scalatra.Created
 
@@ -34,10 +34,25 @@ class UserController(implicit setup: Setup) extends BaseController
     getUserJson(getUser(userName))
   }
 
+  // username reminder
+  put("/unr/") {
+    val map = body()
+    val email = require(map, "email")
+
+    new Thread(new Runnable {
+      def run() {
+        userService.sendUsername(email)
+      }
+    }).start()
+
+    UsernameReminderResult(email,
+      message = Some("If you have an account with this address, you should receive an email in a few minutes.")
+    )
+  }
+
   // requests password to be reset
   // TODO mechanism to avoid/reduce DoS attacks
   put("/rpwr/:userName") {
-    request.getRemoteHost
     val userName = require(params, "userName")
     val user = getUser(userName)
 

@@ -3,6 +3,7 @@ package org.mmisw.orr.ont.service
 import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
+import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
 import org.mmisw.orr.ont.db.{PwReset, User}
 import org.mmisw.orr.ont._
 import org.mmisw.orr.ont.util.Emailer
@@ -105,6 +106,54 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
 
       case Failure(exc)  => throw CannotUpdateUser(userName, exc.getMessage)
     }
+  }
+
+  /**
+   * Sends email with reminder of username(s).
+   * TODO username-email relationship to be decided
+   */
+  def sendUsername(email: String): Unit = {
+    logger.debug(s"sendUsername: email=$email")
+
+    val dtFormatter = DateTimeFormat.forPattern("YYYY-MM-dd")
+    def getEmailText(users: Seq[db.User]): String = {
+
+      val fmt = "%s - %-12s - %s"
+      val header = fmt.format("Registered", "Username", "Full name")
+      def user2info(u: db.User): String =
+        fmt.format(dtFormatter.print(u.registered), u.userName, u.firstName+ " " + u.lastName)
+
+      val be = if (users.size > 1) "s are" else " is"
+      s"""
+        |Hi $email,
+        |
+        |A request has been received to send a reminder of account information
+        |associated with your email address.
+        |
+        |The following account$be associated:
+        |    $header
+        |    ${users.map(user2info).mkString("\n    ")}
+        |
+        |The orr-ont team
+        """.stripMargin
+    }
+
+    val query = MongoDBObject("email" -> email)
+    val users = usersDAO.find(query).toSeq.sortBy(_.registered.toDate)
+
+    if (users.nonEmpty) {
+      val emailText = getEmailText(users)
+      println(s"sendUsername: email=$email: emailText:\n$emailText")
+      try {
+        emailer.sendEmail(email,
+          s"Your orr-ont username${if (users.size > 1) "s" else ""}",
+          emailText)
+      }
+      catch {
+        case exc:Exception => exc.printStackTrace()
+      }
+    }
+    else println(s"sendUsername: email=$email: no associated usernames")
   }
 
   /**
