@@ -1,6 +1,7 @@
 ## change log ##
 
 * 2016-01-19: 0.3.0:
+  - re-enable test with use of JWT based authentication
   - before(): after basic auth, tries to get JWT from the params, then from the (json) body
   
 * 2016-01-18: 0.3.0:

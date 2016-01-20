@@ -134,18 +134,17 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
 
-    // TODO "succeed with JWT"
-//    val jwt = jwtUtil.createToken(userName, Map())
-//    "succeed with JWT" in {
-//      val headers = Map("content-type" -> "application/json")
-//      val reqBody2 = pretty(render(Map("jwt" -> jwt)))
-//      put(s"/user/$userName", body = reqBody2, headers = headers) {
-//        status must_== 200
-//        logger.debug(s"PUT user reply body=$body")
-//        val res = parse(body).extract[UserResult]
-//        res.userName must_== userName
-//      }
-//    }
+    val jwt = jwtUtil.createToken(userName, Map())
+    "succeed with JWT" in {
+      val headers = Map("content-type" -> "application/json")
+      val reqBody2 = pretty(render(Map("jwt" -> jwt)))
+      put(s"/user/$userName", body = reqBody2, headers = headers) {
+        status must_== 200
+        logger.debug(s"PUT user reply body=$body")
+        val res = parse(body).extract[UserResult]
+        res.userName must_== userName
+      }
+    }
 
     "succeed with user credentials" in {
       val headers = Map("content-type" -> "application/json", "Authorization" -> userCredentials)
