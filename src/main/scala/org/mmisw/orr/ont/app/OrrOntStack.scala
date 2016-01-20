@@ -40,6 +40,11 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSuppor
     if (json != JNothing) json.extract[Map[String, JValue]] else error(400, "missing json body")
   }
 
+  protected def bodyOpt() : Option[Map[String, JValue]] = {
+    val json = parsedBody
+    if (json != JNothing) Some(json.extract[Map[String, JValue]]) else None
+  }
+
   protected def require(map: Map[String, JValue], paramName: String) = {
     val value = map.getOrElse(paramName, missing(paramName))
     if (!value.isInstanceOf[JString]) error(400, s"'$paramName' param value is not a string")

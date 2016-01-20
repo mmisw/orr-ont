@@ -34,13 +34,19 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
     authenticatedUser = {
       // try basic auth, then JWT, to see if we have an authenticated user
       val baReq = new BasicAuthStrategy.BasicAuthRequest(request)
-      if (baReq.providesAuth && baReq.isBasicAuth)
+      if (baReq.providesAuth && baReq.isBasicAuth) {
         scentry.authenticate("Basic")
+      }
       else for {
-        jwt <- params.get("jwt")
+        jwt <- getFromParamsOrBody("jwt")
         authUser <- jwtUtil.verifyToken(jwt)
       } yield authUser
     }
+  }
+
+  protected def getFromParamsOrBody(name: String): Option[String] = {
+    if (params.contains(name)) params.get(name)
+    else for (body <- bodyOpt(); value <- getString(body, name)) yield value
   }
 
   protected def checkIsExtra = authenticatedUser match {

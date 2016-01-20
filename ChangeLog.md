@@ -1,7 +1,9 @@
 ## change log ##
 
+* 2016-01-19: 0.3.0:
+  - before(): after basic auth, tries to get JWT from the params, then from the (json) body
+  
 * 2016-01-18: 0.3.0:
-  - TODO update tests to use JWT based authentication
   - add route to send email with reminder of username(s)
   - adjustment in registration of new user
   - first version of password reset, basic but functional
