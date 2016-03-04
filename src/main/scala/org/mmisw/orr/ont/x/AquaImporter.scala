@@ -9,6 +9,7 @@ import org.joda.time.DateTime
 import org.mmisw.orr.ont.Setup
 import org.mmisw.orr.ont.service.{OrgService, OntFileWriter, OntService, UserService}
 import org.mmisw.orr.ont.swld.ontUtil
+import org.mmisw.orr.ont.util.Emailer
 
 import scala.collection.immutable.TreeMap
 import scala.io.Source
@@ -30,6 +31,8 @@ object AquaImporter extends App with Logging {
   }
 
   implicit val setup = new Setup(config)
+  implicit val emailer = new Emailer(config.getConfig("email"))
+
   val userService = new UserService
   val orgService = new OrgService
   val ontService = new OntService

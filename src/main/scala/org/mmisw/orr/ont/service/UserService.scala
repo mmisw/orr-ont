@@ -3,27 +3,26 @@ package org.mmisw.orr.ont.service
 import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
-import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
+import org.joda.time.format.DateTimeFormat
 import org.mmisw.orr.ont.db.{PwReset, User}
 import org.mmisw.orr.ont._
-import org.mmisw.orr.ont.util.Emailer
+import org.mmisw.orr.ont.util.IEmailer
 
 import scala.util.{Failure, Success, Try}
 
 /**
  * User service
  */
-class UserService(implicit setup: Setup) extends BaseService(setup) with Logging {
+class UserService(implicit setup: Setup, emailer: IEmailer) extends BaseService(setup) with Logging {
 
   createAdminIfMissing()
 
-  private val emailer = new Emailer(setup.config.getConfig("email"))
-
-  private val pwrDAO      = setup.db.pwrDAO
+  private val pwrDAO = setup.db.pwrDAO
 
   /**
    * Gets the users satisfying the given query.
-   * @param query  Query
+    *
+    * @param query  Query
    * @return       iterator
    */
   def getUsers(query: MongoDBObject): Iterator[PendUserResult] = {
@@ -214,7 +213,7 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
          |
          | The orr-ont team
        """.stripMargin
-    println(s"notifyPasswordReset:\n$emailText")
+    logger.debug(s"notifyPasswordReset:\n$emailText")
 
     try {
       emailer.sendEmail(user.email,

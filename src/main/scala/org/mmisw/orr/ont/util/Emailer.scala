@@ -2,7 +2,12 @@ package org.mmisw.orr.ont.util
 
 import com.typesafe.config.Config
 
-class Emailer(emailConfig: Config) {
+
+trait IEmailer {
+  def sendEmail(to: String, subject: String, text: String): Unit
+}
+
+class Emailer(emailConfig: Config) extends IEmailer {
   private[this] val username = emailConfig.getString("account.username")
   private[this] val password = emailConfig.getString("account.password")
 

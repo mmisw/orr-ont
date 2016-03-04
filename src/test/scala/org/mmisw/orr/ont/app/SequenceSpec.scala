@@ -6,15 +6,17 @@ import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.mmisw.orr.ont.auth.authUtil
-import org.mmisw.orr.ont.service.{TripleStoreServiceAgRest, OntService}
+import org.mmisw.orr.ont.service.{UserService, TripleStoreServiceAgRest, OntService}
 import org.mmisw.orr.ont._
+import org.mmisw.orr.ont.util.IEmailer
 import org.scalatra.test.specs2._
+import org.specs2.mock.Mockito
 
 
 /**
  * A general sequence involving users, orgs, and onts.
  */
-class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
+class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with Logging {
   import org.json4s.JsonDSL._
 
   implicit val ontService = new OntService
@@ -164,6 +166,17 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
       }
     }
   }
+
+  "notifyPasswordHasBeenReset" should {
+    "email user" in {
+      implicit val emailer = mock[IEmailer]
+      val userService = new UserService()(setup , emailer)
+      val user = db.User(userName = "un", firstName = "fn", lastName = "ln", password = "pw", email = "e@m.x")
+      userService.notifyPasswordHasBeenReset(user)
+      1===1
+    }
+  }
+
 
   //////////
   // orgs
