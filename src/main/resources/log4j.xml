@@ -11,7 +11,7 @@
   </appender>
 
   <category name="org.mmisw.orr.ont">
-    <priority value="debug" />
+    <priority value="WARN" />
   </category>
 
   <root>

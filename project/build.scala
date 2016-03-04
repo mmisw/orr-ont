@@ -4,11 +4,12 @@ import org.scalatra.sbt._
 import com.earldouglas.xsbtwebplugin.PluginKeys.port
 import com.earldouglas.xsbtwebplugin.WebPlugin.container
 import sbtassembly.AssemblyPlugin.autoImport._
+import scoverage.ScoverageKeys._
 
 object build extends Build {
   val Organization = "org.mmisw"
   val Name = "orr-ont"
-  val Version = "0.3.0"
+  val Version = "0.3.1"
 
   val ScalaVersion      = "2.11.6"
   val ScalatraVersion   = "2.3.0"
@@ -24,10 +25,17 @@ object build extends Build {
     mainClass in assembly := Some("org.mmisw.orr.ont.JettyLauncher")
   )
 
+  lazy val coverageSettings = Seq(
+    coverageExcludedPackages := "org.mmisw.orr.ont.x",
+    coverageMinimum := 70,
+    coverageFailOnMinimum := false,
+    coverageHighlighting := { scalaBinaryVersion.value == "2.11" }
+  )
+
   lazy val project = Project (
     "orr-ont",
     file("."),
-    settings = Defaults.defaultSettings ++ ScalatraPlugin.scalatraWithJRebel ++ assemblySettings ++
+    settings = Defaults.defaultSettings ++ ScalatraPlugin.scalatraWithJRebel ++ assemblySettings ++ coverageSettings ++
       Seq(
       organization := Organization,
       name := Name,

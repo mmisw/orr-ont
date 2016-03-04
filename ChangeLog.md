@@ -1,5 +1,9 @@
 ## change log ##
 
+* 2016-03-03: 0.3.1:
+  - add scoverage
+  - default warn log level
+   
 * 2016-01-19: 0.3.0:
   - re-enable test with use of JWT based authentication
   - before(): after basic auth, tries to get JWT from the params, then from the (json) body
