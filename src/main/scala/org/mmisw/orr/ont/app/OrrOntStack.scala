@@ -67,6 +67,10 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSuppor
     arr map (_.asInstanceOf[JString].values)
   }
 
+  protected def toStringMap(map: Map[String, JValue]): Map[String,String] = {
+    map.map {case (s, value) => (s, value.asInstanceOf[JString].values.trim)}
+  }
+
   ontUtil.mimeMappings foreach { xm => addMimeMapping(xm._2, xm._1) }
 
   // todo why we seem to need to re-set this default one? otherwise tests break!

@@ -253,33 +253,7 @@ class UserController(implicit setup: Setup) extends BaseController
     val map = body()
     verifyIsAuthenticatedUser(userName, "admin")
 
-    var update = getUser(userName)
-
-    if (map.contains("firstName")) {
-      update = update.copy(firstName = require(map, "firstName"))
-    }
-    if (map.contains("lastName")) {
-      update = update.copy(lastName = require(map, "lastName"))
-    }
-    if (map.contains("phone")) {
-      update = update.copy(phone = Some(require(map, "phone")))
-    }
-    if (map.contains("password")) {
-      val password = require(map, "password")
-      val encPassword = userAuth.encryptPassword(password)
-      update = update.copy(password = encPassword)
-    }
-    if (map.contains("ontUri")) {
-      update = update.copy(ontUri = Some(require(map, "ontUri")))
-    }
-    val updated = Some(DateTime.now())
-    update = update.copy(updated = updated)
-    logger.info(s"updating user with: $update")
-
-    Try(usersDAO.update(MongoDBObject("_id" -> userName), update, false, false, WriteConcern.Safe)) match {
-      case Success(result) => UserResult(userName, updated = update.updated)
-      case Failure(exc)    => error(500, s"update failure = $exc")
-    }
+    userService.updateUser(userName, toStringMap(map), Some(DateTime.now()))
   }
 
   /*
