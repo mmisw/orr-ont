@@ -12,3 +12,6 @@ before_script:
 
 notifications:
   slack: mmisw:yEUK01ro6HVvhRbkq9a2Y3df
+
+script: "sbt clean coverage test"
+after_success: "sbt coverageReport coveralls"
