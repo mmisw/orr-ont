@@ -7,7 +7,7 @@ import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.mmisw.orr.ont._
 import org.mmisw.orr.ont.auth.authUtil
-import org.mmisw.orr.ont.service.{OntService, TripleStoreServiceAgRest, UserService}
+import org.mmisw.orr.ont.service.{TripleStoreService, OntService, UserService}
 import org.mmisw.orr.ont.swld.ontUtil
 import org.scalatra.test.specs2._
 import org.specs2.mock.Mockito
@@ -20,7 +20,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   import org.json4s.JsonDSL._
 
   implicit val ontService = new OntService
-  implicit val tsService = new TripleStoreServiceAgRest
+  implicit val tsService = mock[TripleStoreService]
 
   addServlet(new UserController, "/user/*")
   addServlet(new OrgController,  "/org/*")
@@ -579,6 +579,15 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   // triple store
   /////////////////////
 
+  "Get triple store size (GET /ts)" should {
+    "call tsService.getSizeget once" in {
+      get("/ts", headers = adminHeaders) {
+        status must_== 200
+        there was one(tsService).getSize(None)
+      }
+    }
+  }
+
   "Load an ont in triple store (POST /ts)" should {
     "fail with no credentials" in {
       post("/ts", Map("uri" -> ont1Uri)) {
@@ -595,6 +604,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     "succeed with admin credentials" in {
       post("/ts", Map("uri" -> ont1Uri), headers = adminHeaders) {
         status must_== 200
+        there was one(tsService).loadUri(ont1Uri)
       }
     }
   }
@@ -615,6 +625,28 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     "succeed with admin credentials" in {
       put("/ts", Map("uri" -> ont1Uri), headers = adminHeaders) {
         status must_== 200
+        there was one(tsService).reloadUri(ont1Uri)
+      }
+    }
+  }
+
+  "Reload all onts in triple store (PUT /ts)" should {
+    "fail with no credentials" in {
+      put("/ts") {
+        status must_== 401
+      }
+    }
+
+    "fail with regular user credentials" in {
+      put("/ts", Map(), headers = userHeaders) {
+        status must_== 403
+      }
+    }
+
+    "succeed with admin credentials" in {
+      put("/ts", Map(), headers = adminHeaders) {
+        status must_== 200
+        there was one(tsService).reloadAll()
       }
     }
   }
@@ -635,6 +667,28 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     "succeed with admin credentials" in {
       delete("/ts", Map("uri" -> ont1Uri), headers = adminHeaders) {
         status must_== 200
+        there was one(tsService).unloadUri(ont1Uri)
+      }
+    }
+  }
+
+  "Unload all onts from triple store (DELETE /ts)" should {
+    "fail with no credentials" in {
+      delete("/ts") {
+        status must_== 401
+      }
+    }
+
+    "fail with regular user credentials" in {
+      delete("/ts", Map(), headers = userHeaders) {
+        status must_== 403
+      }
+    }
+
+    "succeed with admin credentials" in {
+      delete("/ts", Map(), headers = adminHeaders) {
+        status must_== 200
+        there was one(tsService).unloadAll()
       }
     }
   }

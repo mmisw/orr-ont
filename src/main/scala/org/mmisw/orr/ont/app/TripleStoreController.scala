@@ -1,16 +1,16 @@
 package org.mmisw.orr.ont.app
 
-import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.mmisw.orr.ont.Setup
 import org.mmisw.orr.ont.service.{OntService, TripleStoreService}
-import org.scalatra.BadRequest
 
 
 /**
   */
 class TripleStoreController(implicit setup: Setup, ontService: OntService, tsService: TripleStoreService) extends BaseOntController
 with Logging {
+
+  tsService.setFormats(Map(formats.toSeq: _*))
 
   before() {
     verifyAuthenticatedUser("admin")
@@ -20,33 +20,27 @@ with Logging {
    * Gets the size of the store or the size of a particular named graph.
    */
   get("/") {
-    println(s"params=$params")
-    if (setup.testing.isDefined) "9999"
-    else tsService.getSize(params.get("uri").orElse(params.get("context")))
+    logger.debug(s"GET params=$params")
+    tsService.getSize(params.get("uri").orElse(params.get("context")))
   }
 
   /*
    * Loads an ontology.
    */
   post("/") {
-    if (setup.testing.isDefined) "9999"
-    else {
-      val uri = require(params, "uri")
-      tsService.loadUri(uri, Map(formats.toSeq: _*))
-    }
+    logger.debug(s"POST params=$params")
+    val uri = require(params, "uri")
+    tsService.loadUri(uri)
   }
 
   /*
-   * Reloads an ontology.
+   * Reloads an ontology by given uri, or all if not uri parameter given
    */
   put("/") {
-    if (setup.testing.isDefined) "9999"
-    else params.get("uri") match {
-      case Some(uri) => tsService.reloadUri(uri, Map(formats.toSeq: _*))
-      case None      =>
-        val query = MongoDBObject()  // todo: capture query params
-        var uris = ontService.getOntologyUris(query)
-        tsService.reloadAll(Map(formats.toSeq: _*))
+    logger.debug(s"PUT params=$params")
+    params.get("uri") match {
+      case Some(uri) => tsService.reloadUri(uri)
+      case None      => tsService.reloadAll()
     }
   }
 
@@ -54,10 +48,10 @@ with Logging {
    * Unloads an ontology, or the whole triple store.
    */
   delete("/") {
-    if (setup.testing.isDefined) "9999"
-    else params.get("uri") match {
-      case Some(uri) => tsService.unloadUri(uri, Map(formats.toSeq: _*))
-      case None      => tsService.unloadAll(Map(formats.toSeq: _*))
+    logger.debug(s"DELETE params=$params")
+    params.get("uri") match {
+      case Some(uri) => tsService.unloadUri(uri)
+      case None      => tsService.unloadAll()
     }
   }
 
