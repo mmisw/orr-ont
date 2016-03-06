@@ -126,7 +126,7 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
 
     if (users.nonEmpty) {
       val emailText = getEmailText(users)
-      println(s"sendUsername: email=$email: emailText:\n$emailText")
+      logger.debug(s"sendUsername: email=$email: emailText:\n$emailText")
       try {
         setup.emailer.sendEmail(email,
           s"Your orr-ont username${if (users.size > 1) "s" else ""}",
@@ -136,7 +136,7 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
         case exc:Exception => exc.printStackTrace()
       }
     }
-    else println(s"sendUsername: email=$email: no associated usernames")
+    else logger.debug(s"sendUsername: email=$email: no associated usernames")
   }
 
   /**
@@ -172,7 +172,7 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
     Try(pwrDAO.insert(obj, WriteConcern.Safe)) match {
       case Success(r) =>
         val emailText = getEmailText(s"$resetRoute$token")
-        println(s"resetPassword: PwReset: $obj emailText:\n$emailText")
+        logger.debug(s"resetPassword: PwReset: $obj emailText:\n$emailText")
         try {
           setup.emailer.sendEmail(user.email,
             "Reset your orr-ont password",
