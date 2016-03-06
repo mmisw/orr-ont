@@ -8,6 +8,7 @@ import org.json4s.native.JsonMethods._
 import org.mmisw.orr.ont._
 import org.mmisw.orr.ont.auth.authUtil
 import org.mmisw.orr.ont.service.{OntService, TripleStoreServiceAgRest, UserService}
+import org.mmisw.orr.ont.swld.ontUtil
 import org.scalatra.test.specs2._
 import org.specs2.mock.Mockito
 
@@ -430,6 +431,42 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         latestVersion must_== registeredVersion.get
       }
     }
+
+    // <FORMATS>
+    def doGoodFormat(reqFormat: String, expectedMimeOption: Option[String] = None) = {
+      val map = Map("uri" -> ont1Uri, "format" -> reqFormat)
+      get("/ont", map) {
+        val contentType = response.getContentType()
+        if (status != 200) {
+          println(s"doGoodFormat: reqFormat=$reqFormat -> status=$status contentType=$contentType  reason=${response.getReason()}")
+        }
+        status must_== 200
+        val expectedMime = expectedMimeOption.getOrElse(ontUtil.mimeMappings(reqFormat))
+        contentType must contain(expectedMime)
+      }
+    }
+    "return expected file for rdf reqFormat"    in { doGoodFormat("rdf") }
+    "return expected file for jsonld reqFormat" in { doGoodFormat("jsonld") }
+    "return expected file for n3 reqFormat"     in { doGoodFormat("n3") }
+    // TODO: note that for ttl, currently used Jena version returns mime type for n3:
+    "return expected file for ttl reqFormat"    in { doGoodFormat("ttl", Some(ontUtil.mimeMappings("n3"))) }
+    "return expected file for nt reqFormat"     in { doGoodFormat("nt") }
+    "return expected file for rj reqFormat"     in { doGoodFormat("rj") }
+
+    def doBadFormat(reqFormat: String) = {
+      val map = Map("uri" -> ont1Uri, "format" -> reqFormat)
+      get("/ont", map) {
+        val respBody = body
+        //println(s"doBadFormat: reqFormat=$reqFormat  response body=\n  " + respBody.replace("\n", "\n  "))
+        status must_== 406
+        val res = parse(respBody).extract[Map[String,String]]
+        res.get("format") must beSome(reqFormat)
+      }
+    }
+    // TODO move the following to doGoodFormat once jena actually supports these documented supported formats
+    "return expected file for nq reqFormat"     in { doBadFormat("nq") }
+    "return expected file for trig reqFormat"   in { doBadFormat("trig") }
+    // </FORMATS>
   }
 
   "Get onts with some filter parameters (GET /ont?orgName=nn)" should {

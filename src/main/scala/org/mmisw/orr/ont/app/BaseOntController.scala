@@ -5,7 +5,7 @@ import java.io.File
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.mmisw.orr.ont.Setup
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
-import org.mmisw.orr.ont.service.{NoSuch, NoSuchOntFormat, OntService}
+import org.mmisw.orr.ont.service.{CannotCreateFormat, NoSuch, NoSuchOntFormat, OntService}
 
 import scala.util.{Failure, Success, Try}
 
@@ -26,7 +26,12 @@ with Logging {
     Try(ontService.getOntologyFile(uri, version, reqFormat)) match {
       case Success(res) => res
       case Failure(exc: NoSuchOntFormat) => error(406, exc.details)
-      case Failure(exc) => error(500, exc.getMessage)
+      case Failure(exc: CannotCreateFormat) => error(406, exc.details)
+      case Failure(exc) => {
+        println(s"getOntologyFile: error with uri=$uri version=$version reqFormat=$reqFormat")
+        exc.printStackTrace()
+        error(500, exc.getMessage)
+      }
     }
   }
 

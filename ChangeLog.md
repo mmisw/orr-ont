@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-03-06: 0.3.1:
+  - add tests for requested formats
+  
 * 2016-03-03: 0.3.1:
   - add scoverage
   - default warn log level
