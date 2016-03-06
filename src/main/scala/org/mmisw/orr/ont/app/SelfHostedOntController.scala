@@ -26,7 +26,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
     val reqFormat = getRequestedFormat
     val pathInfo = request.pathInfo
 
-    logger.debug(s"reqFormat=$reqFormat request.pathInfo=$pathInfo")
+    logger.debug(s"SelfHostedOntController: reqFormat=$reqFormat request.pathInfo=$pathInfo")
 
     if (pathInfo.startsWith("/api")) {
       pass()
@@ -39,7 +39,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
 
   ///////////////////////////////////////////////////////////////////////////
 
-  /** returns true only if the dispatch is compeleted here */
+  /** returns true only if the dispatch is completed here */
   private def portalDispatch(pathInfo: String, reqFormat: String): Boolean = {
     // do the special HTML dispatch below only if the "/index.html" exists under my context:
     val hasIndexHtml = Option(request.getServletContext.getRealPath("/index.html")) match {

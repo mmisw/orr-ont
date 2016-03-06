@@ -26,6 +26,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   addServlet(new OrgController,  "/org/*")
   addServlet(new OntController,  "/ont/*")
   addServlet(new TripleStoreController,  "/ts/*")
+  addServlet(new SelfHostedOntController, "/*")
 
   sequential
 
@@ -634,6 +635,19 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     "succeed with admin credentials" in {
       delete("/ts", Map("uri" -> ont1Uri), headers = adminHeaders) {
         status must_== 200
+      }
+    }
+  }
+
+  ////////////////////////////
+  // "self-hosted" requests
+  ////////////////////////////
+  // Except for very basic requests (eg. non-existing), this seems rather tricky to test
+  "self-hosted: GET /non/existent)" should {
+    "return not-found" in {
+      get("/non/existent") {
+        //println(s"GET /non/existent response body=$body")
+        status must_== 404
       }
     }
   }
