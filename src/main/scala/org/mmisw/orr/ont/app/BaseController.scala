@@ -1,9 +1,11 @@
 package org.mmisw.orr.ont.app
 
 import org.mmisw.orr.ont.auth.{AuthUser, AuthenticationSupport}
-import org.mmisw.orr.ont.service.JwtUtil
+import org.mmisw.orr.ont.service.{JwtUtil, NoSuchUser, UserService}
 import org.mmisw.orr.ont.{Setup, db}
 import org.scalatra.auth.strategy.BasicAuthStrategy
+
+import scala.util.{Failure, Success, Try}
 
 
 abstract class BaseController(implicit setup: Setup) extends OrrOntStack
@@ -23,6 +25,9 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
   protected val orgsDAO     = setup.db.orgsDAO
   protected val usersDAO    = setup.db.usersDAO
   protected val ontDAO      = setup.db.ontDAO
+
+  protected val userService = new UserService
+
   protected val userAuth    = setup.db.authenticator
 
   protected val jwtUtil = new JwtUtil(setup.config.getString("firebase.secret"))
@@ -140,8 +145,11 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
   }
 
   protected def getUser(userName: String): db.User = {
-    usersDAO.findOneById(userName).getOrElse(
-      error(404, s"'$userName' user is not registered"))
+    Try(userService.getUser(userName)) match {
+      case Success(res)            => res
+      case Failure(exc: NoSuchUser) => error(404, s"'$userName' user is not registered")
+      case Failure(exc)            => error(500, exc.getMessage)
+    }
   }
 
   protected def verifyUser(userName: String): db.User = {
@@ -151,10 +159,5 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
   protected def verifyUser(userNameOpt: Option[String]): db.User = userNameOpt match {
     case None => missing("userName")
     case Some(userName) => verifyUser(userName)
-  }
-
-  protected def getOrg(orgName: String): db.Organization = {
-    orgsDAO.findOneById(orgName).getOrElse(
-      error(404, s"'$orgName' organization is not registered"))
   }
 }

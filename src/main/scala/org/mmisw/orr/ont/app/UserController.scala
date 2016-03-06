@@ -6,17 +6,13 @@ import com.novus.salat.global._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont._
-import org.mmisw.orr.ont.service.UserService
-import org.mmisw.orr.ont.util.IEmailer
 import org.scalatra.Created
 
 import scala.util.{Failure, Success, Try}
 
 
-class UserController(implicit setup: Setup, emailer: IEmailer) extends BaseController
+class UserController(implicit setup: Setup) extends BaseController
       with Logging {
-
-  val userService = new UserService
 
   createAdminIfMissing()
 
@@ -24,7 +20,7 @@ class UserController(implicit setup: Setup, emailer: IEmailer) extends BaseContr
    * Gets all users
    */
   get("/") {
-    usersDAO.find(MongoDBObject()) map getUserJson
+    userService.getUsers() map getUserJson
   }
 
   /*

@@ -16,11 +16,6 @@ case class UserResult(
             role:        Option[String] = None  // todo
             )
 
-case class PendUserResult(
-            userName:    String,
-            ontUri:      Option[String] = None,
-            registered:  Option[DateTime] = None)
-
 case class UsernameReminderResult(
             email:       String,
             message:     Option[String] = None)
@@ -38,12 +33,6 @@ case class OrgResult(
             updated:     Option[DateTime] = None,
             removed:     Option[DateTime] = None,
             members:     Option[Set[String]] = None)
-
-case class PendOrgResult(
-            orgName:     String,
-            name:        String,
-            ontUri:      Option[String] = None,
-            registered:  Option[DateTime] = None)
 
 case class OntologyResult(
             uri:         String,

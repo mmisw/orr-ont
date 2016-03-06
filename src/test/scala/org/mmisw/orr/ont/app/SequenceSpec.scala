@@ -5,10 +5,9 @@ import java.io.File
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.json4s._
 import org.json4s.native.JsonMethods._
-import org.mmisw.orr.ont.auth.authUtil
-import org.mmisw.orr.ont.service.{UserService, TripleStoreServiceAgRest, OntService}
 import org.mmisw.orr.ont._
-import org.mmisw.orr.ont.util.IEmailer
+import org.mmisw.orr.ont.auth.authUtil
+import org.mmisw.orr.ont.service.{OntService, TripleStoreServiceAgRest, UserService}
 import org.scalatra.test.specs2._
 import org.specs2.mock.Mockito
 
@@ -37,7 +36,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     "succeed and contain the 'admin' user" in {
       get("/user") {
         status must_== 200
-        val res = parse(body).extract[List[PendUserResult]]
+        val res = parse(body).extract[List[UserResult]]
         res.exists(r => r.userName == "admin") must beTrue
       }
     }
@@ -47,7 +46,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     "succeed" in {
       get("/user/admin") {
         status must_== 200
-        val res = parse(body).extract[PendUserResult]
+        val res = parse(body).extract[UserResult]
         res.userName must_== "admin"
       }
     }
@@ -169,14 +168,38 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
 
   "notifyPasswordHasBeenReset" should {
     "email user" in {
-      implicit val emailer = mock[IEmailer]
-      val userService = new UserService()(setup , emailer)
+      val userService = new UserService
       val user = db.User(userName = "un", firstName = "fn", lastName = "ln", password = "pw", email = "e@m.x")
       userService.notifyPasswordHasBeenReset(user)
       1===1
     }
   }
 
+  "username reminder" should {
+    "send email with username" in {
+      val reqBody = pretty(render(Map("email" -> map("email"))))
+      put(s"/user/unr/", body = reqBody) {
+        status must_== 200
+        logger.debug(s"PUT username reminder reply body=$body")
+        val res = parse(body).extract[UsernameReminderResult]
+        res.email must_== map("email")
+        res.message must beSome
+      }
+    }
+  }
+
+  "password reset" should {
+    "email user" in {
+      put(s"/user/rpwr/$userName") {
+        status must_== 200
+        logger.debug(s"PUT username password reset reply body=$body")
+        val res = parse(body).extract[PasswordResetResult]
+        res.userName must_== userName
+        res.email must_== map.get("email")
+        res.message must beSome
+      }
+    }
+  }
 
   //////////
   // orgs
@@ -186,7 +209,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     "succeed" in {
       get("/org") {
         status must_== 200
-        val res = parse(body).extract[List[PendOrgResult]]
+        val res = parse(body).extract[List[OrgResult]]
         res.length must be >= 0
       }
     }

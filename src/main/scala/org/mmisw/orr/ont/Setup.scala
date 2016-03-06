@@ -4,15 +4,20 @@ import com.typesafe.scalalogging.{StrictLogging => Logging}
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import org.mmisw.orr.ont.db.Db
+import org.mmisw.orr.ont.util.IEmailer
 
 
 /**
  * Sets up the application according to configuration.
  *
  * @param config   Base configuration
+ * @param emailer  emailer
  * @param testing  optional string for testing purposes
  */
-class Setup(val config: Config, val testing: Option[String] = None) extends AnyRef with Logging {
+class Setup(val config: Config,
+            val emailer: IEmailer,
+            val testing: Option[String] = None
+            ) extends AnyRef with Logging {
 
   private[this] var dbOpt: Option[Db] = None
 

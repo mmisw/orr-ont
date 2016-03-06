@@ -6,36 +6,23 @@ import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import org.mmisw.orr.ont.db.{PwReset, User}
 import org.mmisw.orr.ont._
-import org.mmisw.orr.ont.util.IEmailer
 
 import scala.util.{Failure, Success, Try}
 
-/**
- * User service
- */
-class UserService(implicit setup: Setup, emailer: IEmailer) extends BaseService(setup) with Logging {
+class UserService(implicit setup: Setup) extends BaseService(setup) with Logging {
 
   createAdminIfMissing()
 
   private val pwrDAO = setup.db.pwrDAO
 
-  /**
-   * Gets the users satisfying the given query.
-    *
-    * @param query  Query
-   * @return       iterator
-   */
-  def getUsers(query: MongoDBObject): Iterator[PendUserResult] = {
-    usersDAO.find(query) map { user =>
-        PendUserResult(user.userName, user.ontUri, Some(user.registered))
-    }
+  def getUsers(query: MongoDBObject = MongoDBObject()): Iterator[User] = {
+    usersDAO.find(query)
   }
 
   def existsUser(userName: String): Boolean = usersDAO.findOneById(userName).isDefined
 
-  /**
-   * Creates a new user.
-   */
+  def getUser(userName: String): User = usersDAO.findOneById(userName).getOrElse(throw NoSuchUser(userName))
+
   def createUser(userName: String, email: String, phoneOpt: Option[String],
                  firstName: String, lastName: String, password: Either[String,String],
                  ontUri: Option[String], registered: DateTime = DateTime.now()) = {
@@ -64,9 +51,6 @@ class UserService(implicit setup: Setup, emailer: IEmailer) extends BaseService(
     }
   }
 
-  /**
-   * Updates a user.
-   */
   def updateUser(userName: String, map: Map[String,String], updated: Option[DateTime] = None) = {
 
     var update = getUser(userName)
@@ -144,7 +128,7 @@ class UserService(implicit setup: Setup, emailer: IEmailer) extends BaseService(
       val emailText = getEmailText(users)
       println(s"sendUsername: email=$email: emailText:\n$emailText")
       try {
-        emailer.sendEmail(email,
+        setup.emailer.sendEmail(email,
           s"Your orr-ont username${if (users.size > 1) "s" else ""}",
           emailText)
       }
@@ -190,7 +174,7 @@ class UserService(implicit setup: Setup, emailer: IEmailer) extends BaseService(
         val emailText = getEmailText(s"$resetRoute$token")
         println(s"resetPassword: PwReset: $obj emailText:\n$emailText")
         try {
-          emailer.sendEmail(user.email,
+          setup.emailer.sendEmail(user.email,
             "Reset your orr-ont password",
             emailText)
         }
@@ -216,7 +200,7 @@ class UserService(implicit setup: Setup, emailer: IEmailer) extends BaseService(
     logger.debug(s"notifyPasswordReset:\n$emailText")
 
     try {
-      emailer.sendEmail(user.email,
+      setup.emailer.sendEmail(user.email,
         "orr-ont password change confirmation",
         emailText
       )
@@ -226,9 +210,6 @@ class UserService(implicit setup: Setup, emailer: IEmailer) extends BaseService(
     }
   }
 
-  /**
-   * Deletes a whole user entry.
-   */
   def deleteUser(userName: String) = {
     val user = getUser(userName)
 
@@ -240,14 +221,9 @@ class UserService(implicit setup: Setup, emailer: IEmailer) extends BaseService(
     }
   }
 
-  /**
-   * Deletes the whole users collection
-   */
   def deleteAll() = usersDAO.remove(MongoDBObject())
 
   ///////////////////////////////////////////////////////////////////////////
-
-  private def getUser(userName: String): User = usersDAO.findOneById(userName).getOrElse(throw NoSuchUser(userName))
 
   /*
    * TODO validate userName

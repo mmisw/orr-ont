@@ -4,9 +4,10 @@ import com.typesafe.config.ConfigFactory
 import org.mmisw.orr.ont.Setup
 import org.mmisw.orr.ont.auth.authUtil
 import org.mmisw.orr.ont.service.JwtUtil
-import org.mmisw.orr.ont.util.Emailer
+import org.mmisw.orr.ont.util.IEmailer
+import org.specs2.mock.Mockito
 
-trait BaseSpec {
+trait BaseSpec extends Mockito {
   implicit val formats = org.json4s.DefaultFormats
 
   val config = ConfigFactory.parseString(
@@ -57,9 +58,10 @@ trait BaseSpec {
   )
 
   // use collection names composed from the name of the test class
-  implicit val setup = new Setup(config, testing = Some(getClass.getSimpleName))
-
-  implicit val emailer = new Emailer(config.getConfig("email"))
+  private val testing = Some(getClass.getSimpleName)
+  implicit val setup = new Setup(config,
+    emailer = mock[IEmailer],
+    testing = testing)
 
   val jwtUtil = new JwtUtil(config.getString("firebase.secret"))
 
