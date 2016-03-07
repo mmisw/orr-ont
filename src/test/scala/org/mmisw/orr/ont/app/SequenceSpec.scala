@@ -208,11 +208,11 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   //////////
 
   "Get all orgs (GET /org)" should {
-    "succeed" in {
+    "succeed and with 0 orgs reported" in {
       get("/org") {
         status must_== 200
         val res = parse(body).extract[List[OrgResult]]
-        res.length must be >= 0
+        res.length must_== 0
       }
     }
   }
@@ -278,6 +278,33 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     }
   }
 
+  "Get orgs (GET /org)" should {
+    "succeed for all with 2 orgs reported" in {
+      get("/org", headers = Map("Authorization" -> userCredentials)) {
+        status must_== 200
+        val res = parse(body).extract[List[OrgResult]]
+        res.length must_== 2
+        res.map (_.orgName) must contain(orgName, orgName2)
+      }
+    }
+    "succeed for specific orgs" in {
+      get(s"/org/$orgName", headers = Map("Authorization" -> userCredentials)) {
+        status must_== 200
+        val res = parse(body).extract[OrgResult]
+        res.orgName must_== orgName
+        res.members must beSome
+        res.members.get must contain(userName)
+      }
+      get(s"/org/$orgName2", headers = Map("Authorization" -> userCredentials)) {
+        status must_== 200
+        val res = parse(body).extract[OrgResult]
+        res.orgName must_== orgName2
+        res.members must beSome
+        res.members.get must contain(userName)
+      }
+    }
+  }
+
   "Update an org (PUT /org/:orgName)" should {
     "fail with no credentials" in {
       val headers = Map("content-type" -> "application/json")
@@ -289,10 +316,30 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
 
     "succeed with member credentials" in {
       val headers = Map("content-type" -> "application/json", "Authorization" -> userCredentials)
-      put(s"/org/$orgName", body = pretty(render("ontUri" -> "updated.ontUri")),
-        headers = headers) {
+      val map = ("ontUri" -> "updated.ontUri") ~
+                ("members"   -> Seq(userName, userName2))
+      put(s"/org/$orgName", body = pretty(render(map)), headers = headers) {
+        val respBody = body
+        //println(s"respBody=\n  " + respBody.replace("\n", "\n  "))
+        status must_== 200
+        val res = parse(respBody).extract[OrgResult]
+        res.ontUri must beSome("updated.ontUri")
+        res.members must beSome
+        res.members.get must haveSize(2)
+        res.members.get must contain(userName, userName2)
+        res.orgName must_== orgName
+      }
+    }
+
+    "remove userName2 for subsequent tests" in {
+      val headers = Map("content-type" -> "application/json", "Authorization" -> userCredentials)
+      val map = ("members" -> Seq(userName))
+      put(s"/org/$orgName", body = pretty(render(map)), headers = headers) {
         status must_== 200
         val res = parse(body).extract[OrgResult]
+        res.members must beSome
+        res.members.get must haveSize(1)
+        res.members.get must contain(userName)
         res.orgName must_== orgName
       }
     }

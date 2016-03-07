@@ -66,7 +66,11 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(orgsDAO.update(MongoDBObject("_id" -> orgName), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
-        OrgResult(orgName, updated = update.updated)
+        OrgResult(orgName,
+          ontUri = update.ontUri,
+          name = Option(update.name),
+          members = Option(update.members),
+          updated = update.updated)
 
       case Failure(exc)  => throw CannotUpdateOrg(orgName, exc.getMessage)
     }
