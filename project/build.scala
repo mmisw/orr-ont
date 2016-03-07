@@ -29,6 +29,8 @@ object build extends Build {
     coverageExcludedPackages := ".*\\.x;ScalatraBootstrap;.*\\.util.MailSender;.*\\.Emailer;" +
       ".*\\.ApiAuthenticationSupport;.*\\.apiAuthenticator;.*\\.HmacUtils;" +
       ".*\\.FirebaseController;" +
+      ".*\\.TripleStoreServiceAgRest;" +
+      ".*\\.SelfHostedOntController;" +
       ".*\\.Skos",
     coverageMinimum := 70,
     coverageFailOnMinimum := false,
