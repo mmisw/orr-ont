@@ -71,7 +71,7 @@ trait BaseSpec extends Mockito {
 
   def newOrgName() = randomStr("org")
 
-  def newOntUri() = randomStr("ont")
+  def newOntUri() = randomStr("http://example.net/ont")
 
   /** random string to compose names/uris */
   def randomStr(prefix: String) = s"$prefix-${java.util.UUID.randomUUID().toString}"
