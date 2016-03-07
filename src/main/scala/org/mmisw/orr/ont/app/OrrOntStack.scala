@@ -76,9 +76,6 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSuppor
 
   ontUtil.mimeMappings foreach { xm => addMimeMapping(xm._2, xm._1) }
 
-  // todo why we seem to need to re-set this default one? otherwise tests break!
-  addMimeMapping("application/json", "json")
-
   val defaultRequestedFormat = "json"
 
   protected def getMyBaseUrl(implicit request: HttpServletRequest): String = {
@@ -94,14 +91,14 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSuppor
   protected def getRequestedFormat(implicit request: HttpServletRequest): String = {
     def getAcceptHeader = {
       val ah = acceptHeader
-      println(s"accept header=$ah")
+      //println(s"accept header=$ah")
       ah
     }
     params.get("format") getOrElse (getAcceptHeader match {
       case List() => defaultRequestedFormat
       case list =>
         if (list contains "text/html") "html"
-        else if (mimeTypes.contains(list(0))) mimeTypes(list(0)) else defaultRequestedFormat
+        else if (mimeTypes.contains(list.head)) mimeTypes(list.head) else defaultRequestedFormat
     })
   }
 
