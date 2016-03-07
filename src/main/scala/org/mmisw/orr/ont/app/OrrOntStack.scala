@@ -63,8 +63,15 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSuppor
     val value = map.getOrElse(paramName, missing(paramName))
     if (!value.isInstanceOf[JArray]) error(400, s"'$paramName' param value is not an array")
     val arr = value.asInstanceOf[JArray].arr
-    if (!canBeEmpty && arr.length == 0) error(400, s"'$paramName' array param cannot be empty")
+    if (!canBeEmpty && arr.isEmpty) error(400, s"'$paramName' array param cannot be empty")
     arr map (_.asInstanceOf[JString].values)
+  }
+
+  protected def getSet(map: Map[String, JValue], paramName: String, canBeEmpty: Boolean = false): Set[String] =
+    getSeq(map, paramName, canBeEmpty).toSet
+
+  protected def toStringMap(map: Map[String, JValue]): Map[String,String] = {
+    map.map {case (s, value) => (s, value.asInstanceOf[JString].values.trim)}
   }
 
   ontUtil.mimeMappings foreach { xm => addMimeMapping(xm._2, xm._1) }

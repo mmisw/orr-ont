@@ -30,6 +30,7 @@ trait SimpleMongoDbJsonConversion extends ScalatraBase with ApiFormats {
 
 }
 
+/*
 /**
  * This is alternative approach using json4s and scalatra-json.
  */
@@ -54,3 +55,4 @@ trait Json4sMongoDbJsonConversion extends JacksonJsonSupport {
   override protected def renderPipeline = transformMongoObjectsToJson4s orElse super.renderPipeline
 
 }
+*/

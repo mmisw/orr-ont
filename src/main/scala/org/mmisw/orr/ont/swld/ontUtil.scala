@@ -34,12 +34,15 @@ object ontUtil extends AnyRef with Logging {
       else {
         // TODO manage resources below
         val model = ModelFactory.createDefaultModel()
-        val fromPath = fromFile.toURI.toURL.toString
-        model.read(fromPath, fromLang)
+        val fromPath = fromFile
+        val source = io.Source.fromFile(fromFile)
+        model.read(source.reader(), uri, fromLang)
         val writer = model.getWriter(toLang)
-        logger.info(s"jenaUtil.convert: path=$fromPath")
+        //println(s"jenaUtil.convert: path=$fromPath toLang=$toLang")
+        logger.info(s"jenaUtil.convert: path=$fromPath toLang=$toLang")
         val toWriter = new FileWriter(toFile)
         writer.write(model, toWriter, uri)
+        toWriter.close()
         toFile
       }
     }

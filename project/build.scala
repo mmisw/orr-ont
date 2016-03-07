@@ -26,7 +26,12 @@ object build extends Build {
   )
 
   lazy val coverageSettings = Seq(
-    coverageExcludedPackages := "org.mmisw.orr.ont.x",
+    coverageExcludedPackages := ".*\\.x;ScalatraBootstrap;.*\\.util.MailSender;.*\\.Emailer;" +
+      ".*\\.ApiAuthenticationSupport;.*\\.apiAuthenticator;.*\\.HmacUtils;" +
+      ".*\\.FirebaseController;" +
+      ".*\\.TripleStoreServiceAgRest;" +
+      ".*\\.SelfHostedOntController;" +
+      ".*\\.Skos",
     coverageMinimum := 70,
     coverageFailOnMinimum := false,
     coverageHighlighting := { scalaBinaryVersion.value == "2.11" }

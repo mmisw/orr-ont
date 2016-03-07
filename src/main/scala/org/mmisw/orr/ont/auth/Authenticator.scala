@@ -8,7 +8,6 @@ import javax.servlet.http.{HttpServletResponse, HttpServletRequest}
 import com.novus.salat.dao.SalatDAO
 
 
-
 object userAuth {
   private var authenticator: Authenticator = null
 
@@ -31,8 +30,6 @@ class Authenticator(usersDAO: SalatDAO[db.User, String]) {
   private val encryptor = new StrongPasswordEncryptor
 
   def encryptPassword(password: String) = encryptor.encryptPassword(password)
-
-  def checkPassword(password: String, encPassword: String) = encryptor.checkPassword(password, encPassword)
 
   def checkPassword(password: String, user: db.User) = encryptor.checkPassword(password, user.password)
 

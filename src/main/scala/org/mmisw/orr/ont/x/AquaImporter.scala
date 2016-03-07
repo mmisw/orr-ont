@@ -9,6 +9,7 @@ import org.joda.time.DateTime
 import org.mmisw.orr.ont.Setup
 import org.mmisw.orr.ont.service.{OrgService, OntFileWriter, OntService, UserService}
 import org.mmisw.orr.ont.swld.ontUtil
+import org.mmisw.orr.ont.util.Emailer
 
 import scala.collection.immutable.TreeMap
 import scala.io.Source
@@ -29,7 +30,8 @@ object AquaImporter extends App with Logging {
     ConfigFactory.parseFile(configFile)
   }
 
-  implicit val setup = new Setup(config)
+  implicit val setup = new Setup(config, emailer = new Emailer(config.getConfig("email")))
+
   val userService = new UserService
   val orgService = new OrgService
   val ontService = new OntService
@@ -116,7 +118,7 @@ object AquaImporter extends App with Logging {
 
   private def addOrgMembers(orgName: String, userNames: Set[String]) {
     orgService.getOrgOpt(orgName) match {
-      case Some(org) => orgService.updateOrg(orgName, Some(org.members.toSet ++ userNames))
+      case Some(org) => orgService.updateOrg(orgName, membersOpt = Some(org.members ++ userNames))
       case None => println(s"WARNING: '$orgName': organization not found")
     }
   }

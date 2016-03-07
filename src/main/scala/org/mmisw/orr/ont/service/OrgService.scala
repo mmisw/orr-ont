@@ -4,25 +4,15 @@ import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.db.Organization
-import org.mmisw.orr.ont.{PendOrgResult, Setup, OrgResult}
+import org.mmisw.orr.ont.{OrgResult, Setup}
 
 import scala.util.{Failure, Success, Try}
 
 
-/**
- * Org service
- */
 class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging {
 
-  /**
-   * Gets the orgs satisfying the given query.
-   * @param query  Query
-   * @return       iterator
-   */
-  def getOrgs(query: MongoDBObject): Iterator[PendOrgResult] = {
-    orgsDAO.find(query) map { org =>
-        PendOrgResult(org.orgName, org.name, org.ontUri, Some(org.registered))
-    }
+  def getOrgs(query: MongoDBObject = MongoDBObject()): Iterator[Organization] = {
+    orgsDAO.find(query)
   }
 
   def existsOrg(orgName: String): Boolean = orgsDAO.findOneById(orgName).isDefined
@@ -31,9 +21,6 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
   def getOrgOpt(orgName: String): Option[Organization] = orgsDAO.findOneById(orgName)
 
-  /**
-   * Creates a new org.
-   */
   def createOrg(orgName: String, name: String,
                 members: Set[String] = Set.empty,
                 ontUri: Option[String] = None) = {
@@ -56,14 +43,13 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
     }
   }
 
-  /**
-   * Updates an org.
-   */
   def updateOrg(orgName: String,
                 membersOpt: Option[Set[String]] = None,
-                map: Map[String,String] = Map.empty,
+                name: Option[String] = None,
+                ontUri: Option[String] = None,
                 registered: Option[DateTime] = None,
-                updated: Option[DateTime] = None) = {
+                updated: Option[DateTime] = None
+               ): OrgResult = {
 
     var update = getOrg(orgName)
 
@@ -71,28 +57,26 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
       members foreach verifyUser
       update = update.copy(members = members)
     }
-    if (map.contains("name")) {
-      update = update.copy(name = map.get("name").get)
-    }
-    if (map.contains("ontUri")) {
-      update = update.copy(ontUri = map.get("ontUri"))
-    }
+
+    name foreach {d => update = update.copy(name = d)}
+    ontUri foreach {d => update = update.copy(ontUri = Some(d))}
 
     registered foreach {d => update = update.copy(registered = d)}
     updated    foreach {d => update = update.copy(updated = Some(d))}
 
     Try(orgsDAO.update(MongoDBObject("_id" -> orgName), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
-        OrgResult(orgName, updated = update.updated)
+        OrgResult(orgName,
+          ontUri = update.ontUri,
+          name = Option(update.name),
+          members = Option(update.members),
+          updated = update.updated)
 
       case Failure(exc)  => throw CannotUpdateOrg(orgName, exc.getMessage)
     }
   }
 
-  /**
-   * Deletes an org.
-   */
-  def deleteOrg(orgName: String) = {
+  def deleteOrg(orgName: String): OrgResult = {
     val org = getOrg(orgName)
 
     Try(orgsDAO.remove(org, WriteConcern.Safe)) match {
@@ -103,16 +87,12 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
     }
   }
 
-  /**
-   * Deletes the whole orgs collection
-   */
   def deleteAll() = orgsDAO.remove(MongoDBObject())
 
   ///////////////////////////////////////////////////////////////////////////
 
   private def validateOrgName(orgName: String) {
     val re = """(\w|-)+""".r
-    re.findFirstIn(orgName).headOption.getOrElse(InvalidOrgName(orgName))
+    re.findFirstIn(orgName).getOrElse(InvalidOrgName(orgName))
   }
-
 }

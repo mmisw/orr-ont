@@ -16,6 +16,10 @@ with TripleStoreService with Logging {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
+  var formats: Map[String,String] = Map()
+
+  def setFormats(formats: Map[String,String]): Unit = { this.formats = formats }
+
   def getSize(contextOpt: Option[String] = None): Either[Throwable, String] = {
     val prom = Promise[Either[Throwable, String]]()
 
@@ -33,32 +37,32 @@ with TripleStoreService with Logging {
     res
   }
 
-  def loadUri(uri: String, formats: Map[String, String]): Either[Throwable, String] =
-    loadUri(reload = false, uri, formats)
+  def loadUri(uri: String): Either[Throwable, String] =
+    loadUri(reload = false, uri)
 
-  def reloadUri(uri: String, formats: Map[String, String]): Either[Throwable, String] =
-    loadUri(reload = true, uri, formats)
+  def reloadUri(uri: String): Either[Throwable, String] =
+    loadUri(reload = true, uri)
 
-  def reloadUris(uris: Iterator[String], formats: Map[String, String]) = {
+  def reloadUris(uris: Iterator[String]) = {
     logger.warn(s"reloadUris:")
-    uris map { reloadUri(_, formats)}
+    uris map reloadUri
     Right("done")
   }
 
-  def reloadAll(formats: Map[String, String]) = {
+  def reloadAll() = {
     logger.warn(s"reloadAll:")
-    unloadAll(formats)
+    unloadAll()
     val uris = ontService.getAllOntologyUris.toList
     logger.warn(s"loading: ${uris.size} ontologies...")
-    uris map { loadUri(_, formats)}
+    uris map loadUri
     Right("done")
   }
 
-  def unloadUri(uri: String, formats: Map[String, String]): Either[Throwable, String] =
-    unload(Some(uri), formats)
+  def unloadUri(uri: String): Either[Throwable, String] =
+    unload(Some(uri))
 
-  def unloadAll(formats: Map[String, String]): Either[Throwable, String] =
-    unload(None, formats)
+  def unloadAll(): Either[Throwable, String] =
+    unload(None)
 
   ///////////////////////////////////////////////////////////////////////////
 
@@ -66,7 +70,7 @@ with TripleStoreService with Logging {
    * Loads the given ontology in the triple store.
    * If reload is true, the contents are replaced.
    */
-  private def loadUri(reload: Boolean, uri: String, formats: Map[String, String]): Either[Throwable, String] = {
+  private def loadUri(reload: Boolean, uri: String): Either[Throwable, String] = {
     val prom = Promise[Either[Throwable, String]]()
 
     logger.warn(s"loadUri: $uri")
@@ -101,7 +105,7 @@ with TripleStoreService with Logging {
   /**
    * Unloads a particular ontology, or the whole triple store.
    */
-  private def unload(uriOpt: Option[String], formats: Map[String, String]): Either[Throwable, String] = {
+  private def unload(uriOpt: Option[String]): Either[Throwable, String] = {
     logger.warn(s"unload: uriOpt=$uriOpt")
     val prom = Promise[Either[Throwable, String]]()
 

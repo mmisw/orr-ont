@@ -3,40 +3,26 @@ package org.mmisw.orr.ont.service
 import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
-import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
+import org.joda.time.format.DateTimeFormat
 import org.mmisw.orr.ont.db.{PwReset, User}
 import org.mmisw.orr.ont._
-import org.mmisw.orr.ont.util.Emailer
 
 import scala.util.{Failure, Success, Try}
 
-/**
- * User service
- */
 class UserService(implicit setup: Setup) extends BaseService(setup) with Logging {
 
   createAdminIfMissing()
 
-  private val emailer = new Emailer(setup.config.getConfig("email"))
+  private val pwrDAO = setup.db.pwrDAO
 
-  private val pwrDAO      = setup.db.pwrDAO
-
-  /**
-   * Gets the users satisfying the given query.
-   * @param query  Query
-   * @return       iterator
-   */
-  def getUsers(query: MongoDBObject): Iterator[PendUserResult] = {
-    usersDAO.find(query) map { user =>
-        PendUserResult(user.userName, user.ontUri, Some(user.registered))
-    }
+  def getUsers(query: MongoDBObject = MongoDBObject()): Iterator[User] = {
+    usersDAO.find(query)
   }
 
   def existsUser(userName: String): Boolean = usersDAO.findOneById(userName).isDefined
 
-  /**
-   * Creates a new user.
-   */
+  def getUser(userName: String): User = usersDAO.findOneById(userName).getOrElse(throw NoSuchUser(userName))
+
   def createUser(userName: String, email: String, phoneOpt: Option[String],
                  firstName: String, lastName: String, password: Either[String,String],
                  ontUri: Option[String], registered: DateTime = DateTime.now()) = {
@@ -65,9 +51,6 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
     }
   }
 
-  /**
-   * Updates a user.
-   */
   def updateUser(userName: String, map: Map[String,String], updated: Option[DateTime] = None) = {
 
     var update = getUser(userName)
@@ -143,9 +126,9 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
 
     if (users.nonEmpty) {
       val emailText = getEmailText(users)
-      println(s"sendUsername: email=$email: emailText:\n$emailText")
+      logger.debug(s"sendUsername: email=$email: emailText:\n$emailText")
       try {
-        emailer.sendEmail(email,
+        setup.emailer.sendEmail(email,
           s"Your orr-ont username${if (users.size > 1) "s" else ""}",
           emailText)
       }
@@ -153,7 +136,7 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
         case exc:Exception => exc.printStackTrace()
       }
     }
-    else println(s"sendUsername: email=$email: no associated usernames")
+    else logger.debug(s"sendUsername: email=$email: no associated usernames")
   }
 
   /**
@@ -189,9 +172,9 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
     Try(pwrDAO.insert(obj, WriteConcern.Safe)) match {
       case Success(r) =>
         val emailText = getEmailText(s"$resetRoute$token")
-        println(s"resetPassword: PwReset: $obj emailText:\n$emailText")
+        logger.debug(s"resetPassword: PwReset: $obj emailText:\n$emailText")
         try {
-          emailer.sendEmail(user.email,
+          setup.emailer.sendEmail(user.email,
             "Reset your orr-ont password",
             emailText)
         }
@@ -214,10 +197,10 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
          |
          | The orr-ont team
        """.stripMargin
-    println(s"notifyPasswordReset:\n$emailText")
+    logger.debug(s"notifyPasswordReset:\n$emailText")
 
     try {
-      emailer.sendEmail(user.email,
+      setup.emailer.sendEmail(user.email,
         "orr-ont password change confirmation",
         emailText
       )
@@ -227,9 +210,6 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
     }
   }
 
-  /**
-   * Deletes a whole user entry.
-   */
   def deleteUser(userName: String) = {
     val user = getUser(userName)
 
@@ -241,14 +221,9 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
     }
   }
 
-  /**
-   * Deletes the whole users collection
-   */
   def deleteAll() = usersDAO.remove(MongoDBObject())
 
   ///////////////////////////////////////////////////////////////////////////
-
-  private def getUser(userName: String): User = usersDAO.findOneById(userName).getOrElse(throw NoSuchUser(userName))
 
   /*
    * TODO validate userName

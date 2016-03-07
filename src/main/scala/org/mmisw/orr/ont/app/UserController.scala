@@ -6,7 +6,6 @@ import com.novus.salat.global._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont._
-import org.mmisw.orr.ont.service.UserService
 import org.scalatra.Created
 
 import scala.util.{Failure, Success, Try}
@@ -15,15 +14,13 @@ import scala.util.{Failure, Success, Try}
 class UserController(implicit setup: Setup) extends BaseController
       with Logging {
 
-  val userService = new UserService
-
   createAdminIfMissing()
 
   /*
    * Gets all users
    */
   get("/") {
-    usersDAO.find(MongoDBObject()) map getUserJson
+    userService.getUsers() map getUserJson
   }
 
   /*
@@ -253,33 +250,7 @@ class UserController(implicit setup: Setup) extends BaseController
     val map = body()
     verifyIsAuthenticatedUser(userName, "admin")
 
-    var update = getUser(userName)
-
-    if (map.contains("firstName")) {
-      update = update.copy(firstName = require(map, "firstName"))
-    }
-    if (map.contains("lastName")) {
-      update = update.copy(lastName = require(map, "lastName"))
-    }
-    if (map.contains("phone")) {
-      update = update.copy(phone = Some(require(map, "phone")))
-    }
-    if (map.contains("password")) {
-      val password = require(map, "password")
-      val encPassword = userAuth.encryptPassword(password)
-      update = update.copy(password = encPassword)
-    }
-    if (map.contains("ontUri")) {
-      update = update.copy(ontUri = Some(require(map, "ontUri")))
-    }
-    val updated = Some(DateTime.now())
-    update = update.copy(updated = updated)
-    logger.info(s"updating user with: $update")
-
-    Try(usersDAO.update(MongoDBObject("_id" -> userName), update, false, false, WriteConcern.Safe)) match {
-      case Success(result) => UserResult(userName, updated = update.updated)
-      case Failure(exc)    => error(500, s"update failure = $exc")
-    }
+    userService.updateUser(userName, toStringMap(map), Some(DateTime.now()))
   }
 
   /*

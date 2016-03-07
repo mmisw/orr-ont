@@ -1,12 +1,12 @@
 package org.mmisw.orr.ont.app
 
-import com.mongodb.casbah.Imports._
 import com.novus.salat._
 import com.novus.salat.global._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.db.Organization
-import org.mmisw.orr.ont.{PendOrgResult, db, OrgResult, Setup}
+import org.mmisw.orr.ont.service._
+import org.mmisw.orr.ont.{OrgResult, Setup, db}
 import org.scalatra.Created
 
 import scala.util.{Failure, Success, Try}
@@ -15,26 +15,18 @@ import scala.util.{Failure, Success, Try}
 class OrgController(implicit setup: Setup) extends BaseController
     with Logging {
 
-  /*
-   * Gets all organizations
-   */
+  val orgService = new OrgService
+
   get("/") {
-    orgsDAO.find(MongoDBObject()) map getOrgJson
+    orgService.getOrgs() map getOrgJson
   }
 
-  /*
-   * Gets an organization
-   */
   get("/:orgName") {
     val orgName = require(params, "orgName")
     val org = getOrg(orgName)
     getOrgJson(org)
   }
 
-  /*
-   * Registers a new organization.
-   * Only "admin" can do this.
-   */
   post("/") {
     verifyAuthenticatedUser("admin")
     val map = body()
@@ -48,10 +40,6 @@ class OrgController(implicit setup: Setup) extends BaseController
     Created(createOrg(orgName, name, members, ontUri))
   }
 
-  /*
-   * Updates an organization.
-   * Only members and "admin" can do this.
-   */
   put("/:orgName") {
     val orgName = require(params, "orgName")
     val org = getOrg(orgName)
@@ -59,68 +47,65 @@ class OrgController(implicit setup: Setup) extends BaseController
     verifyAuthenticatedUser(org.members + "admin")
 
     val map = body()
-    var update = org
 
-    if (map.contains("name")) {
-      update = update.copy(name = require(map, "name"))
-    }
-    if (map.contains("ontUri")) {
-      update = update.copy(ontUri = Some(require(map, "ontUri")))
-    }
-    if (map.contains("members")) {
-      val members = getSeq(map, "members").toSet
+    val nameOpt = getString(map, "name")
+    val ontUriOpt = getString(map, "ontUri")
+
+    val membersOpt = if (map.contains("members")) {
+      val members = getSet(map, "members")
       members foreach verifyUser
-      update = update.copy(members = members)
+      Some(members)
     }
-    val updated = Some(DateTime.now())
-    update = update.copy(updated = updated)
-    logger.info(s"updating organization with: $update")
-    Try(orgsDAO.update(MongoDBObject("_id" -> orgName), update, false, false, WriteConcern.Safe)) match {
-      case Success(result) => OrgResult(orgName, updated = update.updated)
-      case Failure(exc)    => error(500, s"update failure = $exc")
+    else None
+
+    Try(orgService.updateOrg(orgName, membersOpt = membersOpt,
+      name = nameOpt, ontUri = ontUriOpt,
+      updated = Some(DateTime.now())
+    )) match {
+      case Success(res)  => res
+      case Failure(exc)  => error(500, exc.getMessage)
     }
   }
 
-  /*
-   * Deletes an organization.
-   * Only "admin" can do this.
-   */
   delete("/:orgName") {
     verifyAuthenticatedUser("admin")
-    val orgName = require(params, "orgName")
-    val org = getOrg(orgName)
-    deleteOrg(org)
+    deleteOrg(require(params, "orgName"))
   }
 
   delete("/!/all") {
     verifyAuthenticatedUser("admin")
-    orgsDAO.remove(MongoDBObject())
+    orgService.deleteAll()
   }
 
   ///////////////////////////////////////////////////////////////////////////
 
-  def createOrg(orgName: String, name: String, members: Set[String], ontUri: Option[String] = None) = {
-    orgsDAO.findOneById(orgName) match {
-      case None =>
-        members foreach verifyUser
-        val obj = Organization(orgName, name, ontUri, members)
+  def createOrg(orgName: String, name: String,
+                members: Set[String],
+                ontUri: Option[String] = None) = {
 
-        Try(orgsDAO.insert(obj, WriteConcern.Safe)) match {
-          case Success(r) => OrgResult(orgName, registered = Some(obj.registered))
+    members foreach verifyUser
 
-          case Failure(exc)  => error(500, s"insert failure = $exc")
-          // TODO note that it might be a duplicate key in concurrent registration
-        }
-
-      case Some(ont) => error(400, s"'$orgName' organization already registered")
+    Try(orgService.createOrg(orgName, name, members, ontUri)) match {
+      case Success(res)                       => res
+      case Failure(exc: OrgAlreadyRegistered) => error(409, exc.details)
+      case Failure(exc: CannotInsertOrg)      => error(500, exc.details)
+      case Failure(exc)                       => error(500, exc.getMessage)
     }
   }
 
-  def deleteOrg(org: db.Organization) = {
-    Try(orgsDAO.remove(org, WriteConcern.Safe)) match {
-      case Success(result) => OrgResult(org.orgName, removed = Some(DateTime.now())) //TODO
+  def getOrg(orgName: String): db.Organization = {
+    Try(orgService.getOrg(orgName)) match {
+      case Success(res)            => res
+      case Failure(exc: NoSuchOrg) => error(404, s"'$orgName' organization is not registered")
+      case Failure(exc)            => error(500, exc.getMessage)
+    }
+  }
 
-      case Failure(exc)  => error(500, s"update failure = $exc")
+  def deleteOrg(orgName: String) = {
+    Try(orgService.getOrg(orgName)) match {
+      case Success(res)            => res
+      case Failure(exc: NoSuchOrg) => error(404, s"'$orgName' organization is not registered")
+      case Failure(exc)            => error(500, exc.getMessage)
     }
   }
 

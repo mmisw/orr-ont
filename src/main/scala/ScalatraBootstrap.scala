@@ -6,6 +6,7 @@ import java.util.ServiceConfigurationError
 import org.mmisw.orr.ont._
 import org.mmisw.orr.ont.app._
 import org.mmisw.orr.ont.service.{TripleStoreService, TripleStoreServiceAgRest, OntService}
+import org.mmisw.orr.ont.util.Emailer
 import org.scalatra._
 import javax.servlet.ServletContext
 
@@ -33,7 +34,7 @@ class ScalatraBootstrap extends LifeCycle with StrictLogging {
       ConfigFactory.parseFile(configFile)
     }
 
-    implicit val setup = new Setup(config)
+    implicit val setup = new Setup(config, new Emailer(config.getConfig("email")))
     implicit val ontService = new OntService
     implicit val tsService: TripleStoreService = new TripleStoreServiceAgRest
 

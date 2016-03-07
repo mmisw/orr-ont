@@ -5,25 +5,28 @@ import java.io.File
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.json4s._
 import org.json4s.native.JsonMethods._
-import org.mmisw.orr.ont.auth.authUtil
-import org.mmisw.orr.ont.service.{TripleStoreServiceAgRest, OntService}
 import org.mmisw.orr.ont._
+import org.mmisw.orr.ont.auth.authUtil
+import org.mmisw.orr.ont.service.{TripleStoreService, OntService, UserService}
+import org.mmisw.orr.ont.swld.ontUtil
 import org.scalatra.test.specs2._
+import org.specs2.mock.Mockito
 
 
 /**
  * A general sequence involving users, orgs, and onts.
  */
-class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
+class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with Logging {
   import org.json4s.JsonDSL._
 
   implicit val ontService = new OntService
-  implicit val tsService = new TripleStoreServiceAgRest
+  implicit val tsService = mock[TripleStoreService]
 
   addServlet(new UserController, "/user/*")
   addServlet(new OrgController,  "/org/*")
   addServlet(new OntController,  "/ont/*")
   addServlet(new TripleStoreController,  "/ts/*")
+  addServlet(new SelfHostedOntController, "/*")
 
   sequential
 
@@ -35,7 +38,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     "succeed and contain the 'admin' user" in {
       get("/user") {
         status must_== 200
-        val res = parse(body).extract[List[PendUserResult]]
+        val res = parse(body).extract[List[UserResult]]
         res.exists(r => r.userName == "admin") must beTrue
       }
     }
@@ -45,7 +48,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     "succeed" in {
       get("/user/admin") {
         status must_== 200
-        val res = parse(body).extract[PendUserResult]
+        val res = parse(body).extract[UserResult]
         res.userName must_== "admin"
       }
     }
@@ -165,16 +168,51 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
   }
 
+  "notifyPasswordHasBeenReset" should {
+    "email user" in {
+      val userService = new UserService
+      val user = db.User(userName = "un", firstName = "fn", lastName = "ln", password = "pw", email = "e@m.x")
+      userService.notifyPasswordHasBeenReset(user)
+      1===1
+    }
+  }
+
+  "username reminder" should {
+    "send email with username" in {
+      val reqBody = pretty(render(Map("email" -> map("email"))))
+      put(s"/user/unr/", body = reqBody) {
+        status must_== 200
+        logger.debug(s"PUT username reminder reply body=$body")
+        val res = parse(body).extract[UsernameReminderResult]
+        res.email must_== map("email")
+        res.message must beSome
+      }
+    }
+  }
+
+  "password reset" should {
+    "email user" in {
+      put(s"/user/rpwr/$userName") {
+        status must_== 200
+        logger.debug(s"PUT username password reset reply body=$body")
+        val res = parse(body).extract[PasswordResetResult]
+        res.userName must_== userName
+        res.email must_== map.get("email")
+        res.message must beSome
+      }
+    }
+  }
+
   //////////
   // orgs
   //////////
 
   "Get all orgs (GET /org)" should {
-    "succeed" in {
+    "succeed and with 0 orgs reported" in {
       get("/org") {
         status must_== 200
-        val res = parse(body).extract[List[PendOrgResult]]
-        res.length must be >= 0
+        val res = parse(body).extract[List[OrgResult]]
+        res.length must_== 0
       }
     }
   }
@@ -240,6 +278,33 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     }
   }
 
+  "Get orgs (GET /org)" should {
+    "succeed for all with 2 orgs reported" in {
+      get("/org", headers = Map("Authorization" -> userCredentials)) {
+        status must_== 200
+        val res = parse(body).extract[List[OrgResult]]
+        res.length must_== 2
+        res.map (_.orgName) must contain(orgName, orgName2)
+      }
+    }
+    "succeed for specific orgs" in {
+      get(s"/org/$orgName", headers = Map("Authorization" -> userCredentials)) {
+        status must_== 200
+        val res = parse(body).extract[OrgResult]
+        res.orgName must_== orgName
+        res.members must beSome
+        res.members.get must contain(userName)
+      }
+      get(s"/org/$orgName2", headers = Map("Authorization" -> userCredentials)) {
+        status must_== 200
+        val res = parse(body).extract[OrgResult]
+        res.orgName must_== orgName2
+        res.members must beSome
+        res.members.get must contain(userName)
+      }
+    }
+  }
+
   "Update an org (PUT /org/:orgName)" should {
     "fail with no credentials" in {
       val headers = Map("content-type" -> "application/json")
@@ -251,10 +316,30 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
 
     "succeed with member credentials" in {
       val headers = Map("content-type" -> "application/json", "Authorization" -> userCredentials)
-      put(s"/org/$orgName", body = pretty(render("ontUri" -> "updated.ontUri")),
-        headers = headers) {
+      val map = ("ontUri" -> "updated.ontUri") ~
+                ("members"   -> Seq(userName, userName2))
+      put(s"/org/$orgName", body = pretty(render(map)), headers = headers) {
+        val respBody = body
+        //println(s"respBody=\n  " + respBody.replace("\n", "\n  "))
+        status must_== 200
+        val res = parse(respBody).extract[OrgResult]
+        res.ontUri must beSome("updated.ontUri")
+        res.members must beSome
+        res.members.get must haveSize(2)
+        res.members.get must contain(userName, userName2)
+        res.orgName must_== orgName
+      }
+    }
+
+    "remove userName2 for subsequent tests" in {
+      val headers = Map("content-type" -> "application/json", "Authorization" -> userCredentials)
+      val map = ("members" -> Seq(userName))
+      put(s"/org/$orgName", body = pretty(render(map)), headers = headers) {
         status must_== 200
         val res = parse(body).extract[OrgResult]
+        res.members must beSome
+        res.members.get must haveSize(1)
+        res.members.get must contain(userName)
         res.orgName must_== orgName
       }
     }
@@ -394,6 +479,42 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
         latestVersion must_== registeredVersion.get
       }
     }
+
+    // <FORMATS>
+    def doGoodFormat(reqFormat: String, expectedMimeOption: Option[String] = None) = {
+      val map = Map("uri" -> ont1Uri, "format" -> reqFormat)
+      get("/ont", map) {
+        val contentType = response.getContentType()
+        if (status != 200) {
+          println(s"doGoodFormat: reqFormat=$reqFormat -> status=$status contentType=$contentType  reason=${response.getReason()}")
+        }
+        status must_== 200
+        val expectedMime = expectedMimeOption.getOrElse(ontUtil.mimeMappings(reqFormat))
+        contentType must contain(expectedMime)
+      }
+    }
+    "return expected file for rdf reqFormat"    in { doGoodFormat("rdf") }
+    "return expected file for jsonld reqFormat" in { doGoodFormat("jsonld") }
+    "return expected file for n3 reqFormat"     in { doGoodFormat("n3") }
+    // TODO: note that for ttl, currently used Jena version returns mime type for n3:
+    "return expected file for ttl reqFormat"    in { doGoodFormat("ttl", Some(ontUtil.mimeMappings("n3"))) }
+    "return expected file for nt reqFormat"     in { doGoodFormat("nt") }
+    "return expected file for rj reqFormat"     in { doGoodFormat("rj") }
+
+    def doBadFormat(reqFormat: String) = {
+      val map = Map("uri" -> ont1Uri, "format" -> reqFormat)
+      get("/ont", map) {
+        val respBody = body
+        //println(s"doBadFormat: reqFormat=$reqFormat  response body=\n  " + respBody.replace("\n", "\n  "))
+        status must_== 406
+        val res = parse(respBody).extract[Map[String,String]]
+        res.get("format") must beSome(reqFormat)
+      }
+    }
+    // TODO move the following to doGoodFormat once jena actually supports these documented supported formats
+    "return expected file for nq reqFormat"     in { doBadFormat("nq") }
+    "return expected file for trig reqFormat"   in { doBadFormat("trig") }
+    // </FORMATS>
   }
 
   "Get onts with some filter parameters (GET /ont?orgName=nn)" should {
@@ -505,6 +626,15 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
   // triple store
   /////////////////////
 
+  "Get triple store size (GET /ts)" should {
+    "call tsService.getSizeget once" in {
+      get("/ts", headers = adminHeaders) {
+        status must_== 200
+        there was one(tsService).getSize(None)
+      }
+    }
+  }
+
   "Load an ont in triple store (POST /ts)" should {
     "fail with no credentials" in {
       post("/ts", Map("uri" -> ont1Uri)) {
@@ -521,6 +651,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     "succeed with admin credentials" in {
       post("/ts", Map("uri" -> ont1Uri), headers = adminHeaders) {
         status must_== 200
+        there was one(tsService).loadUri(ont1Uri)
       }
     }
   }
@@ -541,6 +672,28 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     "succeed with admin credentials" in {
       put("/ts", Map("uri" -> ont1Uri), headers = adminHeaders) {
         status must_== 200
+        there was one(tsService).reloadUri(ont1Uri)
+      }
+    }
+  }
+
+  "Reload all onts in triple store (PUT /ts)" should {
+    "fail with no credentials" in {
+      put("/ts") {
+        status must_== 401
+      }
+    }
+
+    "fail with regular user credentials" in {
+      put("/ts", Map(), headers = userHeaders) {
+        status must_== 403
+      }
+    }
+
+    "succeed with admin credentials" in {
+      put("/ts", Map(), headers = adminHeaders) {
+        status must_== 200
+        there was one(tsService).reloadAll()
       }
     }
   }
@@ -561,6 +714,41 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Logging {
     "succeed with admin credentials" in {
       delete("/ts", Map("uri" -> ont1Uri), headers = adminHeaders) {
         status must_== 200
+        there was one(tsService).unloadUri(ont1Uri)
+      }
+    }
+  }
+
+  "Unload all onts from triple store (DELETE /ts)" should {
+    "fail with no credentials" in {
+      delete("/ts") {
+        status must_== 401
+      }
+    }
+
+    "fail with regular user credentials" in {
+      delete("/ts", Map(), headers = userHeaders) {
+        status must_== 403
+      }
+    }
+
+    "succeed with admin credentials" in {
+      delete("/ts", Map(), headers = adminHeaders) {
+        status must_== 200
+        there was one(tsService).unloadAll()
+      }
+    }
+  }
+
+  ////////////////////////////
+  // "self-hosted" requests
+  ////////////////////////////
+  // Except for very basic requests (eg. non-existing), this seems rather tricky to test
+  "self-hosted: GET /non/existent)" should {
+    "return not-found" in {
+      get("/non/existent") {
+        //println(s"GET /non/existent response body=$body")
+        status must_== 404
       }
     }
   }
