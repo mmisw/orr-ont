@@ -28,9 +28,11 @@ with Logging {
       case Failure(exc: NoSuchOntFormat) => error(406, exc.details)
       case Failure(exc: CannotCreateFormat) => error(406, exc.details)
       case Failure(exc) => {
+        // $COVERAGE-OFF$
         println(s"getOntologyFile: error with uri=$uri version=$version reqFormat=$reqFormat")
         exc.printStackTrace()
         error(500, exc.getMessage)
+        // $COVERAGE-ON$
       }
     }
   }
