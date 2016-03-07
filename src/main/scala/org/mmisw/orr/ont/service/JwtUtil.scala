@@ -34,7 +34,6 @@ class JwtUtil(secret: String) extends AnyRef with Logging {
   private[this] def doVerifyToken(jwt: String): String = {
     val verifyRes: java.util.Map[String, AnyRef] = jwtVerifier.verify(jwt)
 
-    println(s"verifyToken: verifyRes=$verifyRes")
     logger.debug(s"verifyToken: verifyRes=$verifyRes")
 
     if (!verifyRes.containsKey("d")) {

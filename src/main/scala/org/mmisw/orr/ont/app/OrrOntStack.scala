@@ -84,7 +84,7 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSuppor
     val prefix = if (url.endsWith(uri)) url.substring(0, url.length - uri.length) else url
     val contextPath = request.getContextPath
     val baseUrl = prefix + contextPath
-    println(s"getMyBaseUrl: url=$url uri=$uri contextPath=$contextPath baseUrl=$baseUrl")
+    //println(s"getMyBaseUrl: url=$url uri=$uri contextPath=$contextPath baseUrl=$baseUrl")
     baseUrl
   }
 
