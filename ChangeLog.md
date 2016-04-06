@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-04-05: 0.3.1:
+  - dockerizing ...
+  
 * 2016-03-06: 0.3.1:
   - skip testing of TripleStoreServiceAgRest, SelfHostedOntController
   - more org tests
