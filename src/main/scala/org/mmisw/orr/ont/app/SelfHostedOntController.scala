@@ -33,7 +33,9 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
     }
 
     if (!portalDispatch(pathInfo, reqFormat)) {
-      resolve(pathInfo.substring(1), reqFormat)
+      // skip leading slash if any
+      val noSlash = if (pathInfo.length() > 1) pathInfo.substring(1) else pathInfo
+      resolve(noSlash, reqFormat)
     }
   }
 
