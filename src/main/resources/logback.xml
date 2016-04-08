@@ -12,4 +12,7 @@
   </root>
 
   <logger name="org.mmisw.orr.ont.app" level="WARN" />
+  <logger name="org.mmisw.orr.ont.app.OntController" level="DEBUG" />
+  <logger name="org.mmisw.orr.ont.service.OntService" level="DEBUG" />
+  <logger name="org.mmisw.orr.ont.swld" level="DEBUG" />
 </configuration>

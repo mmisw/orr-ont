@@ -49,6 +49,8 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
     }
   }
 
+  protected def requireAuthenticatedUser = authenticatedUser.getOrElse(bug("authenticatedUser should be defined"))
+
   protected def getFromParamsOrBody(name: String): Option[String] = {
     if (params.contains(name)) params.get(name)
     else for (body <- bodyOpt(); value <- getString(body, name)) yield value

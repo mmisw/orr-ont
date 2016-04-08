@@ -2,6 +2,9 @@
 
 * 2016-04-07: 0.3.1:
   - consistently use similar user verification (try basic auth then JWT) in various operations
+  - add requireAuthenticatedUser to be called wherever an authenticated user is expected
+  - increase upload max size to 10MB
+  - some debugging enabled for ontology upload operation
   - print stacktrace for 500 error code
   
 * 2016-04-05: 0.3.1:

@@ -14,6 +14,18 @@
     <priority value="WARN" />
   </category>
 
+  <category name="org.mmisw.orr.ont.app.OntController">
+    <priority value="DEBUG" />
+  </category>
+
+  <category name="org.mmisw.orr.ont.service.OntService">
+    <priority value="DEBUG" />
+  </category>
+
+  <category name="org.mmisw.orr.ont.swld">
+    <priority value="DEBUG" />
+  </category>
+
   <root>
     <priority value="WARN" />
     <appender-ref ref="console" />

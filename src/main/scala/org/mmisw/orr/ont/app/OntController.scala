@@ -18,7 +18,7 @@ import scala.util.{Failure, Success, Try}
 /**
  * Controller for the "ont" API.
  */
-@MultipartConfig(maxFileSize = 5*1024*1024)
+@MultipartConfig(maxFileSize = 10*1024*1024)
 class OntController(implicit setup: Setup, ontService: OntService) extends BaseOntController
       with FileUploadSupport with Logging {
 
@@ -26,7 +26,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
 
   error {
     case e: SizeConstraintExceededException =>
-      error(413, "The file you uploaded exceeded the 5MB limit.")
+      error(413, "The file you uploaded exceeds the 10MB limit.")
   }
 
   /*
@@ -150,6 +150,20 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
                              contact_name: Option[String],
                              date: String,
                              ontFileWriter: OntFileWriter, orgName: String) = {
+
+    val user = requireAuthenticatedUser
+    logger.debug(s"""
+         |createOntology:
+         | user:           $user
+         | uri:            $uri
+         | name:           $name
+         | version:        $version
+         | version_status: $version_status
+         | contact_name:   $contact_name
+         | date:           $date
+         | orgName:        $orgName
+         | ontFileWriter.format: ${ontFileWriter.format}
+         |""".stripMargin)
 
     Try(ontService.createOntology(uri, name, version, version_status,
           contact_name, date, user.userName, orgName, ontFileWriter)) match {
