@@ -135,18 +135,27 @@ object ontUtil extends AnyRef with Logging {
    * @return
    */
   private def getOntology(uri: String, file: File, format: String, processImports: Boolean = false):
-    Option[Ontology] = {
+  Option[Ontology] = {
+    val ontModel = loadOntModel(uri, file, format, processImports)
+    Option(ontModel.getOntology(uri))
+  }
 
+  private def loadOntModel(uri: String, file: File, format: String, processImports: Boolean = false):
+  OntModel = {
     logger.debug(s"Loading uri='$uri' file=$file with processImports=$processImports")
-    val path = file.getAbsolutePath
-    logger.debug(s"path='$path'")
-    val source = io.Source.fromFile(path)
     val lang = format2lang(storedFormat(format)).getOrElse(throw new IllegalArgumentException)
     val ontModel = createDefaultOntModel
     ontModel.setDynamicImports(false)
     ontModel.getDocumentManager.setProcessImports(processImports)
+    readOntModel(uri, file, lang, ontModel)
+    ontModel
+  }
+
+  private def readOntModel(uri: String, file: File, lang: String, ontModel: OntModel): Unit = {
+    val path = file.getAbsolutePath
+    logger.debug(s"readOntModel: path='$path' lang='$lang'")
+    val source = io.Source.fromFile(path)
     ontModel.read(source.reader(), uri, lang)
-    Option(ontModel.getOntology(uri))
   }
 
   private def createDefaultOntModel: OntModel = {

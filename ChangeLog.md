@@ -1,6 +1,8 @@
 ## change log ##
 
 * 2016-04-07: 0.3.1:
+  - refactor model read as preparation for more appropriate mechanism using input stream and not reader
+  
   - consistently use similar user verification (try basic auth then JWT) in various operations
   - add requireAuthenticatedUser to be called wherever an authenticated user is expected
   - increase upload max size to 10MB
