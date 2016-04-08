@@ -13,7 +13,7 @@ with Logging {
   tsService.setFormats(Map(formats.toSeq: _*))
 
   before() {
-    verifyAuthenticatedUser("admin")
+    verifyIsAuthenticatedUser("admin")
   }
 
   /*

@@ -81,9 +81,14 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
     if (!ok) halt(403, s"unauthorized")
   }
 
-  protected def verifyIsAuthenticatedUser(userNames: String*): Unit = authenticatedUser match {
-    case Some(u) if userNames.contains(u.userName) =>
-    case _ => halt(401, s"unauthorized")
+  protected def verifyIsAuthenticatedUser(userNames: String*): Unit = {
+    val u = authenticatedUser.getOrElse(halt(401, s"unauthorized"))
+    if (!userNames.contains(u.userName)) halt(403, s"unauthorized")
+  }
+
+  protected def verifyIsAuthenticatedUser(userNames: Set[String]): Unit = {
+    val u = authenticatedUser.getOrElse(halt(401, s"unauthorized"))
+    if (!userNames.contains(u.userName)) halt(403, s"unauthorized")
   }
 
 //  ///////////////////////////////////////////////////////////////////////////
@@ -139,16 +144,6 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
 //      case None    => false
 //    }
 //  }
-
-  protected def verifyAuthenticatedUser(userNames: String*) {
-    basicAuth
-    if (!userNames.contains(user.userName)) halt(403, s"unauthorized")
-  }
-
-  protected def verifyAuthenticatedUser(userNames: Set[String]) {
-    basicAuth
-    if (!userNames.contains(user.userName)) halt(403, s"unauthorized")
-  }
 
   protected def getUser(userName: String): db.User = {
     Try(userService.getUser(userName)) match {

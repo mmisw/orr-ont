@@ -1,7 +1,7 @@
 ## change log ##
 
 * 2016-04-07: 0.3.1:
-  - POST /ont: use similar user verification (try basic auth then JWT)
+  - consistently use similar user verification (try basic auth then JWT) in various operations
   - print stacktrace for 500 error code
   
 * 2016-04-05: 0.3.1:

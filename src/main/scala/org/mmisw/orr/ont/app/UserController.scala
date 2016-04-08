@@ -258,7 +258,7 @@ class UserController(implicit setup: Setup) extends BaseController
    * Only "admin" can do this.
    */
   delete("/:userName") {
-    verifyAuthenticatedUser("admin")
+    verifyIsAuthenticatedUser("admin")
     val userName = require(params, "userName")
     val user = getUser(userName)
     deleteUser(user)
@@ -266,12 +266,12 @@ class UserController(implicit setup: Setup) extends BaseController
 
   // for initial testing of authentication from unit tests
   post("/!/testAuth") {
-    verifyAuthenticatedUser("admin")
+    verifyIsAuthenticatedUser("admin")
     UserResult("admin")
   }
 
   delete("/!/all") {
-    verifyAuthenticatedUser("admin")
+    verifyIsAuthenticatedUser("admin")
     usersDAO.remove(MongoDBObject())
   }
 

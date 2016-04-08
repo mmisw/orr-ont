@@ -92,7 +92,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
             bug(s"org '$orgName' should exist")
 
           case Some(org) =>
-            verifyAuthenticatedUser(org.members + "admin")
+            verifyIsAuthenticatedUser(org.members + "admin")
         }
 
       case None =>
@@ -122,7 +122,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
         orgsDAO.findOneById(orgName) match {
           case None => bug(s"org '$orgName' should exist")
 
-          case Some(org) => verifyAuthenticatedUser(org.members + "admin")
+          case Some(org) => verifyIsAuthenticatedUser(org.members + "admin")
         }
 
       case None =>
@@ -136,7 +136,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
   }
 
   delete("/!/all") {
-    verifyAuthenticatedUser("admin")
+    verifyIsAuthenticatedUser("admin")
     ontService.deleteAll()
   }
 
