@@ -1,8 +1,8 @@
 package org.mmisw.orr.ont.swld
 
 import com.hp.hpl.jena.ontology.{Ontology, OntDocumentManager, OntModelSpec, OntModel}
-import com.hp.hpl.jena.rdf.model.{RDFNode, Property, ModelFactory}
-import java.io.{FileInputStream, FileWriter, File}
+import com.hp.hpl.jena.rdf.model.{Model, RDFNode, Property, ModelFactory}
+import java.io.{FileOutputStream, FileInputStream, File}
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 
 import com.github.jsonldjava.jena.JenaJSONLD
@@ -32,17 +32,13 @@ object ontUtil extends AnyRef with Logging {
     def doIt(fromLang: String, toLang: String): File = {
       if (fromLang == toLang) fromFile
       else {
-        // TODO manage resources below
+        logger.info(s"ontUtil.convert: path=$fromFile toLang=$toLang")
         val model = ModelFactory.createDefaultModel()
-        val fromPath = fromFile
-        val source = io.Source.fromFile(fromFile)
-        model.read(source.reader(), uri, fromLang)
+        readModel(uri, fromFile, fromLang, model)
         val writer = model.getWriter(toLang)
-        //println(s"jenaUtil.convert: path=$fromPath toLang=$toLang")
-        logger.info(s"jenaUtil.convert: path=$fromPath toLang=$toLang")
-        val toWriter = new FileWriter(toFile)
-        writer.write(model, toWriter, uri)
-        toWriter.close()
+        val os = new FileOutputStream(toFile)
+        try writer.write(model, os, uri)
+        finally os.close()
         toFile
       }
     }
@@ -93,10 +89,10 @@ object ontUtil extends AnyRef with Logging {
     var map = Map[String, String]()
 
     val values1 = listPropertyValues(ontology, OmvMmi.hasResourceType)
-    if (values1.size > 0) map = map.updated("resourceType", values1.head)
+    if (values1.nonEmpty) map = map.updated("resourceType", values1.head)
 
     val values2 = listPropertyValues(ontology, Omv.usedOntologyEngineeringTool)
-    if (values2.size > 0) {
+    if (values2.nonEmpty) {
       val usedOntologyEngineeringTool = values2.head
       val ontologyType = if (usedOntologyEngineeringTool == OmvMmi.voc2rdf.getURI)
         "vocabulary"
@@ -135,15 +131,15 @@ object ontUtil extends AnyRef with Logging {
     val ontModel = createDefaultOntModel
     ontModel.setDynamicImports(false)
     ontModel.getDocumentManager.setProcessImports(processImports)
-    readOntModel(uri, file, lang, ontModel)
+    readModel(uri, file, lang, ontModel)
     ontModel
   }
 
-  private def readOntModel(uri: String, file: File, lang: String, ontModel: OntModel): Unit = {
+  private def readModel(uri: String, file: File, lang: String, model: Model): Unit = {
     val path = file.getAbsolutePath
-    logger.debug(s"readOntModel: path='$path' lang='$lang'")
+    logger.debug(s"readModel: path='$path' lang='$lang'")
     val is = new FileInputStream(file)
-    try ontModel.read(is, uri, lang)
+    try model.read(is, uri, lang)
     finally is.close()
   }
 

@@ -1,7 +1,10 @@
 ## change log ##
 
 * 2016-04-07: 0.3.1:
-  - use input stream when reading in uploaded ontology
+  - use input stream when reading in uploaded ontology and in ontology format conversion.
+    Now, the associated Jena warnings are gone, and, as a good test, loading/converting the 
+    CF standard name ontology now succeeds
+    (the error was: ERROR org.apache.jena.riot - {E213} Input length = 1)
   - refactor model read as preparation for more appropriate mechanism using input stream and not reader
   
   - consistently use similar user verification (try basic auth then JWT) in various operations
