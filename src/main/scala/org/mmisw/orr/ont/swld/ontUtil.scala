@@ -2,7 +2,7 @@ package org.mmisw.orr.ont.swld
 
 import com.hp.hpl.jena.ontology.{Ontology, OntDocumentManager, OntModelSpec, OntModel}
 import com.hp.hpl.jena.rdf.model.{RDFNode, Property, ModelFactory}
-import java.io.{FileWriter, File}
+import java.io.{FileInputStream, FileWriter, File}
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 
 import com.github.jsonldjava.jena.JenaJSONLD
@@ -61,7 +61,8 @@ object ontUtil extends AnyRef with Logging {
   }
 
   def getPropsFromOntMetadata(uri: String, file: File, format: String): Map[String,String] = {
-    getOntology(uri, file, format) match {
+    val ontModel = loadOntModel(uri, file, format)
+    Option(ontModel.getOntology(uri)) match {
       case Some(ontology) =>
         try extractSomeProps(ontology)
         catch {
@@ -126,20 +127,7 @@ object ontUtil extends AnyRef with Logging {
     values.toList
   }
 
-  /**
-   * Gets the Jena Ontology object of the given uri from the given file.
-   * @param uri
-   * @param file
-   * @param format
-   * @param processImports
-   * @return
-   */
-  private def getOntology(uri: String, file: File, format: String, processImports: Boolean = false):
-  Option[Ontology] = {
-    val ontModel = loadOntModel(uri, file, format, processImports)
-    Option(ontModel.getOntology(uri))
-  }
-
+  /** Loads an ontology model from a file. */
   private def loadOntModel(uri: String, file: File, format: String, processImports: Boolean = false):
   OntModel = {
     logger.debug(s"Loading uri='$uri' file=$file with processImports=$processImports")
@@ -154,8 +142,9 @@ object ontUtil extends AnyRef with Logging {
   private def readOntModel(uri: String, file: File, lang: String, ontModel: OntModel): Unit = {
     val path = file.getAbsolutePath
     logger.debug(s"readOntModel: path='$path' lang='$lang'")
-    val source = io.Source.fromFile(path)
-    ontModel.read(source.reader(), uri, lang)
+    val is = new FileInputStream(file)
+    try ontModel.read(is, uri, lang)
+    finally is.close()
   }
 
   private def createDefaultOntModel: OntModel = {

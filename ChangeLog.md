@@ -1,6 +1,7 @@
 ## change log ##
 
 * 2016-04-07: 0.3.1:
+  - use input stream when reading in uploaded ontology
   - refactor model read as preparation for more appropriate mechanism using input stream and not reader
   
   - consistently use similar user verification (try basic auth then JWT) in various operations
