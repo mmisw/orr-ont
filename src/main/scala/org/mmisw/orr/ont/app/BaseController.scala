@@ -75,6 +75,12 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
     case None    => false
   }
 
+  protected def verifyIsUserOrAdminOrExtra(userNames: Set[String]): Unit = {
+    val u = authenticatedUser.getOrElse(halt(401, s"unauthorized"))
+    val ok = userNames.contains(u.userName) || "admin" == u.userName || extra.contains(u.userName)
+    if (!ok) halt(403, s"unauthorized")
+  }
+
   protected def verifyIsAuthenticatedUser(userNames: String*): Unit = authenticatedUser match {
     case Some(u) if userNames.contains(u.userName) =>
     case _ => halt(401, s"unauthorized")
@@ -148,7 +154,7 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
     Try(userService.getUser(userName)) match {
       case Success(res)            => res
       case Failure(exc: NoSuchUser) => error(404, s"'$userName' user is not registered")
-      case Failure(exc)            => error(500, exc.getMessage)
+      case Failure(exc)             => error500(exc)
     }
   }
 

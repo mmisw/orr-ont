@@ -107,7 +107,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
               case exc: AnyRef =>
                 logger.info(s"EXC in selfResolve: $exc")
                 // TODO dispatch some synthetic response as in previous Ont
-                error(500, s"TODO: generate summary for organization '$xyz'")
+                error500(s"TODO: generate summary for organization '$xyz'")
             }
         }
       case None =>
@@ -116,7 +116,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
             user.ontUri match {
               case Some(ontUri) => redirect(ontUri)
               case None =>
-                error(500, s"TODO: generate summary for user '$xyz'")
+                error500(s"TODO: generate summary for user '$xyz'")
             }
           case None => error(404, s"No organization or user by given name: '$xyz'")
         }
@@ -160,7 +160,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
     Try(ontService.resolveOntology(uri, versionOpt)) match {
       case Success(res)         => res
       case Failure(exc: NoSuch) => error(404, exc.details)
-      case Failure(exc)         => error(500, exc.getMessage)
+      case Failure(exc)         => error500(exc)
     }
   }
 
@@ -168,7 +168,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
     Try(ontService.getOntologyFile(uri, version, reqFormat)) match {
       case Success(res)                   => res
       case Failure(exc: NoSuchOntFormat)  => error(406, exc.details)
-      case Failure(exc) => error(500, exc.getMessage)
+      case Failure(exc)                   => error500(exc)
     }
   }
 

@@ -154,13 +154,13 @@ class UserController(implicit setup: Setup) extends BaseController
     val update = user.copy(password = userAuth.encryptPassword(password))
     Try(usersDAO.update(MongoDBObject("_id" -> userName), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
-      case Failure(exc)    => error(500, s"update failure = $exc")
+      case Failure(exc)    => error500(exc)
     }
 
     // remove token
     Try(setup.db.pwrDAO.remove(pwr, WriteConcern.Safe)) match {
       case Success(result) =>
-      case Failure(exc)    => error(500, s"update failure = $exc")
+      case Failure(exc)    => error500(exc)
     }
 
     // TODO: update firebase.
@@ -311,7 +311,7 @@ class UserController(implicit setup: Setup) extends BaseController
         Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
           case Success(r) => UserResult(userName, registered = Some(obj.registered))
 
-          case Failure(exc)  => error(500, s"insert failure = $exc")
+          case Failure(exc)  => error500(exc)
           // TODO note that it might be a duplicate key in concurrent registration
         }
 
@@ -347,7 +347,7 @@ class UserController(implicit setup: Setup) extends BaseController
   def deleteUser(user: db.User) = {
     Try(usersDAO.remove(user, WriteConcern.Safe)) match {
       case Success(result) => UserResult(user.userName, removed = Some(DateTime.now()))
-      case Failure(exc)    => error(500, s"update failure = $exc")
+      case Failure(exc)    => error500(exc)
     }
   }
 

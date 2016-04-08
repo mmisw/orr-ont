@@ -59,7 +59,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
         error(400, s"'$orgName' invalid organization")
 
       case Some(org) =>
-        verifyAuthenticatedUser(org.members + "admin")
+        verifyIsUserOrAdminOrExtra(org.members + "admin")
     }
 
     // TODO capture version_status from parameter
@@ -157,8 +157,9 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
 
       case Failure(exc: InvalidUri) => error(400, exc.details)
       case Failure(exc: OntologyAlreadyRegistered) => error(409, exc.details)
-      case Failure(exc: Problem) => error(500, exc.details)
-      case Failure(exc) => error(500, exc.getMessage)
+
+      case Failure(exc: Problem) => error500(exc)
+      case Failure(exc)          => error500(exc)
     }
   }
 
@@ -249,8 +250,8 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
 
       case Failure(exc: NoSuch)                       => error(404, exc.details)
       case Failure(exc: NotAMember)                   => error(401, exc.details)
-      case Failure(exc: CannotInsertOntologyVersion)  => error(500, exc.details)
-      case Failure(exc)                               => error(500, exc.getMessage)
+      case Failure(exc: CannotInsertOntologyVersion)  => error500(exc)
+      case Failure(exc)                               => error500(exc)
     }
   }
 
@@ -267,8 +268,8 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
 
       case Failure(exc: NoSuch)                       => error(404, exc.details)
       case Failure(exc: NotAMember)                   => error(401, exc.details)
-      case Failure(exc: CannotUpdateOntologyVersion)  => error(500, exc.details)
-      case Failure(exc)                               => error(500, exc.getMessage)
+      case Failure(exc: CannotUpdateOntologyVersion)  => error500(exc)
+      case Failure(exc)                               => error500(exc)
     }
   }
 
@@ -282,8 +283,8 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
 
       case Failure(exc: NoSuch)                       => error(404, exc.details)
       case Failure(exc: NotAMember)                   => error(401, exc.details)
-      case Failure(exc: CannotDeleteOntologyVersion)  => error(500, exc.details)
-      case Failure(exc)                               => error(500, exc.getMessage)
+      case Failure(exc: CannotDeleteOntologyVersion)  => error500(exc)
+      case Failure(exc)                               => error500(exc)
     }
   }
 
@@ -296,8 +297,8 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
 
       case Failure(exc: NoSuch)                       => error(404, exc.details)
       case Failure(exc: NotAMember)                   => error(401, exc.details)
-      case Failure(exc: CannotDeleteOntology)         => error(500, exc.details)
-      case Failure(exc)                               => error(500, exc.getMessage)
+      case Failure(exc: CannotDeleteOntology)         => error500(exc)
+      case Failure(exc)                               => error500(exc)
     }
   }
 }

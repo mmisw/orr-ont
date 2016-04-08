@@ -18,7 +18,7 @@ with Logging {
     Try(ontService.resolveOntology(uri, versionOpt)) match {
       case Success(res) => res
       case Failure(exc: NoSuch) => error(404, exc.details)
-      case Failure(exc) => error(500, exc.getMessage)
+      case Failure(exc)         => error500(exc)
     }
   }
 
@@ -31,7 +31,7 @@ with Logging {
         // $COVERAGE-OFF$
         println(s"getOntologyFile: error with uri=$uri version=$version reqFormat=$reqFormat")
         exc.printStackTrace()
-        error(500, exc.getMessage)
+        error500(exc)
         // $COVERAGE-ON$
       }
     }

@@ -21,9 +21,16 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSuppor
 
   protected def error(status: Int, details: Seq[(String,String)]): Nothing = halt(status, MongoDBObject(details: _*))
 
+  protected def error500(exc: Throwable): Nothing = {
+    exc.printStackTrace()
+    halt(500, MongoDBObject("error" -> exc.getMessage))
+  }
+
+  protected def error500(msg: String): Nothing = halt(500, MongoDBObject("error" -> msg))
+
   protected def missing(paramName: String): Nothing = error(400, s"'$paramName' param missing")
 
-  protected def bug(msg: String): Nothing = error(500, s"$msg. Please notify this bug.")
+  protected def bug(msg: String): Nothing = error500(s"$msg. Please notify this bug.")
 
   protected def require(map: Params, paramName: String) = {
     val value = map.getOrElse(paramName, missing(paramName)).trim
