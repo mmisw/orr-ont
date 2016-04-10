@@ -1,5 +1,10 @@
 ## change log ##
 
+* 2016-04-10: 0.3.1:
+  - include 'extra' list in verification of admin user
+	- use verifyIsAdminOrExtra() instead of verifyIsAuthenticatedUser("admin")
+	- use verifyIsUserOrAdminOrExtra(Set(userName)) instead of verifyIsAuthenticatedUser(userName, "admin")
+  
 * 2016-04-07: 0.3.1:
   - use input stream when reading in uploaded ontology and in ontology format conversion.
     Now, the associated Jena warnings are gone, and, as a good test, loading/converting the 

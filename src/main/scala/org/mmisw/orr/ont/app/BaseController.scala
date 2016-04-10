@@ -56,25 +56,34 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
     else for (body <- bodyOpt(); value <- getString(body, name)) yield value
   }
 
-  protected def checkIsExtra = authenticatedUser match {
+  protected def checkIsExtra: Boolean = authenticatedUser match {
     case Some(u) => extra.contains(u.userName)
     case None    => false
   }
-  protected def checkIsAdminOrExtra = authenticatedUser match {
+
+  protected def checkIsAdminOrExtra: Boolean = authenticatedUser match {
     case Some(u) => "admin" == u.userName || extra.contains(u.userName)
     case None    => false
   }
+
   /**
    * True only if the authenticated user (if any) is one of the given user names,
    * or is "admin", or is one of the extras.
    */
-  protected def checkIsUserOrAdminOrExtra(userNames: String*) = authenticatedUser match {
+  protected def checkIsUserOrAdminOrExtra(userNames: String*): Boolean = authenticatedUser match {
     case Some(u) => userNames.contains(u.userName) || "admin" == u.userName || extra.contains(u.userName)
     case None    => false
   }
-  protected def checkIsUserOrAdminOrExtra(userNames: Set[String]) = authenticatedUser match {
+
+  protected def checkIsUserOrAdminOrExtra(userNames: Set[String]): Boolean = authenticatedUser match {
     case Some(u) => userNames.contains(u.userName) || "admin" == u.userName || extra.contains(u.userName)
     case None    => false
+  }
+
+  protected def verifyIsAdminOrExtra(): Unit = {
+    val u = authenticatedUser.getOrElse(halt(401, s"unauthorized"))
+    val ok = "admin" == u.userName || extra.contains(u.userName)
+    if (!ok) halt(403, s"unauthorized")
   }
 
   protected def verifyIsUserOrAdminOrExtra(userNames: Set[String]): Unit = {

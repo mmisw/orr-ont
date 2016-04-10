@@ -59,7 +59,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
         error(400, s"'$orgName' invalid organization")
 
       case Some(org) =>
-        verifyIsUserOrAdminOrExtra(org.members + "admin")
+        verifyIsUserOrAdminOrExtra(org.members)
     }
 
     // TODO capture version_status from parameter
@@ -136,7 +136,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
   }
 
   delete("/!/all") {
-    verifyIsAuthenticatedUser("admin")
+    verifyIsAdminOrExtra()
     ontService.deleteAll()
   }
 

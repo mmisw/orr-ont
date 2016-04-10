@@ -28,7 +28,7 @@ class OrgController(implicit setup: Setup) extends BaseController
   }
 
   post("/") {
-    verifyIsAuthenticatedUser("admin")
+    verifyIsAdminOrExtra()
     val map = body()
 
     logger.info(s"POST body = $map")
@@ -68,12 +68,12 @@ class OrgController(implicit setup: Setup) extends BaseController
   }
 
   delete("/:orgName") {
-    verifyIsAuthenticatedUser("admin")
+    verifyIsAdminOrExtra()
     deleteOrg(require(params, "orgName"))
   }
 
   delete("/!/all") {
-    verifyIsAuthenticatedUser("admin")
+    verifyIsAdminOrExtra()
     orgService.deleteAll()
   }
 
