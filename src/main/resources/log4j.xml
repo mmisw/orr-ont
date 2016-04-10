@@ -14,11 +14,11 @@
     <priority value="WARN" />
   </category>
 
-  <category name="org.mmisw.orr.ont.app.OntController">
+  <category name="org.mmisw.orr.ont.app">
     <priority value="DEBUG" />
   </category>
 
-  <category name="org.mmisw.orr.ont.service.OntService">
+  <category name="org.mmisw.orr.ont.service">
     <priority value="DEBUG" />
   </category>
 
