@@ -44,6 +44,22 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
   }
 
   /*
+   * Uploads an ontology file.
+   */
+  post("/upload") {
+    val u = authenticatedUser.getOrElse(halt(401, s"unauthorized"))
+    try {
+      val ontFileWriter = getContentsAndFormat
+      val uploadedFileInfo = ontService.saveUploadedOntologyFile(u.userName, ontFileWriter)
+      uploadedFileInfo
+    }
+    catch { case e: Throwable =>
+      e.printStackTrace()
+      throw e
+    }
+  }
+
+  /*
    * Registers a new ontology entry.
    */
   post("/") {
@@ -223,7 +239,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
     }
   }
 
-  private def getContentsAndFormat = {
+  private def getContentsAndFormat: OntFileWriter = {
     val fileItem = fileParams.getOrElse("file", missing("file"))
 
     // todo make format param optional

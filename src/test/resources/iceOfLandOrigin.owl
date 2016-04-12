@@ -1,0 +1,164 @@
+<?xml version="1.0"?>
+<rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns="http://purl.org/wmo/seaice/iceOfLandOrigin#"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:muo="http://purl.oclc.org/NET/muo/muo#"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:omv="http://omv.ontoware.org/2005/05/ontology#"
+    xmlns:omvmmi="http://mmisw.org/ont/mmi/20081020/ontologyMetadata/"
+    xmlns:vocab="http://www.w3.org/1999/xhtml/vocab#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+    xml:base="http://purl.org/wmo/seaice/iceOfLandOrigin">
+    <owl:Ontology rdf:about="">
+        <omvmmi:hasContentCreator>Ruth E. Duerr, Jim McCusker, Siri-Jodha Singh Khalsa, Peter Pulsifer, Mark A. Parsons, Peter A. Fox, Deborah L. McGuinness</omvmmi:hasContentCreator>
+        <omv:hasCreator>Ruth E. Duerr, Jim McCusker, Siri-Jodha Singh Khalsa, Peter Pulsifer, Mark A. Parsons, Peter A. Fox, Deborah L. McGuinness</omv:hasCreator>
+        <omvmmi:creditRequired>not specified</omvmmi:creditRequired>
+        <omv:acronym>iolo</omv:acronym>
+        <dc:date>2015-11-24T06:25:14+0000</dc:date>
+        <dc:creator>Ruth E. Duerr, Jim McCusker, Siri-Jodha Singh Khalsa, Peter Pulsifer, Mark A. Parsons, Peter A. Fox, Deborah L. McGuinness</dc:creator>
+        <dc:description>This ontology describes the types of ice of land origin found floating in the sea.</dc:description>
+        <omv:description>This ontology describes the types of ice of land origin found floating in the sea.</omv:description>
+        <omv:creationDate>2015-11-24T06:25:14+0000</omv:creationDate>
+        <omv:name>Ice of land origin.</omv:name>
+        <omvmmi:hasResourceType>test</omvmmi:hasResourceType>
+        <omv:version>20151124T062514</omv:version>
+        <omvmmi:origMaintainerCode>wmo</omvmmi:origMaintainerCode>
+    </owl:Ontology>
+    <owl:Ontology rdf:about="#">
+        <dc:subject rdf:resource="http://dataportal.ucar.edu/schemas/gcmd.owl#cryosphere_sea_ice_ice_types"/>
+        <dc:subject rdf:resource="http://dataportal.ucar.edu/schemas/gcmd.owl#cryosphere_glaciers_ice_sheets_glaciers"/>
+        <dc:subject rdf:resource="http://dataportal.ucar.edu/schemas/gcmd.owl#terrestrial_hydrosphere_glaciers_ice_sheets_ice_sheet"/>
+        <vocab:license>http://creativecommons.org/publicdomain/zero/1.0/</vocab:license>
+        <dc:language>english</dc:language>
+        <dc:rights>To the extent possible under law, the SSIII Project Team has waived all copyright and related or neighboring rights to "Terminology for the types of ice of land origin found floating in the sea".  The SSIII Project Team expects that users will follow the Polar Information Commons Ethics and Norms of Data Sharing found at http://polarcommons.org/ethics-and-norms-of-data-sharing.php.  This work is published from the United States.</dc:rights>
+        <rdfs:comment>A draft document prepared at AARI by Dr Andrey Bushuev (http://www.aari.nw.ru/gdsidb/docs/wmo/nomenclature/WMO_Nomenclature_draft_version1-0.pdf) is used as the source for this ontology. Though this draft is based on the official WMO No. 259 publication, it has not been formally adopted by the WMO. The currently approved nomenclature can be found at http://www.aari.ru/gdsidb/xml/wmo_259.php.</rdfs:comment>
+        <dc:subject rdf:resource="http://dataportal.ucar.edu/schemas/gcmd.owl#terrestrial_hydrosphere_glaciers_ice_sheets_icebergs"/>
+        <owl:priorVersion>1.0</owl:priorVersion>
+        <dc:subject rdf:resource="http://dataportal.ucar.edu/schemas/gcmd.owl#terrestrial_hydrosphere_glaciers_ice_sheets_glaciers"/>
+        <dc:publisher>National Snow and Ice Data Center</dc:publisher>
+        <dc:subject rdf:resource="http://dataportal.ucar.edu/schemas/gcmd.owl#cryosphere_glaciers_ice_sheets_ice_sheets"/>
+        <dc:subject rdf:resource="http://dataportal.ucar.edu/schemas/gcmd.owl#oceans_sea_ice_icebergs"/>
+        <rdfs:label>Ice of land origin.</rdfs:label>
+        <dc:date>February 18, 2013</dc:date>
+        <owl:versionInfo>2.0</owl:versionInfo>
+        <dc:source>http://www.aari.nw.ru/gdsidb/docs/wmo/nomenclature/WMO_Nomenclature_draft_version1-0.pdf</dc:source>
+        <dc:subject rdf:resource="http://dataportal.ucar.edu/schemas/gcmd.owl#cryosphere_glaciers_ice_sheets_icebergs"/>
+        <rdfs:comment>This ontology describes the types of ice of land origin found floating in the sea.</rdfs:comment>
+        <dc:creator>Ruth E. Duerr, Jim McCusker, Siri-Jodha Singh Khalsa, Peter Pulsifer, Mark A. Parsons, Peter A. Fox, Deborah L. McGuinness</dc:creator>
+        <dc:title>Terminology for the types of ice of land origin found floating in the sea</dc:title>
+        <dc:subject rdf:resource="http://dataportal.ucar.edu/schemas/gcmd.owl#cryosphere_sea_ice_icebergs"/>
+    </owl:Ontology>
+    <rdfs:Datatype rdf:about="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+    <rdfs:Datatype rdf:about="http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"/>
+    <rdfs:Datatype rdf:about="http://www.w3.org/2001/XMLSchema#double"/>
+    <rdfs:Datatype rdf:about="http://www.w3.org/2001/XMLSchema#string"/>
+    <rdfs:Datatype rdf:about="http://www.w3.org/2001/XMLSchema#decimal"/>
+    <rdfs:Datatype rdf:about="http://www.w3.org/2001/XMLSchema#integer"/>
+    <owl:Class rdf:ID="Glacier">
+        <rdfs:label>Glacier</rdfs:label>
+        <rdfs:subClassOf>
+            <owl:Class rdf:ID="IceOfLandOrigin"/>
+        </rdfs:subClassOf>
+        <rdfs:comment>A mass of ice predominantly of atmospheric origin, usually moving from higher to lower ground. A seaward margin of a glacier that is aground, the rock basement being at or below sea-level, is termed an ice wall. The projecting seaward extension of a glacier, which is usually afloat, is termed a glacier tongue. In the Antarctic, glacier tongues may extend over many tens of kilometers.</rdfs:comment>
+        <dc:source rdf:resource="http://www.aari.nw.ru/gdsidb/docs/wmo/nomenclature/WMO_Nomenclature_draft_version1-0.pdf#Section4.2"/>
+    </owl:Class>
+    <owl:Class rdf:ID="TabularBerg">
+        <rdfs:label>Tabular berg</rdfs:label>
+        <rdfs:subClassOf>
+            <owl:Class rdf:ID="Iceberg"/>
+        </rdfs:subClassOf>
+        <rdfs:comment>Most flat-topped icebergs form by calving from an ice shelf and show horizontal banding (cf. ice island).</rdfs:comment>
+        <dc:source rdf:resource="http://www.aari.nw.ru/gdsidb/docs/wmo/nomenclature/WMO_Nomenclature_draft_version1-0.pdf#Section4.4.2"/>
+    </owl:Class>
+    <owl:Class rdf:ID="Growler">
+        <rdfs:label>Growler</rdfs:label>
+        <rdfs:subClassOf>
+            <owl:Class rdf:ID="GlacierIce"/>
+        </rdfs:subClassOf>
+        <rdfs:comment>A smaller piece of ice of land origin than a bergy bit. The color is usually white, but sometimes transparent or blue-green or nearly black, normally occupying an area of about 20 m2. Growlers are distinguished with difficulty when they are surrounded by ice and also in heavy swell. </rdfs:comment>
+        <dc:source rdf:resource="http://www.aari.nw.ru/gdsidb/docs/wmo/nomenclature/WMO_Nomenclature_draft_version1-0.pdf#Section4.4.4"/>
+    </owl:Class>
+    <owl:Class rdf:ID="IceShelf">
+        <rdfs:label>Ice shelf</rdfs:label>
+        <rdfs:subClassOf>
+            <owl:Class rdf:about="#IceOfLandOrigin"/>
+        </rdfs:subClassOf>
+        <rdfs:comment>A floating ice sheet of considerable thickness showing 2-50 m or more above sea-level, attached to the coast or a glacier. Usually of great horizontal extent and with a level or gently undulating surface. Nourished by annual snow accumulation at the surface and often also by the seaward extension of land glaciers. Limited areas may be aground. The seaward edge is termed an ice front.</rdfs:comment>
+        <dc:source rdf:resource="http://www.aari.nw.ru/gdsidb/docs/wmo/nomenclature/WMO_Nomenclature_draft_version1-0.pdf#Section4.3"/>
+    </owl:Class>
+    <owl:Class rdf:ID="GlacierBerg">
+        <rdfs:label>Glacier berg</rdfs:label>
+        <rdfs:subClassOf>
+            <owl:Class rdf:about="#Iceberg"/>
+        </rdfs:subClassOf>
+        <rdfs:comment>An irregularly shaped iceberg</rdfs:comment>
+        <dc:source rdf:resource="http://www.aari.nw.ru/gdsidb/docs/wmo/nomenclature/WMO_Nomenclature_draft_version1-0.pdf#Section4.4.1"/>
+    </owl:Class>
+    <owl:Class rdf:about="#Iceberg">
+        <rdfs:label>Iceberg</rdfs:label>
+        <rdfs:subClassOf>
+            <owl:Class rdf:about="#GlacierIce"/>
+        </rdfs:subClassOf>
+        <rdfs:comment>A massive piece of ice of varying shape, protruding more than 5 m above sea-level, which has broken away from a glacier or an ice shelf, and which may be afloat or aground. Icebergs by their external look may be subdivided into tabular, dome-shaped, sloping and rounded bergs.</rdfs:comment>
+        <dc:source rdf:resource="http://www.aari.nw.ru/gdsidb/docs/wmo/nomenclature/WMO_Nomenclature_draft_version1-0.pdf#Section4.4"/>
+    </owl:Class>
+    <owl:Class rdf:ID="IceIsland">
+        <rdfs:label>Ice island</rdfs:label>
+        <rdfs:subClassOf>
+            <owl:Class rdf:about="#IceOfLandOrigin"/>
+        </rdfs:subClassOf>
+        <rdfs:comment>A large piece of floating ice protruding about 5 m above sea-level, which has broken away from an Arctic ice shelf, having a thickness of 15-30 m and an area of from a few thousand square meters to 500 km2 or more, and usually characterized by a regularly undulating surface which gives it a ribbed appearance from the air. (10.4.3) [Note: Antarctic use is slightly different and refers to a grounded part of a floating ice sheet which rises significantly higher than its surroundings, eg Butler Island. There are also more substantial features, eg the Lyddan Ice Rise.]</rdfs:comment>
+    </owl:Class>
+    <owl:Class rdf:ID="BergyBit">
+        <rdfs:label>Bergy bit</rdfs:label>
+        <rdfs:subClassOf>
+            <owl:Class rdf:about="#GlacierIce"/>
+        </rdfs:subClassOf>
+        <rdfs:comment>A large piece of floating ice of land origin, showing less than 5 m above sea-level and 100-300 m2 in area (10.4.4 Ed.) [Note: it might be better to say no more than 20 metres long, rather than give an area]</rdfs:comment>
+        <dc:source rdf:resource="http://www.aari.nw.ru/gdsidb/docs/wmo/nomenclature/WMO_Nomenclature_draft_version1-0.pdf#Section4.4.3"/>
+    </owl:Class>
+    <owl:Class rdf:about="#IceOfLandOrigin">
+        <rdfs:label>Ice of land origin</rdfs:label>
+        <rdfs:comment>Ice formed on land or in an ice shelf, found floating in water.</rdfs:comment>
+        <dc:source rdf:resource="http://www.aari.nw.ru/gdsidb/docs/wmo/nomenclature/WMO_Nomenclature_draft_version1-0.pdf#Section1.1.2"/>
+    </owl:Class>
+    <owl:Class rdf:ID="IcebergTonque">
+        <rdfs:label>Iceberg tongue</rdfs:label>
+        <rdfs:subClassOf rdf:resource="#IceOfLandOrigin"/>
+        <rdfs:comment>A major accumulation of icebergs, bergy bits and growlers projecting from the coast, held in place by grounding or joined together by fast ice</rdfs:comment>
+        <dc:source rdf:resource="http://www.aari.nw.ru/gdsidb/docs/wmo/nomenclature/WMO_Nomenclature_draft_version1-0.pdf#Section4.5"/>
+    </owl:Class>
+    <owl:Class rdf:about="#GlacierIce">
+        <rdfs:label>Glacier ice</rdfs:label>
+        <rdfs:subClassOf rdf:resource="#IceOfLandOrigin"/>
+        <rdfs:comment>Ice in, or originating from, a glacier, whether on land or floating on the sea as icebergs, bergy bits or growlers</rdfs:comment>
+        <dc:source rdf:resource="http://www.aari.nw.ru/gdsidb/docs/wmo/nomenclature/WMO_Nomenclature_draft_version1-0.pdf#Section4.1"/>
+    </owl:Class>
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/language"/>
+    <owl:AnnotationProperty rdf:about="http://www.w3.org/1999/xhtml/vocab#license"/>
+    <owl:AnnotationProperty rdf:about="http://www.w3.org/2000/01/rdf-schema#label"/>
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/rights"/>
+    <owl:NamedIndividual rdf:ID="fractionalArea">
+        <muo:measuresQuality>
+            <owl:NamedIndividual rdf:about="http://purl.oclc.org/NET/muo/ucum/physical-quality/area"/>
+        </muo:measuresQuality>
+        <muo:measuresQuality>
+            <owl:NamedIndividual rdf:about="http://purl.oclc.org/NET/muo/ucum/physical-quality/fraction"/>
+        </muo:measuresQuality>
+    </owl:NamedIndividual>
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/date"/>
+    <owl:AnnotationProperty rdf:about="http://purl.oclc.org/NET/muo/muo#preferredUnit"/>
+    <owl:AnnotationProperty rdf:about="http://www.w3.org/2000/01/rdf-schema#comment"/>
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/publisher"/>
+    <owl:NamedIndividual rdf:about="http://creativecommons.org/publicdomain/zero/1.0/"/>
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/title"/>
+    <owl:AnnotationProperty rdf:about="http://www.w3.org/2002/07/owl#priorVersion"/>
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/subject"/>
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/creator"/>
+    <owl:AnnotationProperty rdf:about="http://www.w3.org/2002/07/owl#versionInfo"/>
+    <owl:AnnotationProperty rdf:about="http://purl.oclc.org/NET/muo/muo#measuresQuality">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+    </owl:AnnotationProperty>
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/source"/>
+</rdf:RDF>

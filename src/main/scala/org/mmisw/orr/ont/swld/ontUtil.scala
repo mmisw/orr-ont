@@ -48,9 +48,10 @@ object ontUtil extends AnyRef with Logging {
     } yield doIt(fromLang, toLang)
   }
 
-  // for the files actually stored, for example file.rdf serves both the rdf and the owl formats
+  // for the files actually stored
   def storedFormat(format: String) = format.toLowerCase match {
-    case "owl"  | "rdf"     => "rdf"
+    case "owl"              => "owl"
+    case "rdf"              => "rdf"
     case "json" | "jsonld"  => "jsonld"
     case "ttl"  | "n3"      => "n3"
     case f => f
@@ -124,13 +125,13 @@ object ontUtil extends AnyRef with Logging {
   }
 
   /** Loads an ontology model from a file. */
-  private def loadOntModel(uri: String, file: File, format: String, processImports: Boolean = false):
+  def loadOntModel(uri: String, file: File, format: String):
   OntModel = {
-    logger.debug(s"Loading uri='$uri' file=$file with processImports=$processImports")
     val lang = format2lang(storedFormat(format)).getOrElse(throw new IllegalArgumentException)
+    logger.debug(s"Loading uri='$uri' file=$file lang=$lang")
     val ontModel = createDefaultOntModel
     ontModel.setDynamicImports(false)
-    ontModel.getDocumentManager.setProcessImports(processImports)
+    ontModel.getDocumentManager.setProcessImports(false)
     readModel(uri, file, lang, ontModel)
     ontModel
   }
@@ -150,7 +151,8 @@ object ontUtil extends AnyRef with Logging {
   }
 
   // https://jena.apache.org/documentation/io/
-  private def format2lang(format: String) = Option(format.toLowerCase match {
+  def format2lang(format: String) = Option(format.toLowerCase match {
+    case "owl"          => "OWL/XML"  // to use OWL API
     case "rdf"          => "RDF/XML"
     case "jsonld"       => "JSON-LD"
     case "n3"           => "N3"

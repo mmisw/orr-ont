@@ -7,7 +7,7 @@ import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.mmisw.orr.ont._
 import org.mmisw.orr.ont.auth.authUtil
-import org.mmisw.orr.ont.service.{TripleStoreService, OntService, UserService}
+import org.mmisw.orr.ont.service._
 import org.mmisw.orr.ont.swld.ontUtil
 import org.scalatra.test.specs2._
 import org.specs2.mock.Mockito
@@ -407,9 +407,46 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     }
   }
 
-  val ont1Uri  = "http://example.org/ont1"
   val ont1File = new File("src/test/resources/ont1.rdf")
   val format = "rdf"
+  val map0 = Map("format" -> format)
+
+  "Upload RDF file (POST /ont/upload)" should {
+    "fail with no credentials" in {
+      post("/ont/upload", map0, Map("file" -> ont1File)) {
+        status must_== 401
+      }
+    }
+
+    "succeed with user credentials and return expected info" in {
+      post("/ont/upload", map0, Map("file" -> ont1File), headers = userHeaders) {
+        status must_== 200
+        val uploadedFileInfo = parse(body).extract[UploadedFileInfo]
+        println(s"uploadedFileInfo=$uploadedFileInfo")
+        uploadedFileInfo.userName must_== userName
+        val namespaces = uploadedFileInfo.namespaces
+        namespaces("uriForEmptyPrefix") must_== "http://example.org/ont1/"
+        namespaces("xmlBase")           must_== "http://example.org/ont1"
+      }
+    }
+  }
+
+  "Upload OWL file (POST /ont/upload)" should {
+    val owlFile = new File("src/test/resources/iceOfLandOrigin.owl")
+    "succeed with user credentials and return expected info" in {
+      post("/ont/upload", Map("format" -> "owl"), Map("file" -> owlFile), headers = userHeaders) {
+        status must_== 200
+        val uploadedFileInfo = parse(body).extract[UploadedFileInfo]
+        println(s"uploadedFileInfo=$uploadedFileInfo")
+        uploadedFileInfo.userName must_== userName
+        val namespaces = uploadedFileInfo.namespaces
+        namespaces("uriForEmptyPrefix") must_== "http://purl.org/wmo/seaice/iceOfLandOrigin#"
+        namespaces("xmlBase")           must_== "http://purl.org/wmo/seaice/iceOfLandOrigin"
+      }
+    }
+  }
+
+  val ont1Uri  = "http://example.org/ont1"
   val map1 = Map("uri" -> ont1Uri,
     "name" -> "some ont name",
     "orgName" -> orgName,

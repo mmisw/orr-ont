@@ -76,6 +76,8 @@ object build extends Build {
           .exclude("org.slf4j", "slf4j-log4j12")
         ,
 
+        "net.sourceforge.owlapi"     % "owlapi-distribution"  % "3.4.5",
+
         "com.typesafe"               % "config"               % "1.2.1",
         "com.typesafe.scala-logging"%% "scala-logging"        % "3.1.0",
 

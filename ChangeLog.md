@@ -1,5 +1,14 @@
 ## change log ##
 
+* 2016-04-11/12: 0.3.1:
+  - initial version of POST /ont/upload to perform first step toward registering an ontology
+    from an uploaded file.
+    This operation returns the location of such local file as well as ontology basic 
+	information/metadata for the client (orr-portal) to continue registration sequence. 
+	The uploaded file is stored under baseDirectory/uploads/.
+	Various supporting elements copied from previous mmiorr project; TODO: clean up when time permits.
+	These elements include support for accepting file in OWL/XML (using OWL API library)
+  
 * 2016-04-10: 0.3.1:
   - include 'extra' list in verification of admin user
 	- use verifyIsAdminOrExtra() instead of verifyIsAuthenticatedUser("admin")

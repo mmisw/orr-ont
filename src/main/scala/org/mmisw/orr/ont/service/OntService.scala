@@ -7,7 +7,7 @@ import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
-import org.mmisw.orr.ont.swld.ontUtil
+import org.mmisw.orr.ont.swld.{ontFileLoader, ontUtil}
 import org.mmisw.orr.ont.{OntologySummaryResult, OntologyResult, Setup}
 
 import scala.util.{Failure, Success, Try}
@@ -17,6 +17,11 @@ trait OntFileWriter {
   val format: String
   def write(destFile: File): Unit
 }
+
+case class UploadedFileInfo(userName: String,
+                            filename: String,
+                            namespaces: Map[String,String])
+
 
 /**
  * Ontology service
@@ -316,6 +321,28 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     if (uri.contains("|")) throw InvalidUri(uri, "cannot contain the '|' character")
   }
 
+  def saveUploadedOntologyFile(userName: String, ontFileWriter: OntFileWriter)
+  : UploadedFileInfo = {
+
+    val userDir = new File(uploadsDir, userName)
+    if (!userDir.isDirectory && !userDir.mkdirs()) {
+      throw CannotCreateDirectory(userDir.getAbsolutePath)
+    }
+    val now = System.currentTimeMillis()
+    val filename = s"$now.${ontFileWriter.format}"
+    val destFile = new File(userDir, filename)
+
+    logger.debug(s"saving uploaded file to $destFile")
+    ontFileWriter.write(destFile)
+
+    logger.debug(s"loading model from $destFile")
+    val (actualFile, ontModel) = ontFileLoader.loadOntModel(destFile, ontFileWriter.format)
+
+    val namespaces = ontFileLoader.getNamespaces(ontModel, actualFile)
+
+    UploadedFileInfo(userName, actualFile.getName, namespaces)
+  }
+
   private def writeOntologyFile(uri: String, version: String,
                                 ontFileWriter: OntFileWriter): Map[String,String] = {
     require(!uri.contains("|"))
@@ -336,6 +363,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
 
   private val baseDir = setup.filesConfig.getString("baseDirectory")
+  private val uploadsDir = new File(baseDir, "uploads")
   private val ontsDir = new File(baseDir, "onts")
 
 }
