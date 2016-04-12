@@ -432,7 +432,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   }
 
   "Upload OWL file (POST /ont/upload)" should {
-    val owlFile = new File("src/test/resources/iceOfLandOrigin.owl")
+    val owlFile = new File("src/test/resources/ice-of-land-origin.owl")
     "succeed with user credentials and return expected info" in {
       post("/ont/upload", Map("format" -> "owl"), Map("file" -> owlFile), headers = userHeaders) {
         status must_== 200

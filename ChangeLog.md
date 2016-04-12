@@ -8,6 +8,10 @@
 	The uploaded file is stored under baseDirectory/uploads/.
 	Various supporting elements copied from previous mmiorr project; TODO: clean up when time permits.
 	These elements include support for accepting file in OWL/XML (using OWL API library)
+	
+  - actually use a local copy of original http://purl.org/wmo/seaice/iceOfLandOrigin (which currently 
+    redirects to http://ssiii.googlecode.com/svn/trunk/ontology/ice-of-land-origin.owl) as an OWL/XML
+    file for testing purposes (I was initially using one with some changes made by ORR). 
   
 * 2016-04-10: 0.3.1:
   - include 'extra' list in verification of admin user
