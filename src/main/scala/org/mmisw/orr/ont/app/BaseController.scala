@@ -1,7 +1,7 @@
 package org.mmisw.orr.ont.app
 
 import org.mmisw.orr.ont.auth.{AuthUser, AuthenticationSupport}
-import org.mmisw.orr.ont.service.{JwtUtil, NoSuchUser, UserService}
+import org.mmisw.orr.ont.service.{OrgService, JwtUtil, NoSuchUser, UserService}
 import org.mmisw.orr.ont.{Setup, db}
 import org.scalatra.auth.strategy.BasicAuthStrategy
 
@@ -27,6 +27,7 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
   protected val ontDAO      = setup.db.ontDAO
 
   protected val userService = new UserService
+  protected val orgService = new OrgService
 
   protected val userAuth    = setup.db.authenticator
 

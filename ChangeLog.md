@@ -13,6 +13,8 @@
     - if "file" is given, then uploaded file is included in the request (as in previous version)
 	- else if "uploadedFilename", then gets the file from previously uploaded file
 	
+  - GET /user/username: include the organizations the requested user is member of
+	
   - actually use a local copy of original http://purl.org/wmo/seaice/iceOfLandOrigin (which currently 
     redirects to http://ssiii.googlecode.com/svn/trunk/ontology/ice-of-land-origin.owl) as an OWL/XML
     file for testing purposes (I was initially using one with some changes made by ORR). 

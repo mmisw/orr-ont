@@ -21,6 +21,16 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
   def getOrgOpt(orgName: String): Option[Organization] = orgsDAO.findOneById(orgName)
 
+  def getUserOrganizations(userName: String): Option[List[OrgResult]] = {
+    val query = MongoDBObject(
+      "members" -> MongoDBObject("$elemMatch" -> MongoDBObject("$eq" -> userName)))
+    val it: Iterator[Organization] = orgsDAO.find(query)
+    val result = if (it.nonEmpty) Some(it.map(o => OrgResult(o.orgName, name = Option(o.name))).toList)
+    else None
+    println(s"getUserOrganizations: userName=$userName query=$query -> $result")
+    result
+  }
+
   def createOrg(orgName: String, name: String,
                 members: Set[String] = Set.empty,
                 ontUri: Option[String] = None) = {

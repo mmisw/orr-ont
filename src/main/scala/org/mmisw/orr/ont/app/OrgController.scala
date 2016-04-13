@@ -15,8 +15,6 @@ import scala.util.{Failure, Success, Try}
 class OrgController(implicit setup: Setup) extends BaseController
     with Logging {
 
-  val orgService = new OrgService
-
   get("/") {
     orgService.getOrgs() map getOrgJson
   }

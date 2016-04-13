@@ -20,7 +20,9 @@ class UserController(implicit setup: Setup) extends BaseController
    * Gets all users
    */
   get("/") {
-    userService.getUsers() map getUserJson
+    userService.getUsers() map { u =>
+      grater[UserResult].toCompactJSON(getUserJson(u))
+    }
   }
 
   /*
@@ -28,7 +30,8 @@ class UserController(implicit setup: Setup) extends BaseController
    */
   get("/:userName") {
     val userName = require(params, "userName")
-    getUserJson(getUser(userName))
+    val res = getUserJson(getUser(userName))
+    res.copy(organizations = orgService.getUserOrganizations(userName))
   }
 
   // username reminder
@@ -277,7 +280,7 @@ class UserController(implicit setup: Setup) extends BaseController
 
   ///////////////////////////////////////////////////////////////////////////
 
-  def getUserJson(dbUser: db.User) = {
+  def getUserJson(dbUser: db.User): UserResult = {
     var res = UserResult(
       userName   = dbUser.userName,
       firstName  = Some(dbUser.firstName),
@@ -292,7 +295,7 @@ class UserController(implicit setup: Setup) extends BaseController
         updated    = dbUser.updated
       )
     }
-    grater[UserResult].toCompactJSON(res)
+    res
   }
 
   def createUser(userName: String,
