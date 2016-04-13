@@ -3,16 +3,25 @@ package org.mmisw.orr.ont.swld
 import java.io._
 
 import com.hp.hpl.jena.ontology.OntModel
+import com.hp.hpl.jena.vocabulary.{RDFS, RDF}
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.mmisw.orr.ont.util.{XmlBaseExtractor, Util2}
 import org.xml.sax.InputSource
 
+
+case class OntModelLoadedResult(file: File,
+                                format: String,
+                                ontModel: OntModel)
+
+case class PossibleOntologyUri(uri: String,
+                               explanation: String,
+                               label: Option[String])
 /**
   * Based on org.mmisw.orrclient.core.util.TempOntologyHelper.getTempOntologyInfo
   */
 object ontFileLoader extends AnyRef with Logging {
 
-  def loadOntModel(file: File, fileType: String): (File, OntModel) = {
+  def loadOntModel(file: File, fileType: String): OntModelLoadedResult = {
     val lang = ontUtil.format2lang(fileType).getOrElse(
       throw new RuntimeException(s"unrecognized fileType=$fileType")
     )
@@ -20,7 +29,7 @@ object ontFileLoader extends AnyRef with Logging {
     logger.debug(s"ontFileLoader.loadOntModel: lang=$lang")
 
     if (Util2.JENA_LANGS.contains(lang)) {
-      (file, Util2.loadOntModel(file, lang))
+      OntModelLoadedResult(file, fileType, Util2.loadOntModel(file, lang))
     }
     else if ("OWL/XML" == lang) {
       owlApiHelper.loadOntModel(file)
@@ -35,32 +44,43 @@ object ontFileLoader extends AnyRef with Logging {
     }
   }
 
-  /**
-    * <ul>
-    * <li> namespace associated with the empty prefix, if any;
-    * <li> URI of the xml:base of the document, if any;
-    * </ul>
-    */
-  def getNamespaces(model: OntModel, file: File): Map[String,String] = {
-    var map = Map[String,String]()
+  def getPossibleOntologyUris(model: OntModel, file: File): List[PossibleOntologyUri] = {
+    var list = List[PossibleOntologyUri]()
 
-    Option(model.getNsPrefixURI("")) foreach { uriForEmptyPrefix =>
-        map = map.updated("uriForEmptyPrefix", uriForEmptyPrefix)
+    def add(uriOpt: Option[String], explanation: String): Unit = {
+      for {
+        uri <- uriOpt
+        ontology <- Option(model.getOntology(uri))
+      } {
+        val labelOpt = ontUtil.getValue(ontology, RDFS.label)
+        list = PossibleOntologyUri(uri, explanation, labelOpt) :: list
+      }
     }
 
+    // try xml:base:
     try {
       val is = new InputSource(new StringReader(readRdf(file)))
-      Option(XmlBaseExtractor.getXMLBase(is)) foreach { xmlBase =>
-        map = map.updated("xmlBase", xmlBase.toString)
+      for {
+        xmlBase <- Option(XmlBaseExtractor.getXMLBase(is))
       }
+        add(Option(xmlBase.toString), "Value of xml:base attribute")
     }
     catch {
       case e: Throwable => {
-        val error: String = "error while trying to read xml:base attribute: " + e.getMessage
-        logger.warn(error, e)
+        logger.warn(s"error while trying to read xml:base attribute from $file", e)
       }
     }
-    map
+
+    // try namespace associated with empty prefix:
+    Option(model.getNsPrefixURI("")) foreach { uriForEmptyPrefix =>
+      add(Option(uriForEmptyPrefix), "Namespace associated with empty prefix")
+      val uri = uriForEmptyPrefix.replaceAll("(#|/)+$", "")
+      if (uri != uriForEmptyPrefix) {
+        add(Option(uri), "Namespace associated with empty prefix but with no trailing separators")
+      }
+    }
+
+    list
   }
 
   /**

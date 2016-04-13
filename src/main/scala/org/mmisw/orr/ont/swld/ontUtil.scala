@@ -1,7 +1,7 @@
 package org.mmisw.orr.ont.swld
 
 import com.hp.hpl.jena.ontology.{Ontology, OntDocumentManager, OntModelSpec, OntModel}
-import com.hp.hpl.jena.rdf.model.{Model, RDFNode, Property, ModelFactory}
+import com.hp.hpl.jena.rdf.model._
 import java.io.{FileOutputStream, FileInputStream, File}
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 
@@ -78,6 +78,18 @@ object ontUtil extends AnyRef with Logging {
     val idx = resourceType.lastIndexOf('/')
     if (idx >= 0 && idx < resourceType.length - 1) resourceType.substring(idx + 1)
     else resourceType
+  }
+
+  def getValue(sub: Resource, pro: Property): Option[String] = {
+    for {
+      sta <- Option(sub.getProperty(pro))
+      node: RDFNode = sta.getObject
+    } yield getValueAsString(node)
+  }
+
+  def getValueAsString(node: RDFNode): String = node match {
+    case lit: Literal  => lit.getLexicalForm
+    case res: Resource => res.getURI
   }
 
   ///////////////////////////////////////////////////////////////////////////

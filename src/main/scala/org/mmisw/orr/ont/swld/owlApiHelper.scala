@@ -3,7 +3,6 @@ package org.mmisw.orr.ont.swld
 import java.io.{IOException, FileOutputStream, File}
 
 import com.typesafe.scalalogging.{StrictLogging => Logging}
-import com.hp.hpl.jena.ontology.OntModel
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.io.RDFXMLOntologyFormat
 import org.semanticweb.owlapi.model.{OWLOntology, OWLOntologyManager}
@@ -18,7 +17,7 @@ object owlApiHelper extends AnyRef with Logging {
     * Internally it loads the file and then saves it in RDF/XML to then use
     * Jena to load this converted version.
     */
-  def loadOntModel(file: File): (File,OntModel) = {
+  def loadOntModel(file: File): OntModelLoadedResult = {
     //Utf8Util.verifyUtf8(file)
     logger.debug("owlApiHelper.loadOntModel: loading file=" + file)
 
@@ -39,7 +38,7 @@ object owlApiHelper extends AnyRef with Logging {
 
       val uriFile = rdfFile.getCanonicalFile.toURI.toString
       logger.debug("owlApiHelper.loadOntModel: now loading using Jena uriFile=" + uriFile)
-      (rdfFile, ontUtil.loadOntModel(uriFile, rdfFile, "rdf"))
+      OntModelLoadedResult(rdfFile, "rdf", ontUtil.loadOntModel(uriFile, rdfFile, "rdf"))
     }
     catch {
       case ex: Throwable => {

@@ -408,8 +408,10 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   }
 
   val ont1File = new File("src/test/resources/ont1.rdf")
+  val ont1Uri  = "http://example.org/ont1"
   val format = "rdf"
   val map0 = Map("format" -> format)
+  var uploadedFileInfoOpt: Option[UploadedFileInfo] = None
 
   "Upload RDF file (POST /ont/upload)" should {
     "fail with no credentials" in {
@@ -423,10 +425,12 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         status must_== 200
         val uploadedFileInfo = parse(body).extract[UploadedFileInfo]
         println(s"uploadedFileInfo=$uploadedFileInfo")
+        uploadedFileInfoOpt = Some(uploadedFileInfo)
         uploadedFileInfo.userName must_== userName
-        val namespaces = uploadedFileInfo.namespaces
-        namespaces("uriForEmptyPrefix") must_== "http://example.org/ont1/"
-        namespaces("xmlBase")           must_== "http://example.org/ont1"
+        uploadedFileInfo.format must_== "rdf"
+        val possibleOntologies = uploadedFileInfo.possibleOntologies
+        val uris = possibleOntologies.map(_.uri)
+        uris must contain("http://example.org/ont1")
       }
     }
   }
@@ -439,14 +443,38 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         val uploadedFileInfo = parse(body).extract[UploadedFileInfo]
         println(s"uploadedFileInfo=$uploadedFileInfo")
         uploadedFileInfo.userName must_== userName
-        val namespaces = uploadedFileInfo.namespaces
-        namespaces("uriForEmptyPrefix") must_== "http://purl.org/wmo/seaice/iceOfLandOrigin#"
-        namespaces("xmlBase")           must_== "http://purl.org/wmo/seaice/iceOfLandOrigin"
+        uploadedFileInfo.format must_== "rdf"
+        val possibleOntologies = uploadedFileInfo.possibleOntologies
+        val uris = possibleOntologies.map(_.uri)
+        uris must contain("http://purl.org/wmo/seaice/iceOfLandOrigin")
+        uris must contain("http://purl.org/wmo/seaice/iceOfLandOrigin#")
       }
     }
   }
 
-  val ont1Uri  = "http://example.org/ont1"
+  "Register a new ont (POST /ont) whose file has been previously uploaded" should {
+    "succeed with user credentials" in {
+      val uploadedOntUri = ont1Uri + "_uploaded"
+      val uploadedFileInfo = uploadedFileInfoOpt.get
+      val mapForUploaded = Map("uri" -> uploadedOntUri,
+        "name" -> "ont with file previously uploaded",
+        "orgName" -> orgName,
+        "userName" -> userName,
+        "uploadedFilename" -> uploadedFileInfo.filename,
+        "uploadedFormat"   -> uploadedFileInfo.format
+      )
+      post("/ont", mapForUploaded, headers = userHeaders) {
+        val b = body
+        logger.debug(s"response body=$b  status=$status")
+        status must_== 201
+        val res = parse(b).extract[OntologyResult]
+        registeredVersion = res.version
+        logger.debug(s"registeredVersion=$registeredVersion")
+        res.uri must_== uploadedOntUri
+      }
+    }
+  }
+
   val map1 = Map("uri" -> ont1Uri,
     "name" -> "some ont name",
     "orgName" -> orgName,

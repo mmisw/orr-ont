@@ -9,6 +9,10 @@
 	Various supporting elements copied from previous mmiorr project; TODO: clean up when time permits.
 	These elements include support for accepting file in OWL/XML (using OWL API library)
 	
+  - POST /ont now also accepts info about previously uploaded file to perform the registration:
+    - if "file" is given, then uploaded file is included in the request (as in previous version)
+	- else if "uploadedFilename", then gets the file from previously uploaded file
+	
   - actually use a local copy of original http://purl.org/wmo/seaice/iceOfLandOrigin (which currently 
     redirects to http://ssiii.googlecode.com/svn/trunk/ontology/ice-of-land-origin.owl) as an OWL/XML
     file for testing purposes (I was initially using one with some changes made by ORR). 

@@ -49,7 +49,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
   post("/upload") {
     val u = authenticatedUser.getOrElse(halt(401, s"unauthorized"))
     try {
-      val ontFileWriter = getContentsAndFormat
+      val ontFileWriter = getOntFileWriterForJustUploadedFile
       val uploadedFileInfo = ontService.saveUploadedOntologyFile(u.userName, ontFileWriter)
       uploadedFileInfo
     }
@@ -84,11 +84,18 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
     // TODO capture contact_name (from parameter, or by parsing ontology metadata)
     val contact_name: Option[String] = None
 
-    // ok, go ahead with registration
-    val contents = getContentsAndFormat
     val (version, date) = getVersion
 
-    Created(createOntology(uri, name, version, version_status, contact_name, date, contents, orgName))
+    // get OntFileWriter according to given relevant parameters:
+    val ontFileWriter = if (fileParams.isDefinedAt("file")) {
+      getOntFileWriterForJustUploadedFile
+    }
+    else {
+      getOntFileWriterForPreviouslyUploadedFile(user.userName)
+    }
+
+    Created(createOntology(uri, name, version,
+      version_status, contact_name, date, ontFileWriter, orgName))
   }
 
   /*
@@ -158,8 +165,19 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
 
   ///////////////////////////////////////////////////////////////////////////
 
-  private case class FileWriter(format: String, fileItem: FileItem) extends AnyRef with OntFileWriter {
-    override def write(destFile: File) { fileItem.write(destFile)}
+  private case class FileItemWriter(format: String, fileItem: FileItem) extends AnyRef with OntFileWriter {
+    override def write(destFile: File) {
+      fileItem.write(destFile)
+    }
+  }
+
+  private case class FileWriter(format: String, file: File) extends AnyRef with OntFileWriter {
+    override def write(destFile: File) {
+      java.nio.file.Files.copy(
+        java.nio.file.Paths.get(file.getPath),
+        java.nio.file.Paths.get(destFile.getPath),
+        java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+    }
   }
 
   private def createOntology(uri: String, name: String, version: String, version_status: Option[String],
@@ -239,7 +257,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
     }
   }
 
-  private def getContentsAndFormat: OntFileWriter = {
+  private def getOntFileWriterForJustUploadedFile: OntFileWriter = {
     val fileItem = fileParams.getOrElse("file", missing("file"))
 
     // todo make format param optional
@@ -249,7 +267,17 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
     //val fileContents = new String(fileItem.get(), fileItem.charset.getOrElse("utf8"))
     //val contentType = file.contentType.getOrElse("application/octet-stream")
 
-    FileWriter(format, fileItem)
+    FileItemWriter(format, fileItem)
+  }
+
+  private def getOntFileWriterForPreviouslyUploadedFile(userName: String): OntFileWriter = {
+    val filename = require(params, "uploadedFilename")
+    val format   = require(params, "uploadedFormat")
+
+    logger.info(s"getOntFileWriterForPreviouslyUploadedFile: filename=$filename format=$format")
+
+    val file = ontService.getUploadedFile(userName, filename)
+    FileWriter(format, file)
   }
 
   private def getVersion = {
@@ -265,7 +293,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
    */
   private def createOntologyVersion(uri: String, user: db.User) = {
     val nameOpt = params.get("name")
-    val contents = getContentsAndFormat
+    val contents = getOntFileWriterForJustUploadedFile
     val (version, date) = getVersion
 
     // TODO capture version_status from parameter

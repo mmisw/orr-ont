@@ -7,7 +7,7 @@ import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
-import org.mmisw.orr.ont.swld.{ontFileLoader, ontUtil}
+import org.mmisw.orr.ont.swld.{PossibleOntologyUri, ontFileLoader, ontUtil}
 import org.mmisw.orr.ont.{OntologySummaryResult, OntologyResult, Setup}
 
 import scala.util.{Failure, Success, Try}
@@ -20,7 +20,8 @@ trait OntFileWriter {
 
 case class UploadedFileInfo(userName: String,
                             filename: String,
-                            namespaces: Map[String,String])
+                            format: String,
+                            possibleOntologies: List[PossibleOntologyUri])
 
 
 /**
@@ -336,11 +337,20 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     ontFileWriter.write(destFile)
 
     logger.debug(s"loading model from $destFile")
-    val (actualFile, ontModel) = ontFileLoader.loadOntModel(destFile, ontFileWriter.format)
+    val ontModelLoadedResult = ontFileLoader.loadOntModel(destFile, ontFileWriter.format)
+    val actualFile = ontModelLoadedResult.file
+    val format = ontModelLoadedResult.format
+    val ontModel = ontModelLoadedResult.ontModel
 
-    val namespaces = ontFileLoader.getNamespaces(ontModel, actualFile)
+    UploadedFileInfo(userName, actualFile.getName, format,
+      ontFileLoader.getPossibleOntologyUris(ontModel, actualFile))
+  }
 
-    UploadedFileInfo(userName, actualFile.getName, namespaces)
+  def getUploadedFile(userName: String, filename: String): File = {
+    val userDir = new File(uploadsDir, userName)
+    val file = new File(userDir, filename)
+    logger.debug(s"getUploadedFile: file=$file")
+    file
   }
 
   private def writeOntologyFile(uri: String, version: String,
