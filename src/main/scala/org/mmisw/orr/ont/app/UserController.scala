@@ -21,7 +21,7 @@ class UserController(implicit setup: Setup) extends BaseController
    */
   get("/") {
     userService.getUsers() map { u =>
-      grater[UserResult].toCompactJSON(getUserJson(u))
+      grater[UserResult].toCompactJSON(getUserResult(u))
     }
   }
 
@@ -30,7 +30,7 @@ class UserController(implicit setup: Setup) extends BaseController
    */
   get("/:userName") {
     val userName = require(params, "userName")
-    val res = getUserJson(getUser(userName))
+    val res = getUserResult(getUser(userName))
     res.copy(organizations = orgService.getUserOrganizations(userName))
   }
 
@@ -280,7 +280,7 @@ class UserController(implicit setup: Setup) extends BaseController
 
   ///////////////////////////////////////////////////////////////////////////
 
-  def getUserJson(dbUser: db.User): UserResult = {
+  def getUserResult(dbUser: db.User): UserResult = {
     var res = UserResult(
       userName   = dbUser.userName,
       firstName  = Some(dbUser.firstName),
