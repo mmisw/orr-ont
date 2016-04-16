@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-04-16: 0.3.1:
+  - also handle previously uploaded file in PUT /ont
+  
 * 2016-04-11/12: 0.3.1:
   - initial version of POST /ont/upload to perform first step toward registering an ontology
     from an uploaded file.

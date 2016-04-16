@@ -86,13 +86,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
 
     val (version, date) = getVersion
 
-    // get OntFileWriter according to given relevant parameters:
-    val ontFileWriter = if (fileParams.isDefinedAt("file")) {
-      getOntFileWriterForJustUploadedFile
-    }
-    else {
-      getOntFileWriterForPreviouslyUploadedFile(user.userName)
-    }
+    val ontFileWriter = getOntFileWriter(user)
 
     Created(createOntology(uri, name, version,
       version_status, contact_name, date, ontFileWriter, orgName))
@@ -122,11 +116,11 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
         bug(s"currently I expect registered ont to have org associated")
     }
 
-    // ok, authenticated user can PUT.
+    val ontFileWriter = getOntFileWriter(user)
 
     versionOpt match {
       case Some(version) => updateOntologyVersion(uri, version, user)
-      case None          => createOntologyVersion(uri, user)
+      case None          => createOntologyVersion(uri, user, ontFileWriter)
     }
   }
 
@@ -257,6 +251,14 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
     }
   }
 
+  /** get OntFileWriter according to given relevant parameters */
+  private def getOntFileWriter(user: db.User): OntFileWriter = {
+    if (fileParams.isDefinedAt("file"))
+      getOntFileWriterForJustUploadedFile
+    else
+      getOntFileWriterForPreviouslyUploadedFile(user.userName)
+  }
+
   private def getOntFileWriterForJustUploadedFile: OntFileWriter = {
     val fileItem = fileParams.getOrElse("file", missing("file"))
 
@@ -291,9 +293,8 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
   /**
    * Adds a new version of a registered ontology.
    */
-  private def createOntologyVersion(uri: String, user: db.User) = {
+  private def createOntologyVersion(uri: String, user: db.User, ontFileWriter: OntFileWriter) = {
     val nameOpt = params.get("name")
-    val contents = getOntFileWriterForJustUploadedFile
     val (version, date) = getVersion
 
     // TODO capture version_status from parameter
@@ -303,7 +304,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
     val contact_name: Option[String] = None
 
     Try(ontService.createOntologyVersion(uri, nameOpt, user.userName, version,
-            version_status, contact_name, date, contents)) match {
+            version_status, contact_name, date, ontFileWriter)) match {
       case Success(ontologyResult) => ontologyResult
 
       case Failure(exc: NoSuch)                       => error(404, exc.details)
