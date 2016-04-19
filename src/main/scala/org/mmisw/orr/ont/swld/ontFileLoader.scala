@@ -3,9 +3,10 @@ package org.mmisw.orr.ont.swld
 import java.io._
 
 import com.hp.hpl.jena.ontology.OntModel
-import com.hp.hpl.jena.vocabulary.{RDFS, RDF}
+import com.hp.hpl.jena.vocabulary.{DC_10, RDFS, DC_11, DCTerms}
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.mmisw.orr.ont.util.{XmlBaseExtractor, Util2}
+import org.mmisw.orr.ont.vocabulary.Omv
 import org.xml.sax.InputSource
 
 
@@ -13,9 +14,12 @@ case class OntModelLoadedResult(file: File,
                                 format: String,
                                 ontModel: OntModel)
 
-case class PossibleOntologyUri(uri: String,
-                               explanation: String,
-                               label: Option[String])
+case class PossibleOntologyName(propertyUri: String,
+                                propertyValue: String)
+
+/** Info for a possible ontology URI */
+case class PossibleOntologyInfo(explanations: List[String],
+                                names: Option[List[PossibleOntologyName]])
 /**
   * Based on org.mmisw.orrclient.core.util.TempOntologyHelper.getTempOntologyInfo
   */
@@ -44,16 +48,34 @@ object ontFileLoader extends AnyRef with Logging {
     }
   }
 
-  def getPossibleOntologyUris(model: OntModel, file: File): List[PossibleOntologyUri] = {
-    var list = List[PossibleOntologyUri]()
+  def getPossibleOntologyUris(model: OntModel, file: File): Map[String, PossibleOntologyInfo] = {
+    var map = Map[String, PossibleOntologyInfo]()
 
     def add(uriOpt: Option[String], explanation: String): Unit = {
       for {
         uri <- uriOpt
         ontology <- Option(model.getOntology(uri))
       } {
-        val labelOpt = ontUtil.getValue(ontology, RDFS.label)
-        list = PossibleOntologyUri(uri, explanation, labelOpt) :: list
+        val newInfo = map.get(uri) match {
+          case None =>
+            val explanations = List(explanation)
+            val namesOpt = {
+              var names = List[PossibleOntologyName]()
+              for (property <- possibleNameProperties) {
+                ontUtil.getValue(ontology, property) foreach { propertyValue =>
+                  names = PossibleOntologyName(property.getURI, propertyValue) :: names
+                }
+              }
+              if (names.nonEmpty) Some(names) else None
+            }
+            PossibleOntologyInfo(explanations, namesOpt)
+
+          case Some(info) =>
+            // one more explanation for the URI
+            PossibleOntologyInfo(explanation :: info.explanations, info.names)
+        }
+
+        map = map.updated(uri, newInfo)
       }
     }
 
@@ -80,8 +102,11 @@ object ontFileLoader extends AnyRef with Logging {
       }
     }
 
-    list
+    map
   }
+
+  private val possibleNameProperties =
+    List(RDFS.label, Omv.name, DCTerms.title, DC_11.title, DC_10.title)
 
   /**
     * Reads an RDF file.

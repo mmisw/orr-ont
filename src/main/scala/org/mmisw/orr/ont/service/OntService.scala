@@ -7,7 +7,7 @@ import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
-import org.mmisw.orr.ont.swld.{PossibleOntologyUri, ontFileLoader, ontUtil}
+import org.mmisw.orr.ont.swld.{PossibleOntologyInfo, ontFileLoader, ontUtil}
 import org.mmisw.orr.ont.{OntologySummaryResult, OntologyResult, Setup}
 
 import scala.util.{Failure, Success, Try}
@@ -21,7 +21,7 @@ trait OntFileWriter {
 case class UploadedFileInfo(userName: String,
                             filename: String,
                             format: String,
-                            possibleOntologies: List[PossibleOntologyUri])
+                            possibleOntologyUris: Map[String, PossibleOntologyInfo])
 
 
 /**

@@ -428,9 +428,9 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         uploadedFileInfoOpt = Some(uploadedFileInfo)
         uploadedFileInfo.userName must_== userName
         uploadedFileInfo.format must_== "rdf"
-        val possibleOntologies = uploadedFileInfo.possibleOntologies
-        val uris = possibleOntologies.map(_.uri)
-        uris must contain("http://example.org/ont1")
+        val possibleOntologyUris = uploadedFileInfo.possibleOntologyUris
+        val uris = possibleOntologyUris.keySet
+        uris must_== Set("http://example.org/ont1")
       }
     }
   }
@@ -440,14 +440,15 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     "succeed with user credentials and return expected info" in {
       post("/ont/upload", Map("format" -> "owl"), Map("file" -> owlFile), headers = userHeaders) {
         status must_== 200
-        val uploadedFileInfo = parse(body).extract[UploadedFileInfo]
+        val b = body
+        println(s"upload response body=$b")
+        val uploadedFileInfo = parse(b).extract[UploadedFileInfo]
         println(s"uploadedFileInfo=$uploadedFileInfo")
         uploadedFileInfo.userName must_== userName
         uploadedFileInfo.format must_== "rdf"
-        val possibleOntologies = uploadedFileInfo.possibleOntologies
-        val uris = possibleOntologies.map(_.uri)
-        uris must contain("http://purl.org/wmo/seaice/iceOfLandOrigin")
-        uris must contain("http://purl.org/wmo/seaice/iceOfLandOrigin#")
+        val possibleOntologyUris = uploadedFileInfo.possibleOntologyUris
+        val uris = possibleOntologyUris.keySet
+        uris must_== Set("http://purl.org/wmo/seaice/iceOfLandOrigin#")
       }
     }
   }
