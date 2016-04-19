@@ -14,12 +14,10 @@ case class OntModelLoadedResult(file: File,
                                 format: String,
                                 ontModel: OntModel)
 
-case class PossibleOntologyName(propertyUri: String,
-                                propertyValue: String)
-
 /** Info for a possible ontology URI */
 case class PossibleOntologyInfo(explanations: List[String],
-                                names: Option[List[PossibleOntologyName]])
+                                metadata: Map[String,List[String]])
+
 /**
   * Based on org.mmisw.orrclient.core.util.TempOntologyHelper.getTempOntologyInfo
   */
@@ -55,21 +53,10 @@ object ontFileLoader extends AnyRef with Logging {
       for (ontology <- Option(model.getOntology(uri))) {
         val newInfo = map.get(uri) match {
           case None =>
-            val explanations = List(explanation)
-            val namesOpt = {
-              var names = List[PossibleOntologyName]()
-              for (property <- possibleNameProperties) {
-                ontUtil.getValue(ontology, property) foreach { propertyValue =>
-                  names = PossibleOntologyName(property.getURI, propertyValue) :: names
-                }
-              }
-              if (names.nonEmpty) Some(names) else None
-            }
-            PossibleOntologyInfo(explanations, namesOpt)
+            PossibleOntologyInfo(List(explanation), ontUtil.extractMetadata(ontology))
 
-          case Some(info) =>
-            // one more explanation for the URI
-            PossibleOntologyInfo(explanation :: info.explanations, info.names)
+          case Some(info) =>  // one more explanation for the URI
+            info.copy(explanations = explanation :: info.explanations)
         }
 
         map = map.updated(uri, newInfo)
@@ -92,9 +79,6 @@ object ontFileLoader extends AnyRef with Logging {
 
     map
   }
-
-  private val possibleNameProperties =
-    List(RDFS.label, Omv.name, DCTerms.title, DC_11.title, DC_10.title)
 
   private def extractXmlBase(file: File): Option[String] = {
     try {

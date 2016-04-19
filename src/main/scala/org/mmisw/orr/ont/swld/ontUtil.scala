@@ -92,8 +92,35 @@ object ontUtil extends AnyRef with Logging {
     case res: Resource => res.getURI
   }
 
+  def extractMetadata(ontology: Ontology): Map[String,List[String]] = {
+    var map = Map[String,List[String]]()
+
+    val it = ontology.listProperties()
+    if ( it != null) {
+      while (it.hasNext) {
+        val stmt = it.next()
+        val prop: Property = stmt.getPredicate
+        val propUri = prop.getURI
+        val node: RDFNode = stmt.getObject
+        val nodeString = nodeAsString(node)
+
+        val newValues = nodeString :: (map.get(propUri) match {
+          case None         => List()
+          case Some(values) => values
+        })
+
+        map = map.updated(propUri, newValues)
+      }
+    }
+    map
+  }
+
   ///////////////////////////////////////////////////////////////////////////
   // private
+
+  private def nodeAsString(n: RDFNode): String =
+    if (n.isResource) n.asResource().getURI
+    else n.asLiteral().getString
 
   /**
    * ad hoc initial mechanism to report some of the ontology metadata.
@@ -120,10 +147,7 @@ object ontUtil extends AnyRef with Logging {
   }
 
   private def listPropertyValues(ont: Ontology, prop: Property): List[String] =
-    listPropertyValueNodes(ont, prop) map { n =>
-      if (n.isResource) n.asResource().getURI
-      else n.asLiteral().getString
-    }
+    listPropertyValueNodes(ont, prop) map nodeAsString
 
   private def listPropertyValueNodes(ontology: Ontology, prop: Property): List[RDFNode] = {
     val values = collection.mutable.ListBuffer[RDFNode]()

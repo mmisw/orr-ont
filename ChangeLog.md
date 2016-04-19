@@ -1,31 +1,33 @@
 ## change log ##
 
-* 2016-04-18: 0.3.1:
-  - upload file: use the following properties for possible ontology names:
-    RDFS.label, Omv.name, DCTerms.title, DC_11.title, DC_10.title
-  - The reported info upon uploading a file looks thus:
+* 2016-04-19: 0.3.1:
+  - upload file: report metadata for each possible ontology URI:
 
     ```json
     {
-        "filename": "1461043897684.rdf",
-        "format": "rdf",
-        "possibleOntologyUris": {
-            "http://example.org/ont1": {
-                "explanations": [
-                    "Namespace associated with empty prefix but with no trailing separators",
-                    "Value of xml:base attribute"
-                ],
-                "names": [
-                    {
-                        "propertyUri": "http://omv.ontoware.org/2005/05/ontology#name",
-                        "propertyValue": "Test ontology"
-                    }
-                ]
-            }
-        },
-        "userName": "carueda"
-    }
+		"filename": "1461089333462.rdf",
+		"format": "rdf",
+		"possibleOntologyUris": {
+			"http://example.org/ont1": {
+				"explanations": [
+					"Value of xml:base attribute"
+				],
+				"metadata": {
+					"<propURI>": [
+						"<propValue>", ...
+					],
+				}
+			}
+		},
+		"userName": "carueda"
+	}
     ```
+    
+    Possible ontology names now handled by the client
+
+* 2016-04-18: 0.3.1:
+  - upload file: use the following properties for possible ontology names:
+    RDFS.label, Omv.name, DCTerms.title, DC_11.title, DC_10.title
   
 * 2016-04-16: 0.3.1:
   - also handle previously uploaded file in PUT /ont
