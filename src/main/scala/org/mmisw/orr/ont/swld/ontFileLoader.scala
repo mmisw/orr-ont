@@ -52,9 +52,7 @@ object ontFileLoader extends AnyRef with Logging {
     var map = Map[String, PossibleOntologyInfo]()
 
     def add(uri: String, explanation: String): Unit = {
-      for {
-        ontology <- Option(model.getOntology(uri))
-      } {
+      for (ontology <- Option(model.getOntology(uri))) {
         val newInfo = map.get(uri) match {
           case None =>
             val explanations = List(explanation)
@@ -78,28 +76,16 @@ object ontFileLoader extends AnyRef with Logging {
       }
     }
 
-    // try xml:base:
-    try {
-      val is = new InputSource(new StringReader(readRdf(file)))
-      for {
-        xmlBase <- Option(XmlBaseExtractor.getXMLBase(is))
-      }
-        add(xmlBase.toString, "Value of xml:base attribute")
-    }
-    catch {
-      case e: Throwable => {
-        logger.warn(s"error while trying to read xml:base attribute from $file", e)
-      }
-    }
+    extractXmlBase(file) foreach(add(_, "Value of xml:base attribute"))
 
     // try namespace associated with empty prefix:
     Option(model.getNsPrefixURI("")) foreach { uriForEmptyPrefix =>
-      // do not add uriForEmptyPrefix if it has already been added per xml:base above
-      if (map.get(uriForEmptyPrefix).isEmpty) {
+      val uriNoTrailingSeparator = uriForEmptyPrefix.replaceAll("(#|/)+$", "")
+      // only add uriForEmptyPrefix or uriNoTrailingSeparator if not already added per xml:base above
+      if (map.get(uriForEmptyPrefix).isEmpty && map.get(uriNoTrailingSeparator).isEmpty) {
         add(uriForEmptyPrefix, "Namespace associated with empty prefix")
-        val uri = uriForEmptyPrefix.replaceAll("(#|/)+$", "")
-        if (uri != uriForEmptyPrefix) {
-          add(uri, "Namespace associated with empty prefix but with no trailing separators")
+        if (uriNoTrailingSeparator != uriForEmptyPrefix) {
+          add(uriNoTrailingSeparator, "Namespace associated with empty prefix but with no trailing separators")
         }
       }
     }
@@ -110,10 +96,21 @@ object ontFileLoader extends AnyRef with Logging {
   private val possibleNameProperties =
     List(RDFS.label, Omv.name, DCTerms.title, DC_11.title, DC_10.title)
 
-  /**
-    * Reads an RDF file.
-    */
-  private def readRdf(file: File): String = {
+  private def extractXmlBase(file: File): Option[String] = {
+    try {
+      val is = new InputSource(new StringReader(readAll(file)))
+      for (xmlBase <- Option(XmlBaseExtractor.getXMLBase(is)))
+        yield xmlBase.toString
+    }
+    catch {
+      case e: Throwable => {
+        logger.warn(s"error while trying to read xml:base attribute from $file", e)
+        None
+      }
+    }
+  }
+
+  private def readAll(file: File): String = {
     val is: Reader = new InputStreamReader(new FileInputStream(file))
     try {
       val sw: StringWriter = new StringWriter
