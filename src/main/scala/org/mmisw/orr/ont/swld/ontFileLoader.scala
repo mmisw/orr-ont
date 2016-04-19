@@ -51,9 +51,8 @@ object ontFileLoader extends AnyRef with Logging {
   def getPossibleOntologyUris(model: OntModel, file: File): Map[String, PossibleOntologyInfo] = {
     var map = Map[String, PossibleOntologyInfo]()
 
-    def add(uriOpt: Option[String], explanation: String): Unit = {
+    def add(uri: String, explanation: String): Unit = {
       for {
-        uri <- uriOpt
         ontology <- Option(model.getOntology(uri))
       } {
         val newInfo = map.get(uri) match {
@@ -85,7 +84,7 @@ object ontFileLoader extends AnyRef with Logging {
       for {
         xmlBase <- Option(XmlBaseExtractor.getXMLBase(is))
       }
-        add(Option(xmlBase.toString), "Value of xml:base attribute")
+        add(xmlBase.toString, "Value of xml:base attribute")
     }
     catch {
       case e: Throwable => {
@@ -95,10 +94,10 @@ object ontFileLoader extends AnyRef with Logging {
 
     // try namespace associated with empty prefix:
     Option(model.getNsPrefixURI("")) foreach { uriForEmptyPrefix =>
-      add(Option(uriForEmptyPrefix), "Namespace associated with empty prefix")
+      add(uriForEmptyPrefix, "Namespace associated with empty prefix")
       val uri = uriForEmptyPrefix.replaceAll("(#|/)+$", "")
       if (uri != uriForEmptyPrefix) {
-        add(Option(uri), "Namespace associated with empty prefix but with no trailing separators")
+        add(uri, "Namespace associated with empty prefix but with no trailing separators")
       }
     }
 
