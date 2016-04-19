@@ -1,8 +1,8 @@
 package org.mmisw.orr.ont.swld
 
 import com.hp.hpl.jena.ontology.{Ontology, OntDocumentManager, OntModelSpec, OntModel}
-import com.hp.hpl.jena.rdf.model.{RDFNode, Property, ModelFactory}
-import java.io.{FileWriter, File}
+import com.hp.hpl.jena.rdf.model._
+import java.io.{FileOutputStream, FileInputStream, File}
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 
 import com.github.jsonldjava.jena.JenaJSONLD
@@ -32,17 +32,13 @@ object ontUtil extends AnyRef with Logging {
     def doIt(fromLang: String, toLang: String): File = {
       if (fromLang == toLang) fromFile
       else {
-        // TODO manage resources below
+        logger.info(s"ontUtil.convert: path=$fromFile toLang=$toLang")
         val model = ModelFactory.createDefaultModel()
-        val fromPath = fromFile
-        val source = io.Source.fromFile(fromFile)
-        model.read(source.reader(), uri, fromLang)
+        readModel(uri, fromFile, fromLang, model)
         val writer = model.getWriter(toLang)
-        //println(s"jenaUtil.convert: path=$fromPath toLang=$toLang")
-        logger.info(s"jenaUtil.convert: path=$fromPath toLang=$toLang")
-        val toWriter = new FileWriter(toFile)
-        writer.write(model, toWriter, uri)
-        toWriter.close()
+        val os = new FileOutputStream(toFile)
+        try writer.write(model, os, uri)
+        finally os.close()
         toFile
       }
     }
@@ -52,16 +48,18 @@ object ontUtil extends AnyRef with Logging {
     } yield doIt(fromLang, toLang)
   }
 
-  // for the files actually stored, for example file.rdf serves both the rdf and the owl formats
+  // for the files actually stored
   def storedFormat(format: String) = format.toLowerCase match {
-    case "owl"  | "rdf"     => "rdf"
+    case "owl"              => "owl"
+    case "rdf"              => "rdf"
     case "json" | "jsonld"  => "jsonld"
     case "ttl"  | "n3"      => "n3"
     case f => f
   }
 
   def getPropsFromOntMetadata(uri: String, file: File, format: String): Map[String,String] = {
-    getOntology(uri, file, format) match {
+    val ontModel = loadOntModel(uri, file, format)
+    Option(ontModel.getOntology(uri)) match {
       case Some(ontology) =>
         try extractSomeProps(ontology)
         catch {
@@ -82,6 +80,18 @@ object ontUtil extends AnyRef with Logging {
     else resourceType
   }
 
+  def getValue(sub: Resource, pro: Property): Option[String] = {
+    for {
+      sta <- Option(sub.getProperty(pro))
+      node: RDFNode = sta.getObject
+    } yield getValueAsString(node)
+  }
+
+  def getValueAsString(node: RDFNode): String = node match {
+    case lit: Literal  => lit.getLexicalForm
+    case res: Resource => res.getURI
+  }
+
   ///////////////////////////////////////////////////////////////////////////
   // private
 
@@ -92,10 +102,10 @@ object ontUtil extends AnyRef with Logging {
     var map = Map[String, String]()
 
     val values1 = listPropertyValues(ontology, OmvMmi.hasResourceType)
-    if (values1.size > 0) map = map.updated("resourceType", values1.head)
+    if (values1.nonEmpty) map = map.updated("resourceType", values1.head)
 
     val values2 = listPropertyValues(ontology, Omv.usedOntologyEngineeringTool)
-    if (values2.size > 0) {
+    if (values2.nonEmpty) {
       val usedOntologyEngineeringTool = values2.head
       val ontologyType = if (usedOntologyEngineeringTool == OmvMmi.voc2rdf.getURI)
         "vocabulary"
@@ -126,27 +136,24 @@ object ontUtil extends AnyRef with Logging {
     values.toList
   }
 
-  /**
-   * Gets the Jena Ontology object of the given uri from the given file.
-   * @param uri
-   * @param file
-   * @param format
-   * @param processImports
-   * @return
-   */
-  private def getOntology(uri: String, file: File, format: String, processImports: Boolean = false):
-    Option[Ontology] = {
-
-    logger.debug(s"Loading uri='$uri' file=$file with processImports=$processImports")
-    val path = file.getAbsolutePath
-    logger.debug(s"path='$path'")
-    val source = io.Source.fromFile(path)
+  /** Loads an ontology model from a file. */
+  def loadOntModel(uri: String, file: File, format: String):
+  OntModel = {
     val lang = format2lang(storedFormat(format)).getOrElse(throw new IllegalArgumentException)
+    logger.debug(s"Loading uri='$uri' file=$file lang=$lang")
     val ontModel = createDefaultOntModel
     ontModel.setDynamicImports(false)
-    ontModel.getDocumentManager.setProcessImports(processImports)
-    ontModel.read(source.reader(), uri, lang)
-    Option(ontModel.getOntology(uri))
+    ontModel.getDocumentManager.setProcessImports(false)
+    readModel(uri, file, lang, ontModel)
+    ontModel
+  }
+
+  private def readModel(uri: String, file: File, lang: String, model: Model): Unit = {
+    val path = file.getAbsolutePath
+    logger.debug(s"readModel: path='$path' lang='$lang'")
+    val is = new FileInputStream(file)
+    try model.read(is, uri, lang)
+    finally is.close()
   }
 
   private def createDefaultOntModel: OntModel = {
@@ -156,7 +163,8 @@ object ontUtil extends AnyRef with Logging {
   }
 
   // https://jena.apache.org/documentation/io/
-  private def format2lang(format: String) = Option(format.toLowerCase match {
+  def format2lang(format: String) = Option(format.toLowerCase match {
+    case "owl"          => "OWL/XML"  // to use OWL API
     case "rdf"          => "RDF/XML"
     case "jsonld"       => "JSON-LD"
     case "n3"           => "N3"

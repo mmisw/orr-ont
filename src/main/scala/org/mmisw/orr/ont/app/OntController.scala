@@ -18,7 +18,7 @@ import scala.util.{Failure, Success, Try}
 /**
  * Controller for the "ont" API.
  */
-@MultipartConfig(maxFileSize = 5*1024*1024)
+@MultipartConfig(maxFileSize = 10*1024*1024)
 class OntController(implicit setup: Setup, ontService: OntService) extends BaseOntController
       with FileUploadSupport with Logging {
 
@@ -26,7 +26,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
 
   error {
     case e: SizeConstraintExceededException =>
-      error(413, "The file you uploaded exceeded the 5MB limit.")
+      error(413, "The file you uploaded exceeds the 10MB limit.")
   }
 
   /*
@@ -40,6 +40,22 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
         val onts = ontService.getOntologies(query, checkIsAdminOrExtra)
         // TODO what exactly to report for the list of ontologies?
         onts map grater[OntologySummaryResult].toCompactJSON
+    }
+  }
+
+  /*
+   * Uploads an ontology file.
+   */
+  post("/upload") {
+    val u = authenticatedUser.getOrElse(halt(401, s"unauthorized"))
+    try {
+      val ontFileWriter = getOntFileWriterForJustUploadedFile
+      val uploadedFileInfo = ontService.saveUploadedOntologyFile(u.userName, ontFileWriter)
+      uploadedFileInfo
+    }
+    catch { case e: Throwable =>
+      e.printStackTrace()
+      throw e
     }
   }
 
@@ -59,7 +75,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
         error(400, s"'$orgName' invalid organization")
 
       case Some(org) =>
-        verifyAuthenticatedUser(org.members + "admin")
+        verifyIsUserOrAdminOrExtra(org.members)
     }
 
     // TODO capture version_status from parameter
@@ -68,11 +84,12 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
     // TODO capture contact_name (from parameter, or by parsing ontology metadata)
     val contact_name: Option[String] = None
 
-    // ok, go ahead with registration
-    val contents = getContentsAndFormat
     val (version, date) = getVersion
 
-    Created(createOntology(uri, name, version, version_status, contact_name, date, contents, orgName))
+    val ontFileWriter = getOntFileWriter(user)
+
+    Created(createOntology(uri, name, version,
+      version_status, contact_name, date, ontFileWriter, orgName))
   }
 
   /*
@@ -92,18 +109,18 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
             bug(s"org '$orgName' should exist")
 
           case Some(org) =>
-            verifyAuthenticatedUser(org.members + "admin")
+            verifyIsAuthenticatedUser(org.members + "admin")
         }
 
       case None =>
         bug(s"currently I expect registered ont to have org associated")
     }
 
-    // ok, authenticated user can PUT.
+    val ontFileWriter = getOntFileWriter(user)
 
     versionOpt match {
       case Some(version) => updateOntologyVersion(uri, version, user)
-      case None          => createOntologyVersion(uri, user)
+      case None          => createOntologyVersion(uri, user, ontFileWriter)
     }
   }
 
@@ -122,7 +139,7 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
         orgsDAO.findOneById(orgName) match {
           case None => bug(s"org '$orgName' should exist")
 
-          case Some(org) => verifyAuthenticatedUser(org.members + "admin")
+          case Some(org) => verifyIsAuthenticatedUser(org.members + "admin")
         }
 
       case None =>
@@ -136,14 +153,25 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
   }
 
   delete("/!/all") {
-    verifyAuthenticatedUser("admin")
+    verifyIsAdminOrExtra()
     ontService.deleteAll()
   }
 
   ///////////////////////////////////////////////////////////////////////////
 
-  private case class FileWriter(format: String, fileItem: FileItem) extends AnyRef with OntFileWriter {
-    override def write(destFile: File) { fileItem.write(destFile)}
+  private case class FileItemWriter(format: String, fileItem: FileItem) extends AnyRef with OntFileWriter {
+    override def write(destFile: File) {
+      fileItem.write(destFile)
+    }
+  }
+
+  private case class FileWriter(format: String, file: File) extends AnyRef with OntFileWriter {
+    override def write(destFile: File) {
+      java.nio.file.Files.copy(
+        java.nio.file.Paths.get(file.getPath),
+        java.nio.file.Paths.get(destFile.getPath),
+        java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+    }
   }
 
   private def createOntology(uri: String, name: String, version: String, version_status: Option[String],
@@ -151,14 +179,29 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
                              date: String,
                              ontFileWriter: OntFileWriter, orgName: String) = {
 
+    val user = requireAuthenticatedUser
+    logger.debug(s"""
+         |createOntology:
+         | user:           $user
+         | uri:            $uri
+         | name:           $name
+         | version:        $version
+         | version_status: $version_status
+         | contact_name:   $contact_name
+         | date:           $date
+         | orgName:        $orgName
+         | ontFileWriter.format: ${ontFileWriter.format}
+         |""".stripMargin)
+
     Try(ontService.createOntology(uri, name, version, version_status,
           contact_name, date, user.userName, orgName, ontFileWriter)) match {
       case Success(ontologyResult) => ontologyResult
 
       case Failure(exc: InvalidUri) => error(400, exc.details)
       case Failure(exc: OntologyAlreadyRegistered) => error(409, exc.details)
-      case Failure(exc: Problem) => error(500, exc.details)
-      case Failure(exc) => error(500, exc.getMessage)
+
+      case Failure(exc: Problem) => error500(exc)
+      case Failure(exc)          => error500(exc)
     }
   }
 
@@ -208,7 +251,15 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
     }
   }
 
-  private def getContentsAndFormat = {
+  /** get OntFileWriter according to given relevant parameters */
+  private def getOntFileWriter(user: db.User): OntFileWriter = {
+    if (fileParams.isDefinedAt("file"))
+      getOntFileWriterForJustUploadedFile
+    else
+      getOntFileWriterForPreviouslyUploadedFile(user.userName)
+  }
+
+  private def getOntFileWriterForJustUploadedFile: OntFileWriter = {
     val fileItem = fileParams.getOrElse("file", missing("file"))
 
     // todo make format param optional
@@ -218,7 +269,17 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
     //val fileContents = new String(fileItem.get(), fileItem.charset.getOrElse("utf8"))
     //val contentType = file.contentType.getOrElse("application/octet-stream")
 
-    FileWriter(format, fileItem)
+    FileItemWriter(format, fileItem)
+  }
+
+  private def getOntFileWriterForPreviouslyUploadedFile(userName: String): OntFileWriter = {
+    val filename = require(params, "uploadedFilename")
+    val format   = require(params, "uploadedFormat")
+
+    logger.info(s"getOntFileWriterForPreviouslyUploadedFile: filename=$filename format=$format")
+
+    val file = ontService.getUploadedFile(userName, filename)
+    FileWriter(format, file)
   }
 
   private def getVersion = {
@@ -232,9 +293,8 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
   /**
    * Adds a new version of a registered ontology.
    */
-  private def createOntologyVersion(uri: String, user: db.User) = {
+  private def createOntologyVersion(uri: String, user: db.User, ontFileWriter: OntFileWriter) = {
     val nameOpt = params.get("name")
-    val contents = getContentsAndFormat
     val (version, date) = getVersion
 
     // TODO capture version_status from parameter
@@ -244,13 +304,13 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
     val contact_name: Option[String] = None
 
     Try(ontService.createOntologyVersion(uri, nameOpt, user.userName, version,
-            version_status, contact_name, date, contents)) match {
+            version_status, contact_name, date, ontFileWriter)) match {
       case Success(ontologyResult) => ontologyResult
 
       case Failure(exc: NoSuch)                       => error(404, exc.details)
       case Failure(exc: NotAMember)                   => error(401, exc.details)
-      case Failure(exc: CannotInsertOntologyVersion)  => error(500, exc.details)
-      case Failure(exc)                               => error(500, exc.getMessage)
+      case Failure(exc: CannotInsertOntologyVersion)  => error500(exc)
+      case Failure(exc)                               => error500(exc)
     }
   }
 
@@ -267,8 +327,8 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
 
       case Failure(exc: NoSuch)                       => error(404, exc.details)
       case Failure(exc: NotAMember)                   => error(401, exc.details)
-      case Failure(exc: CannotUpdateOntologyVersion)  => error(500, exc.details)
-      case Failure(exc)                               => error(500, exc.getMessage)
+      case Failure(exc: CannotUpdateOntologyVersion)  => error500(exc)
+      case Failure(exc)                               => error500(exc)
     }
   }
 
@@ -282,8 +342,8 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
 
       case Failure(exc: NoSuch)                       => error(404, exc.details)
       case Failure(exc: NotAMember)                   => error(401, exc.details)
-      case Failure(exc: CannotDeleteOntologyVersion)  => error(500, exc.details)
-      case Failure(exc)                               => error(500, exc.getMessage)
+      case Failure(exc: CannotDeleteOntologyVersion)  => error500(exc)
+      case Failure(exc)                               => error500(exc)
     }
   }
 
@@ -296,8 +356,8 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
 
       case Failure(exc: NoSuch)                       => error(404, exc.details)
       case Failure(exc: NotAMember)                   => error(401, exc.details)
-      case Failure(exc: CannotDeleteOntology)         => error(500, exc.details)
-      case Failure(exc)                               => error(500, exc.getMessage)
+      case Failure(exc: CannotDeleteOntology)         => error500(exc)
+      case Failure(exc)                               => error500(exc)
     }
   }
 }

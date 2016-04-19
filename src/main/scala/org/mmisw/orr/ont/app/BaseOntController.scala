@@ -18,22 +18,16 @@ with Logging {
     Try(ontService.resolveOntology(uri, versionOpt)) match {
       case Success(res) => res
       case Failure(exc: NoSuch) => error(404, exc.details)
-      case Failure(exc) => error(500, exc.getMessage)
+      case Failure(exc)         => error500(exc)
     }
   }
 
   protected def getOntologyFile(uri: String, version: String, reqFormat: String): (File, String) = {
     Try(ontService.getOntologyFile(uri, version, reqFormat)) match {
       case Success(res) => res
-      case Failure(exc: NoSuchOntFormat) => error(406, exc.details)
+      case Failure(exc: NoSuchOntFormat)    => error(406, exc.details)
       case Failure(exc: CannotCreateFormat) => error(406, exc.details)
-      case Failure(exc) => {
-        // $COVERAGE-OFF$
-        println(s"getOntologyFile: error with uri=$uri version=$version reqFormat=$reqFormat")
-        exc.printStackTrace()
-        error(500, exc.getMessage)
-        // $COVERAGE-ON$
-      }
+      case Failure(exc)                     => error500(exc)
     }
   }
 

@@ -13,7 +13,8 @@ case class UserResult(
             registered:  Option[DateTime] = None,
             updated:     Option[DateTime] = None,
             removed:     Option[DateTime] = None,
-            role:        Option[String] = None  // todo
+            role:        Option[String] = None,  // todo
+            organizations: Option[List[OrgResult]] = None
             )
 
 case class UsernameReminderResult(

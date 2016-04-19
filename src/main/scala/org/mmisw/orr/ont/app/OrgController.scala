@@ -15,8 +15,6 @@ import scala.util.{Failure, Success, Try}
 class OrgController(implicit setup: Setup) extends BaseController
     with Logging {
 
-  val orgService = new OrgService
-
   get("/") {
     orgService.getOrgs() map getOrgJson
   }
@@ -28,7 +26,7 @@ class OrgController(implicit setup: Setup) extends BaseController
   }
 
   post("/") {
-    verifyAuthenticatedUser("admin")
+    verifyIsAdminOrExtra()
     val map = body()
 
     logger.info(s"POST body = $map")
@@ -44,7 +42,7 @@ class OrgController(implicit setup: Setup) extends BaseController
     val orgName = require(params, "orgName")
     val org = getOrg(orgName)
 
-    verifyAuthenticatedUser(org.members + "admin")
+    verifyIsAuthenticatedUser(org.members + "admin")
 
     val map = body()
 
@@ -63,17 +61,17 @@ class OrgController(implicit setup: Setup) extends BaseController
       updated = Some(DateTime.now())
     )) match {
       case Success(res)  => res
-      case Failure(exc)  => error(500, exc.getMessage)
+      case Failure(exc)  => error500(exc)
     }
   }
 
   delete("/:orgName") {
-    verifyAuthenticatedUser("admin")
+    verifyIsAdminOrExtra()
     deleteOrg(require(params, "orgName"))
   }
 
   delete("/!/all") {
-    verifyAuthenticatedUser("admin")
+    verifyIsAdminOrExtra()
     orgService.deleteAll()
   }
 
@@ -88,8 +86,8 @@ class OrgController(implicit setup: Setup) extends BaseController
     Try(orgService.createOrg(orgName, name, members, ontUri)) match {
       case Success(res)                       => res
       case Failure(exc: OrgAlreadyRegistered) => error(409, exc.details)
-      case Failure(exc: CannotInsertOrg)      => error(500, exc.details)
-      case Failure(exc)                       => error(500, exc.getMessage)
+      case Failure(exc: CannotInsertOrg)      => error500(exc)
+      case Failure(exc)                       => error500(exc)
     }
   }
 
@@ -97,7 +95,7 @@ class OrgController(implicit setup: Setup) extends BaseController
     Try(orgService.getOrg(orgName)) match {
       case Success(res)            => res
       case Failure(exc: NoSuchOrg) => error(404, s"'$orgName' organization is not registered")
-      case Failure(exc)            => error(500, exc.getMessage)
+      case Failure(exc)            => error500(exc)
     }
   }
 
@@ -105,7 +103,7 @@ class OrgController(implicit setup: Setup) extends BaseController
     Try(orgService.getOrg(orgName)) match {
       case Success(res)            => res
       case Failure(exc: NoSuchOrg) => error(404, s"'$orgName' organization is not registered")
-      case Failure(exc)            => error(500, exc.getMessage)
+      case Failure(exc)            => error500(exc)
     }
   }
 

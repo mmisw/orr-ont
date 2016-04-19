@@ -1,5 +1,75 @@
 ## change log ##
 
+* 2016-04-18: 0.3.1:
+  - upload file: use the following properties for possible ontology names:
+    RDFS.label, Omv.name, DCTerms.title, DC_11.title, DC_10.title
+  - The reported info upon uploading a file looks thus:
+
+    ```json
+    {
+        "filename": "1461043897684.rdf",
+        "format": "rdf",
+        "possibleOntologyUris": {
+            "http://example.org/ont1": {
+                "explanations": [
+                    "Namespace associated with empty prefix but with no trailing separators",
+                    "Value of xml:base attribute"
+                ],
+                "names": [
+                    {
+                        "propertyUri": "http://omv.ontoware.org/2005/05/ontology#name",
+                        "propertyValue": "Test ontology"
+                    }
+                ]
+            }
+        },
+        "userName": "carueda"
+    }
+    ```
+  
+* 2016-04-16: 0.3.1:
+  - also handle previously uploaded file in PUT /ont
+  
+* 2016-04-11/12: 0.3.1:
+  - initial version of POST /ont/upload to perform first step toward registering an ontology
+    from an uploaded file.
+    This operation returns the location of such local file as well as ontology basic 
+	information/metadata for the client (orr-portal) to continue registration sequence. 
+	The uploaded file is stored under baseDirectory/uploads/.
+	Various supporting elements copied from previous mmiorr project; TODO: clean up when time permits.
+	These elements include support for accepting file in OWL/XML (using OWL API library)
+	
+  - POST /ont now also accepts info about previously uploaded file to perform the registration:
+    - if "file" is given, then uploaded file is included in the request (as in previous version)
+	- else if "uploadedFilename", then gets the file from previously uploaded file
+	
+  - GET /user/username: include the organizations the requested user is member of
+	
+  - actually use a local copy of original http://purl.org/wmo/seaice/iceOfLandOrigin (which currently 
+    redirects to http://ssiii.googlecode.com/svn/trunk/ontology/ice-of-land-origin.owl) as an OWL/XML
+    file for testing purposes (I was initially using one with some changes made by ORR). 
+  
+* 2016-04-10: 0.3.1:
+  - include 'extra' list in verification of admin user
+	- use verifyIsAdminOrExtra() instead of verifyIsAuthenticatedUser("admin")
+	- use verifyIsUserOrAdminOrExtra(Set(userName)) instead of verifyIsAuthenticatedUser(userName, "admin")
+  
+* 2016-04-07: 0.3.1:
+  - use input stream when reading in uploaded ontology and in ontology format conversion.
+    Now, the associated Jena warnings are gone, and, as a good test, loading/converting the 
+    CF standard name ontology now succeeds
+    (the error was: ERROR org.apache.jena.riot - {E213} Input length = 1)
+  - refactor model read as preparation for more appropriate mechanism using input stream and not reader
+  
+  - consistently use similar user verification (try basic auth then JWT) in various operations
+  - add requireAuthenticatedUser to be called wherever an authenticated user is expected
+  - increase upload max size to 10MB
+  - some debugging enabled for ontology upload operation
+  - print stacktrace for 500 error code
+  
+* 2016-04-05: 0.3.1:
+  - dockerizing ...
+  
 * 2016-03-06: 0.3.1:
   - skip testing of TripleStoreServiceAgRest, SelfHostedOntController
   - more org tests

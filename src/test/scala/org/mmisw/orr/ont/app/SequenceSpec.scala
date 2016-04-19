@@ -7,7 +7,7 @@ import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.mmisw.orr.ont._
 import org.mmisw.orr.ont.auth.authUtil
-import org.mmisw.orr.ont.service.{TripleStoreService, OntService, UserService}
+import org.mmisw.orr.ont.service._
 import org.mmisw.orr.ont.swld.ontUtil
 import org.scalatra.test.specs2._
 import org.specs2.mock.Mockito
@@ -407,9 +407,75 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     }
   }
 
-  val ont1Uri  = "http://example.org/ont1"
   val ont1File = new File("src/test/resources/ont1.rdf")
+  val ont1Uri  = "http://example.org/ont1"
   val format = "rdf"
+  val map0 = Map("format" -> format)
+  var uploadedFileInfoOpt: Option[UploadedFileInfo] = None
+
+  "Upload RDF file (POST /ont/upload)" should {
+    "fail with no credentials" in {
+      post("/ont/upload", map0, Map("file" -> ont1File)) {
+        status must_== 401
+      }
+    }
+
+    "succeed with user credentials and return expected info" in {
+      post("/ont/upload", map0, Map("file" -> ont1File), headers = userHeaders) {
+        status must_== 200
+        val uploadedFileInfo = parse(body).extract[UploadedFileInfo]
+        println(s"uploadedFileInfo=$uploadedFileInfo")
+        uploadedFileInfoOpt = Some(uploadedFileInfo)
+        uploadedFileInfo.userName must_== userName
+        uploadedFileInfo.format must_== "rdf"
+        val possibleOntologyUris = uploadedFileInfo.possibleOntologyUris
+        val uris = possibleOntologyUris.keySet
+        uris must_== Set("http://example.org/ont1")
+      }
+    }
+  }
+
+  "Upload OWL file (POST /ont/upload)" should {
+    val owlFile = new File("src/test/resources/ice-of-land-origin.owl")
+    "succeed with user credentials and return expected info" in {
+      post("/ont/upload", Map("format" -> "owl"), Map("file" -> owlFile), headers = userHeaders) {
+        status must_== 200
+        val b = body
+        println(s"upload response body=$b")
+        val uploadedFileInfo = parse(b).extract[UploadedFileInfo]
+        println(s"uploadedFileInfo=$uploadedFileInfo")
+        uploadedFileInfo.userName must_== userName
+        uploadedFileInfo.format must_== "rdf"
+        val possibleOntologyUris = uploadedFileInfo.possibleOntologyUris
+        val uris = possibleOntologyUris.keySet
+        uris must_== Set("http://purl.org/wmo/seaice/iceOfLandOrigin#")
+      }
+    }
+  }
+
+  "Register a new ont (POST /ont) whose file has been previously uploaded" should {
+    "succeed with user credentials" in {
+      val uploadedOntUri = ont1Uri + "_uploaded"
+      val uploadedFileInfo = uploadedFileInfoOpt.get
+      val mapForUploaded = Map("uri" -> uploadedOntUri,
+        "name" -> "ont with file previously uploaded",
+        "orgName" -> orgName,
+        "userName" -> userName,
+        "uploadedFilename" -> uploadedFileInfo.filename,
+        "uploadedFormat"   -> uploadedFileInfo.format
+      )
+      post("/ont", mapForUploaded, headers = userHeaders) {
+        val b = body
+        logger.debug(s"response body=$b  status=$status")
+        status must_== 201
+        val res = parse(b).extract[OntologyResult]
+        registeredVersion = res.version
+        logger.debug(s"registeredVersion=$registeredVersion")
+        res.uri must_== uploadedOntUri
+      }
+    }
+  }
+
   val map1 = Map("uri" -> ont1Uri,
     "name" -> "some ont name",
     "orgName" -> orgName,

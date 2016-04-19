@@ -20,7 +20,9 @@ class UserController(implicit setup: Setup) extends BaseController
    * Gets all users
    */
   get("/") {
-    userService.getUsers() map getUserJson
+    userService.getUsers() map { u =>
+      grater[UserResult].toCompactJSON(getUserResult(u))
+    }
   }
 
   /*
@@ -28,7 +30,8 @@ class UserController(implicit setup: Setup) extends BaseController
    */
   get("/:userName") {
     val userName = require(params, "userName")
-    getUserJson(getUser(userName))
+    val res = getUserResult(getUser(userName))
+    res.copy(organizations = orgService.getUserOrganizations(userName))
   }
 
   // username reminder
@@ -154,13 +157,13 @@ class UserController(implicit setup: Setup) extends BaseController
     val update = user.copy(password = userAuth.encryptPassword(password))
     Try(usersDAO.update(MongoDBObject("_id" -> userName), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
-      case Failure(exc)    => error(500, s"update failure = $exc")
+      case Failure(exc)    => error500(exc)
     }
 
     // remove token
     Try(setup.db.pwrDAO.remove(pwr, WriteConcern.Safe)) match {
       case Success(result) =>
-      case Failure(exc)    => error(500, s"update failure = $exc")
+      case Failure(exc)    => error500(exc)
     }
 
     // TODO: update firebase.
@@ -248,17 +251,17 @@ class UserController(implicit setup: Setup) extends BaseController
     val userName = require(params, "userName")
     logger.debug(s"PUT userName=$userName")
     val map = body()
-    verifyIsAuthenticatedUser(userName, "admin")
+    verifyIsUserOrAdminOrExtra(Set(userName))
 
     userService.updateUser(userName, toStringMap(map), Some(DateTime.now()))
   }
 
   /*
    * Removes a user account.
-   * Only "admin" can do this.
+   * Only an "admin" can do this.
    */
   delete("/:userName") {
-    verifyAuthenticatedUser("admin")
+    verifyIsAdminOrExtra()
     val userName = require(params, "userName")
     val user = getUser(userName)
     deleteUser(user)
@@ -266,18 +269,18 @@ class UserController(implicit setup: Setup) extends BaseController
 
   // for initial testing of authentication from unit tests
   post("/!/testAuth") {
-    verifyAuthenticatedUser("admin")
+    verifyIsAdminOrExtra()
     UserResult("admin")
   }
 
   delete("/!/all") {
-    verifyAuthenticatedUser("admin")
+    verifyIsAdminOrExtra()
     usersDAO.remove(MongoDBObject())
   }
 
   ///////////////////////////////////////////////////////////////////////////
 
-  def getUserJson(dbUser: db.User) = {
+  def getUserResult(dbUser: db.User): UserResult = {
     var res = UserResult(
       userName   = dbUser.userName,
       firstName  = Some(dbUser.firstName),
@@ -292,7 +295,7 @@ class UserController(implicit setup: Setup) extends BaseController
         updated    = dbUser.updated
       )
     }
-    grater[UserResult].toCompactJSON(res)
+    res
   }
 
   def createUser(userName: String,
@@ -311,7 +314,7 @@ class UserController(implicit setup: Setup) extends BaseController
         Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
           case Success(r) => UserResult(userName, registered = Some(obj.registered))
 
-          case Failure(exc)  => error(500, s"insert failure = $exc")
+          case Failure(exc)  => error500(exc)
           // TODO note that it might be a duplicate key in concurrent registration
         }
 
@@ -347,7 +350,7 @@ class UserController(implicit setup: Setup) extends BaseController
   def deleteUser(user: db.User) = {
     Try(usersDAO.remove(user, WriteConcern.Safe)) match {
       case Success(result) => UserResult(user.userName, removed = Some(DateTime.now()))
-      case Failure(exc)    => error(500, s"update failure = $exc")
+      case Failure(exc)    => error500(exc)
     }
   }
 

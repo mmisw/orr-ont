@@ -1,7 +1,7 @@
 package org.mmisw.orr.ont.app
 
 import org.mmisw.orr.ont.auth.{AuthUser, AuthenticationSupport}
-import org.mmisw.orr.ont.service.{JwtUtil, NoSuchUser, UserService}
+import org.mmisw.orr.ont.service.{OrgService, JwtUtil, NoSuchUser, UserService}
 import org.mmisw.orr.ont.{Setup, db}
 import org.scalatra.auth.strategy.BasicAuthStrategy
 
@@ -27,6 +27,7 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
   protected val ontDAO      = setup.db.ontDAO
 
   protected val userService = new UserService
+  protected val orgService = new OrgService
 
   protected val userAuth    = setup.db.authenticator
 
@@ -49,35 +50,57 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
     }
   }
 
+  protected def requireAuthenticatedUser = authenticatedUser.getOrElse(bug("authenticatedUser should be defined"))
+
   protected def getFromParamsOrBody(name: String): Option[String] = {
     if (params.contains(name)) params.get(name)
     else for (body <- bodyOpt(); value <- getString(body, name)) yield value
   }
 
-  protected def checkIsExtra = authenticatedUser match {
+  protected def checkIsExtra: Boolean = authenticatedUser match {
     case Some(u) => extra.contains(u.userName)
     case None    => false
   }
-  protected def checkIsAdminOrExtra = authenticatedUser match {
+
+  protected def checkIsAdminOrExtra: Boolean = authenticatedUser match {
     case Some(u) => "admin" == u.userName || extra.contains(u.userName)
     case None    => false
   }
+
   /**
    * True only if the authenticated user (if any) is one of the given user names,
    * or is "admin", or is one of the extras.
    */
-  protected def checkIsUserOrAdminOrExtra(userNames: String*) = authenticatedUser match {
-    case Some(u) => userNames.contains(u.userName) || "admin" == u.userName || extra.contains(u.userName)
-    case None    => false
-  }
-  protected def checkIsUserOrAdminOrExtra(userNames: Set[String]) = authenticatedUser match {
+  protected def checkIsUserOrAdminOrExtra(userNames: String*): Boolean = authenticatedUser match {
     case Some(u) => userNames.contains(u.userName) || "admin" == u.userName || extra.contains(u.userName)
     case None    => false
   }
 
-  protected def verifyIsAuthenticatedUser(userNames: String*): Unit = authenticatedUser match {
-    case Some(u) if userNames.contains(u.userName) =>
-    case _ => halt(401, s"unauthorized")
+  protected def checkIsUserOrAdminOrExtra(userNames: Set[String]): Boolean = authenticatedUser match {
+    case Some(u) => userNames.contains(u.userName) || "admin" == u.userName || extra.contains(u.userName)
+    case None    => false
+  }
+
+  protected def verifyIsAdminOrExtra(): Unit = {
+    val u = authenticatedUser.getOrElse(halt(401, s"unauthorized"))
+    val ok = "admin" == u.userName || extra.contains(u.userName)
+    if (!ok) halt(403, s"unauthorized")
+  }
+
+  protected def verifyIsUserOrAdminOrExtra(userNames: Set[String]): Unit = {
+    val u = authenticatedUser.getOrElse(halt(401, s"unauthorized"))
+    val ok = userNames.contains(u.userName) || "admin" == u.userName || extra.contains(u.userName)
+    if (!ok) halt(403, s"unauthorized")
+  }
+
+  protected def verifyIsAuthenticatedUser(userNames: String*): Unit = {
+    val u = authenticatedUser.getOrElse(halt(401, s"unauthorized"))
+    if (!userNames.contains(u.userName)) halt(403, s"unauthorized")
+  }
+
+  protected def verifyIsAuthenticatedUser(userNames: Set[String]): Unit = {
+    val u = authenticatedUser.getOrElse(halt(401, s"unauthorized"))
+    if (!userNames.contains(u.userName)) halt(403, s"unauthorized")
   }
 
 //  ///////////////////////////////////////////////////////////////////////////
@@ -134,21 +157,11 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
 //    }
 //  }
 
-  protected def verifyAuthenticatedUser(userNames: String*) {
-    basicAuth
-    if (!userNames.contains(user.userName)) halt(403, s"unauthorized")
-  }
-
-  protected def verifyAuthenticatedUser(userNames: Set[String]) {
-    basicAuth
-    if (!userNames.contains(user.userName)) halt(403, s"unauthorized")
-  }
-
   protected def getUser(userName: String): db.User = {
     Try(userService.getUser(userName)) match {
       case Success(res)            => res
       case Failure(exc: NoSuchUser) => error(404, s"'$userName' user is not registered")
-      case Failure(exc)            => error(500, exc.getMessage)
+      case Failure(exc)             => error500(exc)
     }
   }
 
