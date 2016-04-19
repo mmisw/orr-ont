@@ -5,7 +5,7 @@
     RDFS.label, Omv.name, DCTerms.title, DC_11.title, DC_10.title
   - The reported info upon uploading a file looks thus:
 
-    ```
+    ```json
     {
         "filename": "1461043897684.rdf",
         "format": "rdf",
