@@ -94,10 +94,13 @@ object ontFileLoader extends AnyRef with Logging {
 
     // try namespace associated with empty prefix:
     Option(model.getNsPrefixURI("")) foreach { uriForEmptyPrefix =>
-      add(uriForEmptyPrefix, "Namespace associated with empty prefix")
-      val uri = uriForEmptyPrefix.replaceAll("(#|/)+$", "")
-      if (uri != uriForEmptyPrefix) {
-        add(uri, "Namespace associated with empty prefix but with no trailing separators")
+      // do not add uriForEmptyPrefix if it has already been added per xml:base above
+      if (map.get(uriForEmptyPrefix).isEmpty) {
+        add(uriForEmptyPrefix, "Namespace associated with empty prefix")
+        val uri = uriForEmptyPrefix.replaceAll("(#|/)+$", "")
+        if (uri != uriForEmptyPrefix) {
+          add(uri, "Namespace associated with empty prefix but with no trailing separators")
+        }
       }
     }
 
