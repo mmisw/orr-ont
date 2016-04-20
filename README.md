@@ -40,8 +40,10 @@ These notes are WiP while the complete build/deployment workflow itself is refin
     
 > bochica:
 >
+>    ```
 >    BASE_DIR=/Users/carueda/orr-ont-base-directory
 >    MONGO_DATA=${BASE_DIR}/mongo-dbpath
+>    ```
 >
     
     mkdir -p ${BASE_DIR}
@@ -108,10 +110,12 @@ These notes are WiP while the complete build/deployment workflow itself is refin
 > and it's not immediately clear how to "intercept" requests/responses 
 > to add headers (CORS), etc.
 > 
+>    ```
 >    docker run --name nginx-proxy -d \
 >           -p 80:80 \
 >           -v /var/run/docker.sock:/tmp/docker.sock:ro \
 >           jwilder/nginx-proxy
+>    ```
 > 
 
 ### Use
@@ -121,5 +125,7 @@ These notes are WiP while the complete build/deployment workflow itself is refin
 
 > bochica:
 >
+>    ```
 >    open http://`docker-machine ip`/orr-ont
+>    ```
 >
