@@ -11,7 +11,8 @@
     <appender-ref ref="STDOUT" />
   </root>
 
-  <logger name="org.mmisw.orr.ont.app" level="DEBUG" />
-  <logger name="org.mmisw.orr.ont.service" level="DEBUG" />
-  <logger name="org.mmisw.orr.ont.swld" level="DEBUG" />
+  <logger name="org.mmisw.orr.ont.db"        level="INFO" />
+  <logger name="org.mmisw.orr.ont.app"       level="DEBUG" />
+  <logger name="org.mmisw.orr.ont.service"   level="DEBUG" />
+  <logger name="org.mmisw.orr.ont.swld"      level="DEBUG" />
 </configuration>

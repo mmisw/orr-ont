@@ -1,8 +1,7 @@
 package org.mmisw.orr.ont
 
 import com.typesafe.scalalogging.{StrictLogging => Logging}
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import org.mmisw.orr.ont.db.Db
 import org.mmisw.orr.ont.util.IEmailer
 
@@ -22,7 +21,11 @@ class Setup(val config: Config,
   private[this] var dbOpt: Option[Db] = None
 
   // todo omit/obfuscate any passwords in output logging
-  logger.debug(s"Loaded configuration: $config")
+  if (logger.underlying.isInfoEnabled()) {
+    val options: ConfigRenderOptions = ConfigRenderOptions.defaults
+      .setFormatted(true).setComments(false).setOriginComments(false)
+    logger.info(s"mongoConfig = ${config.root.render(options)}")
+  }
 
   val mongoConfig = {
     val mc = config.getConfig("mongo")

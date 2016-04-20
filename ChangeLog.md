@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-04-20: 0.3.1:
+  - allow {template.}orront.conf overrides via environment variables
+  
 * 2016-04-19: 0.3.1:
   - upload file: report metadata for each possible ontology URI:
 
