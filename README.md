@@ -87,6 +87,7 @@ These notes are WiP while the complete build/deployment workflow itself is refin
            -e MONGO_HOST=mongo \
            -e MONGO_PORT=27017 \
            -e AGRAPH_HOST=agraph \
+           -e AGRAPH_PORT=10035 \
            -v `pwd`/orront.conf:/etc/orront.conf \
            -v ${BASE_DIR}:/opt/orr-ont-base-directory \
            -p 9090:8080 \
@@ -96,7 +97,6 @@ These notes are WiP while the complete build/deployment workflow itself is refin
 
     docker run --name httpd -d \
            -p 80:80 \
-           --link mongo \
            --link agraph \
            --link orr-ont \
            mmisw/httpd
