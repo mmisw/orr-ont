@@ -4,7 +4,7 @@
 
 
 `orr-ont` is a new version of the `Ont` service.
-See wiki.
+See [wiki](https://github.com/mmisw/orr-ont/wiki).
 
 
 # Build and deployment
@@ -120,7 +120,7 @@ These notes are WiP while the complete build/deployment workflow itself is refin
 
 ### Use
 
-    open http://localhost:8080/orr-ont
+    open http://localhost/orr-ont
 
 
 > bochica:
