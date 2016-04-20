@@ -38,7 +38,7 @@ These notes are WiP while the complete build/deployment workflow itself is refin
     BASE_DIR=/home/carueda/orr-ont-base-directory
     MONGO_DATA=${BASE_DIR}/mongo-data
     
-> bochica:
+> my mac:
 >
 >    ```
 >    BASE_DIR=/Users/carueda/orr-ont-base-directory
@@ -76,10 +76,7 @@ These notes are WiP while the complete build/deployment workflow itself is refin
 #### AllegroGraph
 
     docker run --name agraph -d \
-           -e VIRTUAL_HOST=sparql.bochica.net \
-           -e VIRTUAL_PORT=10035 \
            -m 1g -p 10000-10035:10000-10035 franzinc/agraph
-
 
     
 #### orr-ont
@@ -87,8 +84,6 @@ These notes are WiP while the complete build/deployment workflow itself is refin
     docker run --name orr-ont -d \
            --link mongo \
            --link agraph \
-           --expose 8080 \
-           -e VIRTUAL_HOST=bochica.net \
            -v `pwd`/orront.conf:/etc/orront.conf \
            -v ${BASE_DIR}:/opt/orr-ont-base-directory \
            -p 9090:8080 \
@@ -110,20 +105,30 @@ These notes are WiP while the complete build/deployment workflow itself is refin
 > and it's not immediately clear how to "intercept" requests/responses 
 > to add headers (CORS), etc.
 > 
+> Basically, nginx-proxy would be run as this:
+>
 >    ```
 >    docker run --name nginx-proxy -d \
 >           -p 80:80 \
 >           -v /var/run/docker.sock:/tmp/docker.sock:ro \
 >           jwilder/nginx-proxy
 >    ```
-> 
+>
+> AllegroGraph would be started with, for example,
+> `-e VIRTUAL_HOST=sparql.bochica.net -e VIRTUAL_PORT=10035`,
+> and orr-ont with
+> `-e VIRTUAL_HOST=bochica.net -e VIRTUAL_PORT=8080`;
+> then one could open AG at http://sparql.bochica.net 
+> and the orr-ont at http://bochica.net/orr-ont
+>
+
 
 ### Use
 
-    open http://localhost/orr-ont
+Open http://localhost/orr-ont in your browser.
 
 
-> bochica:
+> my mac:
 >
 >    ```
 >    open http://`docker-machine ip`/orr-ont
