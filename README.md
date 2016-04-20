@@ -99,8 +99,8 @@ These notes are WiP while the complete build/deployment workflow itself is refin
            mmisw/httpd
                
 >
-> [nginx-proxy](https://github.com/jwilder/nginx-proxy) is very interesting ... 
-> but it currently does not support paths
+> [nginx-proxy](https://github.com/jwilder/nginx-proxy) 
+> looks very interesting ... but it currently does not support paths
 > (see eg., [this](https://github.com/jwilder/nginx-proxy/pull/254)),
 > and it's not immediately clear how to "intercept" requests/responses 
 > to add headers (CORS), etc.
@@ -115,11 +115,11 @@ These notes are WiP while the complete build/deployment workflow itself is refin
 >    ```
 >
 > AllegroGraph would be started with, for example,
-> `-e VIRTUAL_HOST=sparql.bochica.net -e VIRTUAL_PORT=10035`,
+> `-e VIRTUAL_HOST=sparql.somehost.net -e VIRTUAL_PORT=10035`,
 > and orr-ont with
-> `-e VIRTUAL_HOST=bochica.net -e VIRTUAL_PORT=8080`;
-> then one could open AG at http://sparql.bochica.net 
-> and the orr-ont at http://bochica.net/orr-ont
+> `-e VIRTUAL_HOST=somehost.net -e VIRTUAL_PORT=8080`;
+> then one could open AG at http://sparql.somehost.net 
+> and the orr-ont at http://somehost.net/orr-ont
 >
 
 
