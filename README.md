@@ -8,69 +8,104 @@ See wiki.
 
 **NOTE: these notes are still terse ..
 
-## build package
+## build `orr-ont` package
 
-	sbt package
-	
-## build and push image
+    sbt package
+    
+## build and push `mmisw/orr-ont` image
 
-	docker build -t mmisw/orr-ont --no-cache .
-	docker push mmisw/orr-ont
-	
-## deploy on target machine
+    docker build -t mmisw/orr-ont --no-cache .
+    docker push mmisw/orr-ont
+    
 
-Determine host base directory to store files (mongo data and ontology files), 
-e.g.,
+## deployment
 
-	mkdir -p /home/carueda/orr-ont-base-directory
-	
-### run mongo
+### docker images:
 
-	docker pull mvertes/alpine-mongo
+    docker pull mongo
+    docker pull franzinc/agraph
+    docker pull mmisw/httpd
+    docker pull mmisw/orr-ont
+    
+  
+### preparations
 
-	mkdir -p /home/carueda/orr-ont-base-directory/mongo-data
-	
-	
-BOCHICA:
+    BASE_DIR=/home/carueda/orr-ont-base-directory
+    MONGO_DATA=${BASE_DIR}/mongo-data
+    
+> bochica:
+>	
+>	BASE_DIR=/Users/carueda/orr-ont-base-directory
+>	MONGO_DATA=${BASE_DIR}/mongo-dbpath
+>	
+    
+    mkdir -p ${BASE_DIR}
+    mkdir -p ${MONGO_DATA}
+    
+    scp somewhere:template.orront.conf ./orront.conf
+    vim ./orront.conf   # edit if needed
+    
 
-	docker run -d --name mongo \
-	       -p 27017:27017 \
-           -v /Users/carueda/orr-ont-base-directory/mongo-dbpath:/data/db \
-      	   mvertes/alpine-mongo
-	
-REMOTE:
+    
+### run containers
 
-	docker run -d --name mongo \
-	       -p 27017:27017 \
-           -v /home/carueda/orr-ont-base-directory/mongo-data:/data/db \
-      	   mvertes/alpine-mongo
+#### mongo
 
-	
-### configure orr-ont
+    docker run --name mongo -d \
+           -p 27017:27017 \
+           -v {MONGO_DATA}:/data/db \
+           mongo
+           
+> Note (MacOS): Due to VirtualBox bug, -v not supported so no way to have 
+> a local share for the mongo data.
+>
+>    ```
+>    docker run --name mongo -d \
+>           -p 27017:27017 \
+>           mongo
+>    ```
+           
+    
+#### allegrograph
 
-	scp somewhere:template.orront.conf /home/carueda/orront.conf
-	vim /home/carueda/orront.conf   # edit if needed
-	
-### deploy and run orr-ont
+    docker run --name agraph -d \
+           -e VIRTUAL_HOST=sparql.bochica.net \
+           -e VIRTUAL_PORT=10035 \
+           -m 1g -p 10000-10035:10000-10035 franzinc/agraph
 
-	docker pull mmisw/orr-ont
- 
- 
-BOCHICA:
 
-	docker run -d --name orr-ont \
-		   --link mongo \
-	       -v /Users/carueda/github/orr-ont/orront.conf:/etc/orront.conf \
-	       -v /tmp/docker-mongo-data:/opt/orr-ont-base-directory \
-	       -p 9090:8080 \
-	       mmisw/orr-ont
+    
+#### orr-ont
 
-REMOTE:
-NOTE: How to "expose" host 10035 (AllegroGraph not containerized) to the orr-ont container??
+    docker run --name orr-ont -d \
+           --link mongo \
+           --link agraph \
+           --expose 8080 \
+           -e VIRTUAL_HOST=bochica.net \
+           -v `pwd`/orront.conf:/etc/orront.conf \
+           -v ${BASE_DIR}:/opt/orr-ont-base-directory \
+           -p 9090:8080 \
+           mmisw/orr-ont
 
-	docker run -d --name orr-ont \
-		   --link mongo \
-	       -v /home/carueda/orront.conf:/etc/orront.conf \
-	       -v /home/carueda/orr-ont-base-directory:/opt/orr-ont-base-directory \
-	       -p 9090:8080 \
-	       mmisw/orr-ont
+#### http proxy
+
+    docker run --name httpd -d \
+           -p 80:80 \
+           --link mongo \
+           --link agraph \
+           --link orr-ont \
+           mmisw/httpd
+               
+>
+> nginx-proxy is very interesting ... but does not yet support paths,
+> see eg., https://github.com/jwilder/nginx-proxy/pull/254
+> 
+> 	docker run --name nginx-proxy -d \
+> 	           -p 80:80 \
+> 	           -v /var/run/docker.sock:/tmp/docker.sock:ro \
+> 	           jwilder/nginx-proxy
+> 
+
+### use
+
+    open http://`docker-machine ip`/orr-ont
