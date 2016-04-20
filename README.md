@@ -6,21 +6,26 @@
 `orr-ont` is a new version of the `Ont` service.
 See wiki.
 
-**NOTE: these notes are still terse ..
 
-## build `orr-ont` package
+# Build and deployment
+
+**NOTE**: 
+These notes are WiP while the complete build/deployment workflow itself is refined.
+
+
+## Build `orr-ont` package
 
     sbt package
     
-## build and push `mmisw/orr-ont` image
+## Build and push `mmisw/orr-ont` image
 
     docker build -t mmisw/orr-ont --no-cache .
     docker push mmisw/orr-ont
     
 
-## deployment
+## Deployment
 
-### docker images:
+### Docker images:
 
     docker pull mongo
     docker pull franzinc/agraph
@@ -28,16 +33,16 @@ See wiki.
     docker pull mmisw/orr-ont
     
   
-### preparations
+### Preparations
 
     BASE_DIR=/home/carueda/orr-ont-base-directory
     MONGO_DATA=${BASE_DIR}/mongo-data
     
 > bochica:
->	
->	BASE_DIR=/Users/carueda/orr-ont-base-directory
->	MONGO_DATA=${BASE_DIR}/mongo-dbpath
->	
+>
+>    BASE_DIR=/Users/carueda/orr-ont-base-directory
+>    MONGO_DATA=${BASE_DIR}/mongo-dbpath
+>
     
     mkdir -p ${BASE_DIR}
     mkdir -p ${MONGO_DATA}
@@ -47,9 +52,9 @@ See wiki.
     
 
     
-### run containers
+### Run containers
 
-#### mongo
+#### Mongo
 
     docker run --name mongo -d \
            -p 27017:27017 \
@@ -66,7 +71,7 @@ See wiki.
 >    ```
            
     
-#### allegrograph
+#### AllegroGraph
 
     docker run --name agraph -d \
            -e VIRTUAL_HOST=sparql.bochica.net \
@@ -87,7 +92,7 @@ See wiki.
            -p 9090:8080 \
            mmisw/orr-ont
 
-#### http proxy
+#### HTTP proxy
 
     docker run --name httpd -d \
            -p 80:80 \
@@ -97,15 +102,24 @@ See wiki.
            mmisw/httpd
                
 >
-> nginx-proxy is very interesting ... but does not yet support paths,
-> see eg., https://github.com/jwilder/nginx-proxy/pull/254
+> [nginx-proxy](https://github.com/jwilder/nginx-proxy) is very interesting ... 
+> but it currently does not support paths
+> (see eg., [this](https://github.com/jwilder/nginx-proxy/pull/254)),
+> and it's not immediately clear how to "intercept" requests/responses 
+> to add headers (CORS), etc.
 > 
-> 	docker run --name nginx-proxy -d \
-> 	           -p 80:80 \
-> 	           -v /var/run/docker.sock:/tmp/docker.sock:ro \
-> 	           jwilder/nginx-proxy
+>    docker run --name nginx-proxy -d \
+>           -p 80:80 \
+>           -v /var/run/docker.sock:/tmp/docker.sock:ro \
+>           jwilder/nginx-proxy
 > 
 
-### use
+### Use
 
-    open http://`docker-machine ip`/orr-ont
+    open http://localhost:8080/orr-ont
+
+
+> bochica:
+>
+>    open http://`docker-machine ip`/orr-ont
+>
