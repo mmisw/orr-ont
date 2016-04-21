@@ -1,6 +1,9 @@
 ## change log ##
 
 * 2016-04-21: 0.3.1:
+  - use `--volumes-from orr-ont` for agraph container to share `/opt/orr-ont-base-directory`
+    so we can have AG to load files directly from the share
+
   - triple store initialization: 
   	- if missing, create AG repository (with name agraph.repoName in given configuration) 
   	- if missing, create AG anonymous user (and give it read access to the agraph.repoName)

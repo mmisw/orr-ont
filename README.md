@@ -76,7 +76,12 @@ These notes are WiP while the complete build/deployment workflow itself is refin
 #### AllegroGraph
 
     docker run --name agraph -d \
+           --volumes-from orr-ont \
            -m 1g -p 10000-10035:10000-10035 franzinc/agraph
+
+`--volumes-from orr-ont` is in particular to share `/opt/orr-ont-base-directory`
+so orr-ont can more efficiently load ontologies into the triple store
+by using the "file" parameter in corresponding AG REST call.
 
     
 #### orr-ont
