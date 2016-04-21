@@ -19,7 +19,10 @@ import scala.util.{Failure, Success, Try}
  * Controller for the "ont" API.
  */
 @MultipartConfig(maxFileSize = 10*1024*1024)
-class OntController(implicit setup: Setup, ontService: OntService) extends BaseOntController
+class OntController(implicit setup: Setup,
+                    ontService: OntService,
+                    tsService: TripleStoreService
+                   ) extends BaseOntController
       with FileUploadSupport with Logging {
 
   //configureMultipartHandling(MultipartConfig(maxFileSize = Some(5 * 1024 * 1024)))
@@ -195,7 +198,9 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
 
     Try(ontService.createOntology(uri, name, version, version_status,
           contact_name, date, user.userName, orgName, ontFileWriter)) match {
-      case Success(ontologyResult) => ontologyResult
+      case Success(ontologyResult) =>
+        loadOntologyInTripleStore(uri, reload = false)
+        ontologyResult
 
       case Failure(exc: InvalidUri) => error(400, exc.details)
       case Failure(exc: OntologyAlreadyRegistered) => error(409, exc.details)
@@ -305,7 +310,9 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
 
     Try(ontService.createOntologyVersion(uri, nameOpt, user.userName, version,
             version_status, contact_name, date, ontFileWriter)) match {
-      case Success(ontologyResult) => ontologyResult
+      case Success(ontologyResult) =>
+        loadOntologyInTripleStore(uri, reload = true)
+        ontologyResult
 
       case Failure(exc: NoSuch)                       => error(404, exc.details)
       case Failure(exc: NotAMember)                   => error(401, exc.details)
@@ -323,13 +330,26 @@ class OntController(implicit setup: Setup, ontService: OntService) extends BaseO
     val name = require(params, "name")
 
     Try(ontService.updateOntologyVersion(uri, version, name, user.userName)) match {
-      case Success(ontologyResult) => ontologyResult
+      case Success(ontologyResult) =>
+        loadOntologyInTripleStore(uri, reload = true)
+        ontologyResult
 
       case Failure(exc: NoSuch)                       => error(404, exc.details)
       case Failure(exc: NotAMember)                   => error(401, exc.details)
       case Failure(exc: CannotUpdateOntologyVersion)  => error500(exc)
       case Failure(exc)                               => error500(exc)
     }
+  }
+
+  private def loadOntologyInTripleStore(uri: String, reload: Boolean): Unit = {
+    if (setup.testing.isEmpty) {
+      val re = if (reload) "re" else ""
+      tsService.loadUriFromLocal(uri, reload) match {
+        case Right(content)  => logger.info(s"${re}loaded ontology uri=$uri in triple store $content")
+        case Left(exc)       => logger.warn(s"could not ${re}load ontology in triple store", exc)
+      }
+    }
+    else logger.warn("loadOntologyInTripleStore: under testing mode so nothing done here")
   }
 
   /**

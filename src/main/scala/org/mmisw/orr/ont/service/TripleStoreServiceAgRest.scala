@@ -6,6 +6,7 @@ import org.json4s.{DefaultFormats, Formats}
 import org.json4s.native.JsonParser
 import org.mmisw.orr.ont.Setup
 import org.mmisw.orr.ont.auth.authUtil
+import org.mmisw.orr.ont.swld.ontUtil
 
 import scala.concurrent.Promise
 import scala.util.{Failure, Success, Try}
@@ -42,6 +43,43 @@ with TripleStoreService with Logging {
     val res = prom.future()
     println(s"RES=$res")
     res
+  }
+
+  /**
+    * Loads a given ontology in the triple store assuming that the AG server and
+    * this orr-ont instance share the same data volume.
+    *
+    * (This operation uses the "file" parameter in the corresponding AG REST call
+    * to load the statements in the file.)
+    *
+    * If reload is true, the contents are replaced.
+    */
+  def loadUriFromLocal(uri: String, reload: Boolean = false): Either[Throwable, String] = {
+    val (_, _, version) = ontService.resolveOntology(uri)
+    val (file, actualFormat) = ontService.getOntologyFile(uri, version, "rdf")
+    val contentType = ontUtil.mimeMappings(actualFormat)
+
+    val absPath = file.getAbsolutePath
+    logger.debug(s"loadUriFromLocal: uri=$uri reload=$reload absPath=$absPath contentType=$contentType")
+
+    val req = (svc / "statements")
+      .setContentType(formats(actualFormat), charset = "UTF-8")
+      .addQueryParameter("context", "\"" + uri + "\"")
+      .addQueryParameter("file", absPath)
+      .setHeader("Content-Type", contentType)
+      .setHeader("Accept", formats("json"))
+      .setHeader("Authorization", authUtil.basicCredentials(userName, password))
+
+    logger.debug(s"loadUriFromLocal: req=$req")
+
+    val future = dispatch.Http((if (reload) req.PUT else req.POST) OK as.String)
+
+    val prom = Promise[Either[Throwable, String]]()
+    future onComplete {
+      case Success(content)   => prom.complete(Try(Right(content)))
+      case Failure(exception) => prom.complete(Try(Left(exception)))
+    }
+    prom.future()
   }
 
   def loadUri(uri: String): Either[Throwable, String] =

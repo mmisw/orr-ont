@@ -1,6 +1,9 @@
 ## change log ##
 
 * 2016-04-21: 0.3.1:
+  - triple store: new loadUriFromLocal method to load the contents of an ontology
+    in the triple store. Assumes the AG and orr-ont servers share the 
+    `/opt/orr-ont-base-directory` directory, which is the case under the defined Docker scheme.
   - use `--volumes-from orr-ont` for agraph container to share `/opt/orr-ont-base-directory`
     so we can have AG to load files directly from the share
 

@@ -158,35 +158,37 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   /**
    * Creates a new ontology entry.
    */
-  def createOntology(uri: String, name: String, version: String, version_status: Option[String],
-                     contact_name: Option[String],
-                     date: String, userName: String, orgName: String,
-                     ontFileWriter: OntFileWriter) = {
+  def createOntology(uri:            String,
+                     name:           String,
+                     version:        String,
+                     version_status: Option[String],
+                     contact_name:   Option[String],
+                     date:           String,
+                     userName:       String,
+                     orgName:        String,
+                     ontFileWriter:  OntFileWriter) = {
 
-    ontDAO.findOneById(uri) match {
-      case None =>
-        validateUri(uri)
+    if (ontDAO.findOneById(uri).isDefined) throw OntologyAlreadyRegistered(uri)
 
-        val map = writeOntologyFile(uri, version, ontFileWriter)
-        val ontologyTypeOpt = map.get("ontologyType")
-        val resourceTypeOpt = map.get("resourceType")
+    validateUri(uri)
 
-        val ontVersion = OntologyVersion(name, userName, ontFileWriter.format, new DateTime(date),
-                                         version_status, contact_name,
-                                         ontologyType = ontologyTypeOpt,
-                                         resourceType = resourceTypeOpt)
+    val map = writeOntologyFile(uri, version, ontFileWriter)
+    val ontologyTypeOpt = map.get("ontologyType")
+    val resourceTypeOpt = map.get("resourceType")
 
-        val ont = Ontology(uri, Some(orgName), versions = Map(version -> ontVersion))
+    val ontVersion = OntologyVersion(name, userName, ontFileWriter.format, new DateTime(date),
+                                     version_status, contact_name,
+                                     ontologyType = ontologyTypeOpt,
+                                     resourceType = resourceTypeOpt)
 
-        Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
-          case Success(_) =>
-            OntologyResult(uri, version = Some(version), registered = Some(ontVersion.date))
+    val ont = Ontology(uri, Some(orgName), versions = Map(version -> ontVersion))
 
-          case Failure(exc) => throw CannotInsertOntology(uri, exc.getMessage)
-              // perhaps duplicate key in concurrent registration
-        }
+    Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
+      case Success(_) =>
+        OntologyResult(uri, version = Some(version), registered = Some(ontVersion.date))
 
-      case Some(ont) => throw OntologyAlreadyRegistered(uri)
+      case Failure(exc) => throw CannotInsertOntology(uri, exc.getMessage)
+          // perhaps duplicate key in concurrent registration
     }
   }
 

@@ -8,6 +8,8 @@ trait TripleStoreService {
 
   def getSize(contextOpt: Option[String] = None): Either[Throwable, String]
 
+  def loadUriFromLocal(uri: String, reload: Boolean = false): Either[Throwable, String]
+
   /**
    * Loads the given ontology in the triple store.
    */
