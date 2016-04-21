@@ -693,7 +693,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   /////////////////////
 
   "Get triple store size (GET /ts)" should {
-    "call tsService.getSizeget once" in {
+    "call tsService.getSize once" in {
       get("/ts", headers = adminHeaders) {
         status must_== 200
         there was one(tsService).getSize(None)
