@@ -1,13 +1,10 @@
 package org.mmisw.orr.ont.service
 
-/**
- * preliminary
- */
 trait TripleStoreService {
 
   def setFormats(formats: Map[String, String]): Unit
 
-  def createRepositoryIfMissing(): Either[Throwable, String]
+  def initialize(): Unit
 
   def getSize(contextOpt: Option[String] = None): Either[Throwable, String]
 

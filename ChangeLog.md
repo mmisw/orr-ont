@@ -1,9 +1,11 @@
 ## change log ##
 
 * 2016-04-21: 0.3.1:
-  - triple store: create AG repository if missing at initialization time.
-    Also add `POST /_repo` to explicit retry this operation in case the call at
-    init time fails (possibly due to AG server not running)
+  - triple store initialization: 
+  	- if missing, create AG repository (with name agraph.repoName in given configuration) 
+  	- if missing, create AG anonymous user (and give it read access to the agraph.repoName)
+    - add `POST /_init` to explicit execute triple store initialization (which will help 
+      in case the call at orr-ont init time fails possibly due to AG server not running)
 
 * 2016-04-20: 0.3.1:
   - allow {template.}orront.conf overrides via environment variables

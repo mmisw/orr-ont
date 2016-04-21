@@ -13,12 +13,12 @@ with Logging {
   tsService.setFormats(Map(formats.toSeq: _*))
 
   /*
-   * Create repo if not existing yet.
-   * See also post("/_repo") below, which will allow to re-attempt this
+   * triple store initialization.
+   * See also post("/_init") below, which will allow to re-attempt this
    * operation with an explicit request in case the call here fails for
    * some reason (possibly because the AG server was not running).
    */
-  tsService.createRepositoryIfMissing()
+  tsService.initialize()
 
   before() {
     verifyIsAdminOrExtra()
@@ -33,10 +33,10 @@ with Logging {
   }
 
   /*
-   * special request to re-try to create AG repo.
+   * special request to re-try to initialize triple store.
    */
-  post("/_repo") {
-    tsService.createRepositoryIfMissing()
+  post("/_init") {
+    tsService.initialize()
   }
 
   /*

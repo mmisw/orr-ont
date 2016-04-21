@@ -2,6 +2,8 @@ package org.mmisw.orr.ont.service
 
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import dispatch._
+import org.json4s.{DefaultFormats, Formats}
+import org.json4s.native.JsonParser
 import org.mmisw.orr.ont.Setup
 import org.mmisw.orr.ont.auth.authUtil
 
@@ -20,43 +22,18 @@ with TripleStoreService with Logging {
 
   def setFormats(formats: Map[String,String]): Unit = { this.formats = formats }
 
-  def createRepositoryIfMissing(): Either[Throwable, String] = {
-    // use getSize as a way to check whether the repository already exists
-    getSize() match {
-      case e@Right(content) =>
-        logger.debug("AG repository already exists")
-        e
-
-      case Left(exc) =>
-        logger.info(s"Could not get AG repository size (${exc.getMessage})." +
-          " Assuming non-existence. Will now attempt to create AG repository")
-        val prom = Promise[Either[Throwable, String]]()
-
-        // NOTE: Not using `svc` directly because host(orrEndpoint) adds a trailing slash
-        // to the URL thus making AG to fail with a 404
-        val req = url(s"http://$orrEndpoint")
-          .setHeader("Accept", formats("json"))
-          .setHeader("Authorization", authUtil.basicCredentials(userName, password))
-
-        dispatch.Http(req.PUT OK as.String) onComplete {
-          case Success(content) =>
-            prom.complete(Try(Right(content)))
-            logger.info(s"AG repository creation succeeded. content=$content")
-
-          case Failure(exception) => prom.complete(Try(Left(exception)))
-            logger.warn("AG repository creation failed", exception)
-        }
-        prom.future()
-    }
+  def initialize(): Unit = {
+    createRepositoryIfMissing()
+    createAnonymousUserIfMissing()
   }
 
   def getSize(contextOpt: Option[String] = None): Either[Throwable, String] = {
     val prom = Promise[Either[Throwable, String]]()
 
-    val sizeReq = contextOpt match {
+    val sizeReq = (contextOpt match {
       case Some(context) => (svc / "size").addQueryParameter("context", "\"" + context + "\"")
       case _ => svc / "size"
-    }
+    }).setHeader("Authorization", authUtil.basicCredentials(userName, password))
     logger.warn(s"getSize: $sizeReq")
     dispatch.Http(sizeReq OK as.String) onComplete {
       case Success(content)   => prom.complete(Try(Right(content)))
@@ -95,6 +72,92 @@ with TripleStoreService with Logging {
     unload(None)
 
   ///////////////////////////////////////////////////////////////////////////
+
+  private def createRepositoryIfMissing(): Either[Throwable, String] = {
+    // use getSize as a way to check whether the repository already exists
+    getSize() match {
+      case e@Right(content) =>
+        logger.debug("AG repository already exists")
+        e
+
+      case Left(exc) =>
+        logger.info(s"Could not get AG repository size (${exc.getMessage})." +
+          " Assuming non-existence. Will now attempt to create AG repository")
+        val prom = Promise[Either[Throwable, String]]()
+
+        // NOTE: Not using `svc` directly because host(orrEndpoint) adds a trailing slash
+        // to the URL thus making AG to fail with a 404
+        val req = url(s"http://$orrEndpoint")
+          .setHeader("Accept", formats("json"))
+          .setHeader("Authorization", authUtil.basicCredentials(userName, password))
+
+        dispatch.Http(req.PUT OK as.String) onComplete {
+          case Success(content) =>
+            prom.complete(Try(Right(content)))
+            logger.info(s"AG repository creation succeeded. content=$content")
+
+          case Failure(exception) => prom.complete(Try(Left(exception)))
+            logger.warn("AG repository creation failed", exception)
+        }
+        prom.future()
+    }
+  }
+
+  private def createAnonymousUserIfMissing(): Unit = {
+    getUsers foreach { users =>
+      if (!users.contains("anonymous")) createAnonymousUser()
+    }
+  }
+
+  private def getUsers: Option[List[String]] = {
+    val prom = Promise[Option[List[String]]]()
+    val usersReq = (host(agEndpoint) / "users")
+      .setHeader("Accept", formats("json"))
+      .setHeader("Authorization", authUtil.basicCredentials(userName, password))
+    logger.debug(s"getUsers: $usersReq")
+    dispatch.Http(usersReq OK as.String) onComplete {
+      case Success(content)   =>
+        implicit val jsonFormats: Formats = DefaultFormats
+        val users = JsonParser.parse(content).extract[List[String]]
+        logger.debug(s"got AG users: $users")
+        prom.complete(Try(Some(users)))
+      case Failure(exception) =>
+        logger.warn(s"Could not get AG users", exception)
+        prom.complete(Try(None))
+    }
+    prom.future()
+  }
+
+  private def createAnonymousUser(): Unit = {
+    val req = (host(agEndpoint) / "users" / "anonymous")
+      .setHeader("Accept", formats("json"))
+      .setHeader("Authorization", authUtil.basicCredentials(userName, password))
+    logger.debug(s"createAnonymousUser: $req")
+    dispatch.Http(req.PUT OK as.String) onComplete {
+      case Success(content)   =>
+        logger.debug(s"createAnonymousUser succeeded. response: $content")
+        setAccessForAnonymousUser()
+
+      case Failure(exception) =>
+        logger.warn(s"Could not create AG anonymous user", exception)
+    }
+  }
+
+  private def setAccessForAnonymousUser(): Unit = {
+    val req = (host(agEndpoint) / "users" / "anonymous" / "access")
+      .addQueryParameter("read", "true")
+      .addQueryParameter("catalog", "/")
+      .addQueryParameter("repository", repoName)
+      .setHeader("Accept", formats("json"))
+      .setHeader("Authorization", authUtil.basicCredentials(userName, password))
+    logger.debug(s"setAccessForAnonymousUser: $req")
+    dispatch.Http(req.PUT OK as.String) onComplete {
+      case Success(content)   =>
+        logger.debug(s"setAccessForAnonymousUser succeeded. response: $content")
+      case Failure(exception) =>
+        logger.warn(s"Could not set access for AG anonymous user", exception)
+    }
+  }
 
   /**
    * Loads the given ontology in the triple store.
@@ -162,10 +225,19 @@ with TripleStoreService with Logging {
     res
   }
 
-  private val orrEndpoint = setup.config.getConfig("agraph").getString("orrEndpoint")
+  private val agConfig = setup.config.getConfig("agraph")
+
+
+  private val agHost     = agConfig.getString("host")
+  private val agPort     = agConfig.getString("port")
+  private val userName   = agConfig.getString("userName")
+  private val password   = agConfig.getString("password")
+  private val repoName   = agConfig.getString("repoName")
+
+  private val agEndpoint  = s"$agHost:$agPort"
+  private val orrEndpoint = s"$agEndpoint/repositories/$repoName"
+
   private val svc = host(orrEndpoint)
 
-  private val userName = setup.config.getString("agraph.userName")
-  private val password = setup.config.getString("agraph.password")
 
 }
