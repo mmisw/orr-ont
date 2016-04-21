@@ -20,6 +20,36 @@ with TripleStoreService with Logging {
 
   def setFormats(formats: Map[String,String]): Unit = { this.formats = formats }
 
+  def createRepositoryIfMissing(): Either[Throwable, String] = {
+    // use getSize as a way to check whether the repository already exists
+    getSize() match {
+      case e@Right(content) =>
+        logger.debug("AG repository already exists")
+        e
+
+      case Left(exc) =>
+        logger.info(s"Could not get AG repository size (${exc.getMessage})." +
+          " Assuming non-existence. Will now attempt to create AG repository")
+        val prom = Promise[Either[Throwable, String]]()
+
+        // NOTE: Not using `svc` directly because host(orrEndpoint) adds a trailing slash
+        // to the URL thus making AG to fail with a 404
+        val req = url(s"http://$orrEndpoint")
+          .setHeader("Accept", formats("json"))
+          .setHeader("Authorization", authUtil.basicCredentials(userName, password))
+
+        dispatch.Http(req.PUT OK as.String) onComplete {
+          case Success(content) =>
+            prom.complete(Try(Right(content)))
+            logger.info(s"AG repository creation succeeded. content=$content")
+
+          case Failure(exception) => prom.complete(Try(Left(exception)))
+            logger.warn("AG repository creation failed", exception)
+        }
+        prom.future()
+    }
+  }
+
   def getSize(contextOpt: Option[String] = None): Either[Throwable, String] = {
     val prom = Promise[Either[Throwable, String]]()
 

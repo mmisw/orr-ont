@@ -7,6 +7,8 @@ trait TripleStoreService {
 
   def setFormats(formats: Map[String, String]): Unit
 
+  def createRepositoryIfMissing(): Either[Throwable, String]
+
   def getSize(contextOpt: Option[String] = None): Either[Throwable, String]
 
   /**

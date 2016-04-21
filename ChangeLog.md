@@ -1,5 +1,10 @@
 ## change log ##
 
+* 2016-04-21: 0.3.1:
+  - triple store: create AG repository if missing at initialization time.
+    Also add `POST /_repo` to explicit retry this operation in case the call at
+    init time fails (possibly due to AG server not running)
+
 * 2016-04-20: 0.3.1:
   - allow {template.}orront.conf overrides via environment variables
   

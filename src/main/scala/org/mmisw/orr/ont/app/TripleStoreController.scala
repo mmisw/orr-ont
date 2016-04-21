@@ -12,6 +12,14 @@ with Logging {
 
   tsService.setFormats(Map(formats.toSeq: _*))
 
+  /*
+   * Create repo if not existing yet.
+   * See also post("/_repo") below, which will allow to re-attempt this
+   * operation with an explicit request in case the call here fails for
+   * some reason (possibly because the AG server was not running).
+   */
+  tsService.createRepositoryIfMissing()
+
   before() {
     verifyIsAdminOrExtra()
   }
@@ -22,6 +30,13 @@ with Logging {
   get("/") {
     logger.debug(s"GET params=$params")
     tsService.getSize(params.get("uri").orElse(params.get("context")))
+  }
+
+  /*
+   * special request to re-try to create AG repo.
+   */
+  post("/_repo") {
+    tsService.createRepositoryIfMissing()
   }
 
   /*
