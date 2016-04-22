@@ -2,9 +2,6 @@ package org.mmisw.orr.ont.app
 
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.mmisw.orr.ont.Setup
-import org.mmisw.orr.ont.service.NoSuchUser
-
-import scala.util.{Failure, Success, Try}
 
 class FirebaseController(implicit setup: Setup) extends BaseController
       with Logging {
@@ -14,12 +11,7 @@ class FirebaseController(implicit setup: Setup) extends BaseController
     val map = body()
     val userName = require(map, "username")
     val password = require(map, "password")
-
-    val user = Try(userService.getUser(userName)) match {
-      case Success(res)            => res
-      case Failure(exc: NoSuchUser) => error(401, "invalid credentials")
-      case Failure(exc)             => error500(exc)
-    }
+    val user     = getUserOpt(userName).getOrElse(error(401, "invalid credentials"))
 
     if (userAuth.checkPassword(password, user)) {
       val custom = Map(

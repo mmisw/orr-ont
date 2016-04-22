@@ -157,6 +157,14 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
 //    }
 //  }
 
+  protected def getUserOpt(userName: String): Option[db.User] = {
+    Try(userService.getUser(userName)) match {
+      case Success(res)            => Some(res)
+      case Failure(exc: NoSuchUser) => None
+      case Failure(exc)             => error500(exc)
+    }
+  }
+
   protected def getUser(userName: String): db.User = {
     Try(userService.getUser(userName)) match {
       case Success(res)            => res
