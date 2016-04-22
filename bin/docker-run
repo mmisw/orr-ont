@@ -44,14 +44,14 @@ function run_httpd() {
 
 function usage() {
 	echo "Usage:"
-	echo "  docker-run [ mongo | agraph | orr-ont | httpd ]*"
+	echo "  docker-run [ mongo | agraph | orront | httpd ]* | ALL"
 	echo "  (order is important)"
 	echo
 	echo "Env var ORR_ONT_BASE_DIR must be defined."
 	echo
 	echo "Examples:"
-	echo "     docker-run mongo agraph orr-ont httpd"
-	echo "     docker-run orr-ont"
+	echo "     docker-run ALL     # same as: docker-run mongo agraph orront httpd"
+	echo "     docker-run orront httpd"
 	echo
 }
 
@@ -67,10 +67,13 @@ else
 
 	echo "ORR_ONT_BASE_DIR = ${ORR_ONT_BASE_DIR}"
 
-	while [ "$what" != "" ]; do
+	args=$*
+	if [ "$what" = "ALL" ]; then
+		args="mongo agraph orront httpd"
+	fi
+
+	for what in $args; do
 		echo "run_$what"
 		run_$what
-		shift
-		what=$1
 	done
 fi
