@@ -1,5 +1,11 @@
 #!/bin/bash
 
+#
+# Note: the use of `-p` is actually only necessary for the httpd container.
+# The other uses are for convenience and can be removed or the host
+# ports changed as desired.
+#
+
 function run_mongo() {
 	if [ "`uname`" = "Linux" ]; then
 		docker run --name mongo -d \
