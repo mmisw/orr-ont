@@ -39,7 +39,7 @@ bash script makes launching the ORR containers very straightforward.
 
     curl -o docker-run https://raw.githubusercontent.com/mmisw/orr-ont/master/bin/docker-run
     chmod +x docker-run
-    ./docker-run mongo agraph orr-ont httpd
+    ./docker-run mongo agraph orront httpd
 
 That's it!
 
