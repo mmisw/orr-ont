@@ -92,10 +92,10 @@ object ontUtil extends AnyRef with Logging {
     case res: Resource => res.getURI
   }
 
-  def extractMetadata(ontology: Ontology): Map[String,List[String]] = {
+  def extractAttributes(resource: Resource): Map[String,List[String]] = {
     var map = Map[String,List[String]]()
 
-    val it = ontology.listProperties()
+    val it = resource.listProperties()
     if ( it != null) {
       while (it.hasNext) {
         val stmt = it.next()

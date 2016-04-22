@@ -50,10 +50,10 @@ object ontFileLoader extends AnyRef with Logging {
     var map = Map[String, PossibleOntologyInfo]()
 
     def add(uri: String, explanation: String): Unit = {
-      for (ontology <- Option(model.getOntology(uri))) {
+      for (resource <- Option(model.getResource(uri))) {
         val newInfo = map.get(uri) match {
           case None =>
-            PossibleOntologyInfo(List(explanation), ontUtil.extractMetadata(ontology))
+            PossibleOntologyInfo(List(explanation), ontUtil.extractAttributes(resource))
 
           case Some(info) =>  // one more explanation for the URI
             info.copy(explanations = explanation :: info.explanations)
