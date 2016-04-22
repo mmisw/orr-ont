@@ -7,10 +7,10 @@ Check with your sysadmin.
 
 The docker images comprising the ORR system are:
 
-    docker pull mongo
-    docker pull franzinc/agraph
-    docker pull mmisw/orr-ont
-    docker pull mmisw/httpd
+- [`mongo`]          (https://hub.docker.com/_/mongo/)
+- [`franzinc/agraph`](https://hub.docker.com/r/franzinc/agraph/)
+- [`mmisw/orr-ont`]  (https://hub.docker.com/r/mmisw/orr-ont/)
+- [`mmisw/httpd`]    (https://hub.docker.com/r/mmisw/httpd/)
 
 > NOTE: specific tagging is still TBD.
 
@@ -21,13 +21,13 @@ The docker images comprising the ORR system are:
   (ontology files, MongoDB data, etc.), and capture that location
   in the `ORR_ONT_BASE_DIR` environment variable, e.g.:
 
-        export ORR_ONT_BASE_DIR=/opt/orr-ont-base-directory
+      export ORR_ONT_BASE_DIR=/opt/orr-ont-base-directory
     
 - Prepare your local `orr-ont` configuration file:
   - Make a local copy (say, with name `orront.conf`) of the template from 
     [here](https://raw.githubusercontent.com/mmisw/orr-ont/master/template.orront.conf)
     
-            curl -o orront.conf https://raw.githubusercontent.com/mmisw/orr-ont/master/template.orront.conf
+        curl -o orront.conf https://raw.githubusercontent.com/mmisw/orr-ont/master/template.orront.conf
     
   - edit `./orront.conf` if needed.
     
