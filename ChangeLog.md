@@ -1,6 +1,7 @@
 ## change log ##
 
 * 2016-04-21: 0.3.1:
+  - new bin/docker-run to facilitate launching on the whole ORR system. README updated.
   - triple store: new loadUriFromLocal method to load the contents of an ontology
     in the triple store. Assumes the AG and orr-ont servers share the 
     `/opt/orr-ont-base-directory` directory, which is the case under the defined Docker scheme.

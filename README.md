@@ -2,143 +2,76 @@
 [![Coverage Status](https://coveralls.io/repos/github/mmisw/orr-ont/badge.svg?branch=master)](https://coveralls.io/github/mmisw/orr-ont?branch=master)
 
 
+# What's orr-ont?
 
-`orr-ont` is a new version of the `Ont` service.
+`orr-ont` is a complete new implementation of the `Ont` service.
 See [wiki](https://github.com/mmisw/orr-ont/wiki).
 
 
-# Build and deployment
+# Deployment
 
-**NOTE**: 
-These notes are WiP while the complete build/deployment workflow itself is refined.
+Only basic requirement is to have a [Docker engine](https://www.docker.com/products/docker-engine)
+on the target system. 
+The user performing the deployment should have the relevant Docker privileges.
+Check with your sysadmin.
 
-
-## Build `orr-ont` package
-
-    sbt package
-    
-## Build and push `mmisw/orr-ont` image
-
-    docker build -t mmisw/orr-ont --no-cache .
-    docker push mmisw/orr-ont
-    
-
-## Deployment
-
-### Docker images:
+The docker images comprising the ORR system are:
 
     docker pull mongo
     docker pull franzinc/agraph
-    docker pull mmisw/httpd
     docker pull mmisw/orr-ont
-    
+    docker pull mmisw/httpd
+
+> NOTE: specific tagging is still TBD.
+
   
 ### Preparations
 
-    BASE_DIR=/home/carueda/orr-ont-base-directory
-    MONGO_DATA=${BASE_DIR}/mongo-data
+- Designate a directory on your host machine as a base location for all data 
+  (ontology files, MongoDB data, etc.), and capture that location
+  in the `ORR_ONT_BASE_DIR` environment variable, e.g.:
+
+        export ORR_ONT_BASE_DIR=/opt/orr-ont-base-directory
     
-> my mac:
->
->    ```
->    BASE_DIR=/Users/carueda/orr-ont-base-directory
->    MONGO_DATA=${BASE_DIR}/mongo-dbpath
->    ```
->
+- Prepare your local `orr-ont` configuration file:
+  - Make a local copy (say, with name `orront.conf`) of the template from 
+    [here](https://raw.githubusercontent.com/mmisw/orr-ont/master/template.orront.conf)
     
-    mkdir -p ${BASE_DIR}
-    mkdir -p ${MONGO_DATA}
+			curl -o orront.conf https://raw.githubusercontent.com/mmisw/orr-ont/master/template.orront.conf
     
-    scp somewhere:template.orront.conf ./orront.conf
-    vim ./orront.conf   # edit if needed
+  - edit `./orront.conf` if needed.
     
 
-    
-### Run containers
+### Run the containers
 
-#### Mongo
+ORR's [`docker-run`](https://raw.githubusercontent.com/mmisw/orr-ont/master/bin/docker-run) 
+bash script makes launching the ORR containers very straightforward.
 
-    docker run --name mongo -d \
-           -p 27017:27017 \
-           -v {MONGO_DATA}:/data/db \
-           mongo
-           
-> Note (MacOS): Due to VirtualBox bug, -v not supported so no way to have 
-> a local share for the mongo data.
->
->    ```
->    docker run --name mongo -d \
->           -p 27017:27017 \
->           mongo
->    ```
-           
-    
-#### AllegroGraph
+	curl -o docker-run https://raw.githubusercontent.com/mmisw/orr-ont/master/bin/docker-run
+	chmod +x docker-run
+	./docker-run mongo agraph orr-ont httpd
 
-    docker run --name agraph -d \
-           --volumes-from orr-ont \
-           -m 1g -p 10000-10035:10000-10035 franzinc/agraph
+That's it!
 
-`--volumes-from orr-ont` is in particular to share `/opt/orr-ont-base-directory`
-so orr-ont can more efficiently load ontologies into the triple store
-by using the "file" parameter in corresponding AG REST call.
-
-    
-#### orr-ont
-
-    docker run --name orr-ont -d \
-           --link mongo \
-           --link agraph \
-           -e MONGO_HOST=mongo \
-           -e MONGO_PORT=27017 \
-           -e AGRAPH_HOST=agraph \
-           -e AGRAPH_PORT=10035 \
-           -v `pwd`/orront.conf:/etc/orront.conf \
-           -v ${BASE_DIR}:/opt/orr-ont-base-directory \
-           -p 9090:8080 \
-           mmisw/orr-ont
-
-#### HTTP proxy
-
-    docker run --name httpd -d \
-           -p 80:80 \
-           --link agraph \
-           --link orr-ont \
-           mmisw/httpd
-               
->
-> [nginx-proxy](https://github.com/jwilder/nginx-proxy) 
-> looks very interesting ... but it currently does not support paths
-> (see eg., [this](https://github.com/jwilder/nginx-proxy/pull/254)),
-> and it's not immediately clear how to "intercept" requests/responses 
-> to add headers (CORS), etc.
-> 
-> Basically, nginx-proxy would be run as this:
->
->    ```
->    docker run --name nginx-proxy -d \
->           -p 80:80 \
->           -v /var/run/docker.sock:/tmp/docker.sock:ro \
->           jwilder/nginx-proxy
->    ```
->
-> AllegroGraph would be started with, for example,
-> `-e VIRTUAL_HOST=sparql.somehost.net -e VIRTUAL_PORT=10035`,
-> and orr-ont with
-> `-e VIRTUAL_HOST=somehost.net -e VIRTUAL_PORT=8080`;
-> then one could open AG at http://sparql.somehost.net 
-> and the orr-ont at http://somehost.net/orr-ont
->
+Now open http://localhost/ont in your browser.
 
 
-### Use
+> On a Mac, open `http://<docker-machine-ip>/ont`.
+ 
 
-Open http://localhost/orr-ont in your browser.
+### Making your ORR instance visible to the world
+
+Currently this consists of exposing port 80 (or whatever the host port defined 
+under the `httpd` option in `docker-run`). 
+Check with your sysadmin. 
+
+> This part is still WiP particularly regarding HTTPS (port 443; certificates, etc.)
 
 
-> my mac:
->
->    ```
->    open http://`docker-machine ip`/orr-ont
->    ```
->
+# `orr-ont` build 
+
+On a clone of this repository:
+
+	sbt test package
+	docker build -t mmisw/orr-ont --no-cache .
+	docker push mmisw/orr-ont

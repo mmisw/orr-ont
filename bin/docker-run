@@ -1,0 +1,76 @@
+#!/bin/bash
+
+function run_mongo() {
+	if [ "`uname`" = "Linux" ]; then
+		docker run --name mongo -d \
+			   -p 27017:27017 \
+			   -v ${ORR_ONT_BASE_DIR}/mongo:/data/db \
+			   mongo
+	else
+		echo "WARN: Not using -v for mongo as this is not a Linux box"
+		docker run --name mongo -d \
+			   -p 27017:27017 \
+			   mongo
+	fi
+}
+
+function run_agraph() {
+    docker run --name agraph -d \
+           -v ${ORR_ONT_BASE_DIR}:/opt/orr-ont-base-directory \
+           -m 1g -p 10000-10035:10000-10035 franzinc/agraph
+}
+
+function run_orront() {
+    docker run --name orr-ont -d \
+           --link mongo \
+           --link agraph \
+           -e MONGO_HOST=mongo \
+           -e MONGO_PORT=27017 \
+           -e AGRAPH_HOST=agraph \
+           -e AGRAPH_PORT=10035 \
+           -v `pwd`/orront.conf:/etc/orront.conf \
+           -v ${ORR_ONT_BASE_DIR}:/opt/orr-ont-base-directory \
+           -p 9090:8080 \
+           mmisw/orr-ont
+}
+
+function run_httpd() {
+    docker run --name httpd -d \
+           -p 80:80 \
+           --link agraph \
+           --link orr-ont \
+           mmisw/httpd
+}
+
+function usage() {
+	echo "Usage:"
+	echo "  docker-run [ mongo | agraph | orr-ont | httpd ]*"
+	echo "  (order is important)"
+	echo
+	echo "Env var ORR_ONT_BASE_DIR must be defined."
+	echo
+	echo "Examples:"
+	echo "     docker-run mongo agraph orr-ont httpd"
+	echo "     docker-run orr-ont"
+	echo
+}
+
+what=$1
+
+if [ "$what" = "" ]; then
+	usage
+else
+	if [ "${ORR_ONT_BASE_DIR}" = "" ]; then
+		echo "ERROR: env var ORR_ONT_BASE_DIR undefined"
+		exit 1
+	fi
+
+	echo "ORR_ONT_BASE_DIR = ${ORR_ONT_BASE_DIR}"
+
+	while [ "$what" != "" ]; do
+		echo "run_$what"
+		run_$what
+		shift
+		what=$1
+	done
+fi
