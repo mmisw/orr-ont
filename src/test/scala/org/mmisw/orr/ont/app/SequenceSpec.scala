@@ -806,6 +806,28 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     }
   }
 
+  "Init triple store (POST /_init)" should {
+    "fail with no credentials" in {
+      post("/ts/_init") {
+        status must_== 401
+      }
+    }
+
+    "fail with regular user credentials" in {
+      post("/ts/_init", Map(), headers = userHeaders) {
+        status must_== 403
+      }
+    }
+
+    "succeed with admin credentials (and 2 calls to initialize)" in {
+      post("/ts/_init", Map(), headers = adminHeaders) {
+        status must_== 200
+        // 2 calls: 1 at controller's init time, and 1 per this request
+        there were two(tsService).initialize()
+      }
+    }
+  }
+
   ////////////////////////////
   // "self-hosted" requests
   ////////////////////////////

@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-04-22: 0.3.1:
+  - add tests for `POST /ts/_init`
+  
 * 2016-04-21: 0.3.1:
   - new bin/docker-run to facilitate launching on the whole ORR system. README updated.
   - triple store: new loadUriFromLocal method to load the contents of an ontology
@@ -11,7 +14,7 @@
   - triple store initialization: 
   	- if missing, create AG repository (with name agraph.repoName in given configuration) 
   	- if missing, create AG anonymous user (and give it read access to the agraph.repoName)
-    - add `POST /_init` to explicit execute triple store initialization (which will help 
+    - add `POST /ts/_init` to explicit execute triple store initialization (which will help 
       in case the call at orr-ont init time fails possibly due to AG server not running)
 
 * 2016-04-20: 0.3.1:
