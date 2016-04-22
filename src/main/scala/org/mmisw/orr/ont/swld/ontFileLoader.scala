@@ -3,10 +3,10 @@ package org.mmisw.orr.ont.swld
 import java.io._
 
 import com.hp.hpl.jena.ontology.OntModel
-import com.hp.hpl.jena.vocabulary.{DC_10, RDFS, DC_11, DCTerms}
+import com.hp.hpl.jena.vocabulary._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
-import org.mmisw.orr.ont.util.{XmlBaseExtractor, Util2}
-import org.mmisw.orr.ont.vocabulary.Omv
+import org.mmisw.orr.ont.util.{Util2, XmlBaseExtractor}
+import org.mmisw.orr.ont.vocabulary.Skos
 import org.xml.sax.InputSource
 
 
@@ -63,19 +63,34 @@ object ontFileLoader extends AnyRef with Logging {
       }
     }
 
-    extractXmlBase(file) foreach(add(_, "Value of xml:base attribute"))
+    def tryXmlBase(): Unit = extractXmlBase(file) foreach(add(_, "Value of xml:base attribute"))
 
-    // try namespace associated with empty prefix:
-    Option(model.getNsPrefixURI("")) foreach { uriForEmptyPrefix =>
-      val uriNoTrailingSeparator = uriForEmptyPrefix.replaceAll("(#|/)+$", "")
-      // only add uriForEmptyPrefix or uriNoTrailingSeparator if not already added per xml:base above
-      if (map.get(uriForEmptyPrefix).isEmpty && map.get(uriNoTrailingSeparator).isEmpty) {
-        add(uriForEmptyPrefix, "Namespace associated with empty prefix")
-        if (uriNoTrailingSeparator != uriForEmptyPrefix) {
-          add(uriNoTrailingSeparator, "Namespace associated with empty prefix but with no trailing separators")
+    def trySkosCollections(): Unit = {
+      logger.debug("trySkosCollections")
+      val it = model.listResourcesWithProperty(RDF.`type`, Skos.Collection)
+      while (it.hasNext) {
+        val res = it.nextResource()
+        add(res.getURI, "Resource of type skos:Collection")
+      }
+    }
+
+    def tryEmptyPrefix(): Unit = {
+      logger.debug("tryEmptyPrefix")
+      Option(model.getNsPrefixURI("")) foreach { uriForEmptyPrefix =>
+        val uriNoTrailingSeparator = uriForEmptyPrefix.replaceAll("(#|/)+$", "")
+        // only add uriForEmptyPrefix or uriNoTrailingSeparator if not already added per xml:base above
+        if (map.get(uriForEmptyPrefix).isEmpty && map.get(uriNoTrailingSeparator).isEmpty) {
+          add(uriForEmptyPrefix, "Namespace associated with empty prefix")
+          if (uriNoTrailingSeparator != uriForEmptyPrefix) {
+            add(uriNoTrailingSeparator, "Namespace associated with empty prefix but with no trailing separators")
+          }
         }
       }
     }
+
+    tryXmlBase()
+    trySkosCollections()
+    tryEmptyPrefix()
 
     map
   }

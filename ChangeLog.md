@@ -1,6 +1,7 @@
 ## change log ##
 
 * 2016-04-22: 0.3.1:
+  - also consider skos:Collection for possibleOntologyUris in uploaded file
   - add tests for `POST /ts/_init`
   
 * 2016-04-21: 0.3.1:

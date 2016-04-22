@@ -25,6 +25,8 @@ object Skos {
 
   val Concept = model.createResource(NS + "Concept", RDFS.Class)
 
+  val Collection     = property("Collection")
+
   val prefLabel      = property("prefLabel")
   val altLabel       = property("altLabel")
   val hiddenLabel    = property("hiddenLabel")
