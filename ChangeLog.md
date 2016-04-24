@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-04-23: 0.3.1:
+  - first consider owl:Ontology for possibleOntologyUris. If none, then consider the other options.
+
 * 2016-04-22: 0.3.1:
   - also consider skos:Collection for possibleOntologyUris in uploaded file
   - add tests for `POST /ts/_init`

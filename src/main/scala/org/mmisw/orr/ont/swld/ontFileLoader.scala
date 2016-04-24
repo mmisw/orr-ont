@@ -3,6 +3,7 @@ package org.mmisw.orr.ont.swld
 import java.io._
 
 import com.hp.hpl.jena.ontology.OntModel
+import com.hp.hpl.jena.rdf.model.Resource
 import com.hp.hpl.jena.vocabulary._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.mmisw.orr.ont.util.{Util2, XmlBaseExtractor}
@@ -63,16 +64,16 @@ object ontFileLoader extends AnyRef with Logging {
       }
     }
 
-    def tryXmlBase(): Unit = extractXmlBase(file) foreach(add(_, "Value of xml:base attribute"))
-
-    def trySkosCollections(): Unit = {
-      logger.debug("trySkosCollections")
-      val it = model.listResourcesWithProperty(RDF.`type`, Skos.Collection)
+    def tryResourcesWithType(resource: Resource): Unit = {
+      logger.debug(s"tryResourcesWithType $resource")
+      val it = model.listResourcesWithProperty(RDF.`type`, resource)
       while (it.hasNext) {
         val res = it.nextResource()
-        add(res.getURI, "Resource of type skos:Collection")
+        add(res.getURI, s"Resource of type $resource")
       }
     }
+
+    def tryXmlBase(): Unit = extractXmlBase(file) foreach(add(_, "Value of xml:base attribute"))
 
     def tryEmptyPrefix(): Unit = {
       logger.debug("tryEmptyPrefix")
@@ -88,9 +89,12 @@ object ontFileLoader extends AnyRef with Logging {
       }
     }
 
-    tryXmlBase()
-    trySkosCollections()
-    tryEmptyPrefix()
+    tryResourcesWithType(OWL.Ontology)
+    if (map.isEmpty) {
+      tryXmlBase()
+      tryResourcesWithType(Skos.Collection)
+      tryEmptyPrefix()
+    }
 
     map
   }
