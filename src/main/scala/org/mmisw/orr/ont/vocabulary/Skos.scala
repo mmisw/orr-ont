@@ -21,11 +21,10 @@ object Skos {
 
   val NS = "http://www.w3.org/2004/02/skos/core#"
 
-  def property(local: String) = model.createProperty(NS, local)
+  private def property(local: String) = model.createProperty(NS, local)
 
-  val Concept = model.createResource(NS + "Concept", RDFS.Class)
-
-  val Collection     = property("Collection")
+  val Concept        = model.createResource(NS + "Concept",    OWL.Class)
+  val Collection     = model.createResource(NS + "Collection", OWL.Class)
 
   val prefLabel      = property("prefLabel")
   val altLabel       = property("altLabel")
