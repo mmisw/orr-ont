@@ -2,7 +2,6 @@
 <rdf:RDF
         xml:base    = "http://example.org/ont1"
         xmlns       = "http://example.org/ont1/"
-        xmlns:ont1  = "http://example.org/ont1/"
         xmlns:rdfs  = "http://www.w3.org/2000/01/rdf-schema#"
         xmlns:rdf   = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
         xmlns:owl   = "http://www.w3.org/2002/07/owl#"
@@ -34,12 +33,12 @@
         <rdfs:label>definition</rdfs:label>
     </owl:DatatypeProperty>
 
-    <Parameter rdf:about="ont1:parA">
+    <Parameter rdf:about="http://example.org/ont1/parA">
         <name>Name of parA</name>
         <definition>Definition of parA</definition>
     </Parameter>
 
-    <Parameter rdf:about="ont1:parB">
+    <Parameter rdf:about="http://example.org/ont1/parB">
         <name>Name of parB</name>
         <definition>Definition of parB</definition>
     </Parameter>
