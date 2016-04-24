@@ -52,11 +52,12 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   }
 
   /**
-   * Gets the ontologies satisfying the given query.
-   * @param query       Query
-   * @param privileged  True to include privileged information
-   * @return            iterator
-   */
+    * Gets the ontologies satisfying the given query.
+    *
+    * @param query       Query
+    * @param privileged  True to include privileged information
+    * @return            iterator
+    */
   def getOntologies(query: MongoDBObject, privileged: Boolean): Iterator[OntologySummaryResult] = {
     ontDAO.find(query) map { ont =>
       getLatestVersion(ont) match {
@@ -93,19 +94,21 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   }
 
   /**
-   * Gets the ontologies satisfying the given query.
-   * @param query  Query
-   * @return       iterator
-   */
+    * Gets the ontologies satisfying the given query.
+    *
+    * @param query  Query
+    * @return       iterator
+    */
   def getOntologyUris(query: MongoDBObject): Iterator[String] = {
     for (ont <- ontDAO.find(query))
       yield ont.uri
   }
 
   /**
-   * Gets all ontologies.
-   * @return       iterator
-   */
+    * Gets all ontologies.
+    *
+    * @return       iterator
+    */
   def getAllOntologyUris: Iterator[String] = {
     for (ont <- ontDAO.find(MongoDBObject()))
       yield ont.uri
@@ -159,6 +162,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
    * Creates a new ontology entry.
    */
   def createOntology(uri:            String,
+                     originalUriOpt: Option[String],
                      name:           String,
                      version:        String,
                      version_status: Option[String],
@@ -172,7 +176,8 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     validateUri(uri)
 
-    val map = writeOntologyFile(uri, version, ontFileWriter)
+    val map = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
+
     val ontologyTypeOpt = map.get("ontologyType")
     val resourceTypeOpt = map.get("resourceType")
 
@@ -195,16 +200,22 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   /**
    * Creates a version for an existing ontology.
    */
-  def createOntologyVersion(uri: String, nameOpt: Option[String], userName: String,
-                            version: String, version_status: Option[String],
-                            contact_name: Option[String], date: String,
-                            ontFileWriter: OntFileWriter) = {
+  def createOntologyVersion(uri:             String,
+                            originalUriOpt:  Option[String],
+                            nameOpt:         Option[String],
+                            userName:        String,
+                            version:         String,
+                            version_status:  Option[String],
+                            contact_name:    Option[String],
+                            date:            String,
+                            ontFileWriter:   OntFileWriter) = {
 
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
 
     verifyOwner(userName, ont)
 
-    val map = writeOntologyFile(uri, version, ontFileWriter)
+    val map = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
+
     val ontologyTypeOpt = map.get("ontologyType")
     val resourceTypeOpt = map.get("resourceType")
 
@@ -231,7 +242,12 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   /**
    * Updates a particular version.
    */
-  def updateOntologyVersion(uri: String, version: String, name: String, userName: String) = {
+  def updateOntologyVersion(uri:            String,
+                            originalUriOpt: Option[String],
+                            version:        String,
+                            name:           String,
+                            userName:       String) = {
+
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
     verifyOwner(userName, ont)
 
@@ -355,24 +371,46 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     file
   }
 
-  private def writeOntologyFile(uri: String, version: String,
-                                ontFileWriter: OntFileWriter): Map[String,String] = {
+  private def getVersionDirectory(uri: String, version: String): File = {
     require(!uri.contains("|"))
-
     val uriEnc = uri.replace('/', '|')
     val uriDir = new File(ontsDir, uriEnc)
     val versionDir = new File(uriDir, version)
     if (!versionDir.isDirectory && !versionDir.mkdirs()) {
       throw CannotCreateDirectory(versionDir.getAbsolutePath)
     }
-    val destFilename = s"file.${ontFileWriter.format}"
-    val dest = new File(versionDir, destFilename)
-
-    ontFileWriter.write(dest)
-
-    ontUtil.getPropsFromOntMetadata(uri, dest, ontFileWriter.format)
+    versionDir
   }
 
+  private def writeOntologyFile(uri:            String,
+                                originalUriOpt: Option[String],
+                                version:        String,
+                                ontFileWriter:  OntFileWriter
+                               ): Map[String,String] = {
+
+    val versionDir = getVersionDirectory(uri, version)
+    val destFile = new File(versionDir, s"file.${ontFileWriter.format}")
+
+    originalUriOpt match {
+      case None =>
+        // it's a "re-hosted" registration.
+        ontFileWriter.write(destFile)
+
+      case Some(originalUri) =>
+        // it's a "fully-hosted" registration.
+
+        // first, save the original file
+        val origDest = new File(versionDir, s"file_orig.${ontFileWriter.format}")
+        ontFileWriter.write(origDest)
+
+        // now, load model and "move" the namespace from `originalUri` to `uri`
+        val ontModel = ontUtil.loadOntModel(originalUri, origDest, ontFileWriter.format)
+        ontUtil.replaceNamespace(ontModel, originalUri, uri)
+        ontUtil.writeModel(uri, ontModel, ontFileWriter.format, destFile)
+    }
+
+    ontUtil.getPropsFromOntMetadata(uri, destFile, ontFileWriter.format)
+  }
 
   private val baseDir = setup.filesConfig.getString("baseDirectory")
   private val uploadsDir = new File(baseDir, "uploads")

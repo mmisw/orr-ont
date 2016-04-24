@@ -194,7 +194,7 @@ object AquaImporter extends App with Logging {
         val dateCreated = DateTime.parse(o.date_created)
         firstSubmission = Some(dateCreated)
         ontService.createOntology(
-          o.uri, o.display_label, o.version_number, o.version_status,
+          o.uri, None, o.display_label, o.version_number, o.version_status,
           o.contact_name,
           o.date_created, users.get(o.user_id).get.username, orgName,
           ontFileWriter)
@@ -210,7 +210,7 @@ object AquaImporter extends App with Logging {
           version_status = o.version_status  // update to use here and propagate
         }
         ontService.createOntologyVersion(
-          o.uri, Some(o.display_label), users.get(o.user_id).get.username,
+          o.uri, None, Some(o.display_label), users.get(o.user_id).get.username,
           o.version_number, version_status, o.contact_name,
           o.date_created, ontFileWriter)
       }

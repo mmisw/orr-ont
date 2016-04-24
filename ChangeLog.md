@@ -1,6 +1,8 @@
 ## change log ##
 
 * 2016-04-23: 0.3.1:
+  - for "fully-hosted" registration, new `originalUri` parameter to perform "transfer" 
+    of associated namespace to given `uri`.
   - first consider owl:Ontology for possibleOntologyUris. If none, then consider the other options.
 
 * 2016-04-22: 0.3.1:

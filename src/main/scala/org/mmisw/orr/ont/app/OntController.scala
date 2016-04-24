@@ -66,10 +66,11 @@ class OntController(implicit setup: Setup,
    * Registers a new ontology entry.
    */
   post("/") {
-    val uri = require(params, "uri")
-    val name = require(params, "name")
-    val orgName = require(params, "orgName")
-    val user = verifyUser(params.get("userName"))
+    val uri            = require(params, "uri")
+    val originalUriOpt = params.get("originalUri")  // for fully-hosted mode
+    val name           = require(params, "name")
+    val orgName        = require(params, "orgName")
+    val user           = verifyUser(params.get("userName"))
 
     // TODO allow absent orgName so user can submit on her own behalf?
 
@@ -91,7 +92,7 @@ class OntController(implicit setup: Setup,
 
     val ontFileWriter = getOntFileWriter(user)
 
-    Created(createOntology(uri, name, version,
+    Created(createOntology(uri, originalUriOpt, name, version,
       version_status, contact_name, date, ontFileWriter, orgName))
   }
 
@@ -99,9 +100,10 @@ class OntController(implicit setup: Setup,
    * Updates a given version or adds a new version.
    */
   put("/") {
-    val uri = require(params, "uri")
-    val versionOpt = params.get("version")
-    val user = verifyUser(params.get("userName"))
+    val uri            = require(params, "uri")
+    val originalUriOpt = params.get("originalUri")  // for fully-hosted mode
+    val versionOpt     = params.get("version")
+    val user           = verifyUser(params.get("userName"))
 
     val (ont, _, _) = resolveOntology(uri, versionOpt)
 
@@ -122,8 +124,8 @@ class OntController(implicit setup: Setup,
     val ontFileWriter = getOntFileWriter(user)
 
     versionOpt match {
-      case Some(version) => updateOntologyVersion(uri, version, user)
-      case None          => createOntologyVersion(uri, user, ontFileWriter)
+      case Some(version) => updateOntologyVersion(uri, originalUriOpt, version, user)
+      case None          => createOntologyVersion(uri, originalUriOpt, user, ontFileWriter)
     }
   }
 
@@ -177,16 +179,22 @@ class OntController(implicit setup: Setup,
     }
   }
 
-  private def createOntology(uri: String, name: String, version: String, version_status: Option[String],
-                             contact_name: Option[String],
-                             date: String,
-                             ontFileWriter: OntFileWriter, orgName: String) = {
-
+  private def createOntology(uri:             String,
+                             originalUriOpt:  Option[String],
+                             name:            String,
+                             version:         String,
+                             version_status:  Option[String],
+                             contact_name:    Option[String],
+                             date:            String,
+                             ontFileWriter:   OntFileWriter,
+                             orgName:         String
+                            ) = {
     val user = requireAuthenticatedUser
     logger.debug(s"""
          |createOntology:
          | user:           $user
          | uri:            $uri
+         | originalUri:    $originalUriOpt
          | name:           $name
          | version:        $version
          | version_status: $version_status
@@ -196,7 +204,7 @@ class OntController(implicit setup: Setup,
          | ontFileWriter.format: ${ontFileWriter.format}
          |""".stripMargin)
 
-    Try(ontService.createOntology(uri, name, version, version_status,
+    Try(ontService.createOntology(uri, originalUriOpt, name, version, version_status,
           contact_name, date, user.userName, orgName, ontFileWriter)) match {
       case Success(ontologyResult) =>
         loadOntologyInTripleStore(uri, reload = false)
@@ -298,7 +306,11 @@ class OntController(implicit setup: Setup,
   /**
    * Adds a new version of a registered ontology.
    */
-  private def createOntologyVersion(uri: String, user: db.User, ontFileWriter: OntFileWriter) = {
+  private def createOntologyVersion(uri:            String,
+                                    originalUriOpt: Option[String],
+                                    user:           db.User,
+                                    ontFileWriter:  OntFileWriter
+                                   ) = {
     val nameOpt = params.get("name")
     val (version, date) = getVersion
 
@@ -308,7 +320,7 @@ class OntController(implicit setup: Setup,
     // TODO capture contact_name (from parameter, or by parsing ontology metadata)
     val contact_name: Option[String] = None
 
-    Try(ontService.createOntologyVersion(uri, nameOpt, user.userName, version,
+    Try(ontService.createOntologyVersion(uri, originalUriOpt, nameOpt, user.userName, version,
             version_status, contact_name, date, ontFileWriter)) match {
       case Success(ontologyResult) =>
         loadOntologyInTripleStore(uri, reload = true)
@@ -326,10 +338,14 @@ class OntController(implicit setup: Setup,
    * Note, only the name in the particular version can be updated at the moment.
    */
   // TODO handle other pieces that can/should be updated
-  private def updateOntologyVersion(uri: String, version: String, user: db.User) = {
+  private def updateOntologyVersion(uri:            String,
+                                    originalUriOpt: Option[String],
+                                    version:        String,
+                                    user:           db.User
+                                   ) = {
     val name = require(params, "name")
 
-    Try(ontService.updateOntologyVersion(uri, version, name, user.userName)) match {
+    Try(ontService.updateOntologyVersion(uri, originalUriOpt, version, name, user.userName)) match {
       case Success(ontologyResult) =>
         loadOntologyInTripleStore(uri, reload = true)
         ontologyResult

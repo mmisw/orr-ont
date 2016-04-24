@@ -1,10 +1,10 @@
 package org.mmisw.orr.ont.swld
 
-import com.hp.hpl.jena.ontology.{Ontology, OntDocumentManager, OntModelSpec, OntModel}
+import com.hp.hpl.jena.ontology.{OntDocumentManager, OntModel, OntModelSpec, Ontology}
 import com.hp.hpl.jena.rdf.model._
-import java.io.{FileOutputStream, FileInputStream, File}
-import com.typesafe.scalalogging.{StrictLogging => Logging}
+import java.io.{File, FileInputStream, FileOutputStream}
 
+import com.typesafe.scalalogging.{StrictLogging => Logging}
 import com.github.jsonldjava.jena.JenaJSONLD
 import org.mmisw.orr.ont.vocabulary.{Omv, OmvMmi}
 
@@ -161,8 +161,7 @@ object ontUtil extends AnyRef with Logging {
   }
 
   /** Loads an ontology model from a file. */
-  def loadOntModel(uri: String, file: File, format: String):
-  OntModel = {
+  def loadOntModel(uri: String, file: File, format: String): OntModel = {
     val lang = format2lang(storedFormat(format)).getOrElse(throw new IllegalArgumentException)
     logger.debug(s"Loading uri='$uri' file=$file lang=$lang")
     val ontModel = createDefaultOntModel
@@ -199,4 +198,110 @@ object ontUtil extends AnyRef with Logging {
     case "rj"           => "RDF/JSON"
     case _              => null
   })
+
+  def writeModel(uri: String, model: Model, format: String, toFile: File): Unit = {
+    val writer = model.getWriter(format2lang(format).get)
+    val os = new FileOutputStream(toFile)
+    try writer.write(model, os, uri)
+    finally os.close()
+
+  }
+  /**
+    * Modifies all statements having its subject, predicate or object in the given old namespace,
+    * so those components get transferred to the given new namespace.
+    *
+    * Any trailing separators ('#' or '/') in oldNamespace are ignored.
+    *
+    * The separator in the new namespace is always '/'.
+    *
+    * Adapted from UnversionedConverter._replaceNameSpace in old Ont.
+    *
+    * TODO this old implementation ignores the possibility of predicates or objects being
+    * defined elsewhere, which should not be modified.
+    * A more appropriate implementation could be:
+    *  1- get the list of URIs of the subjects in the old namespace
+    *  2- only modify the statements having any of its components in that list
+    */
+  def replaceNamespace(model: OntModel, oldNameSpace: String, newNameSpace: String): Unit = {
+    require(!newNameSpace.endsWith("/"))  // we add the "/" separator here
+    logger.debug(s"replaceNamespace: moving terms from $oldNameSpace to $newNameSpace")
+
+    import scala.collection.JavaConversions._
+
+    def inOldNamespace(r: Resource) = {
+      val ns = r.getNameSpace
+      ns != null && oldNameSpace == ns.replaceAll("(#|/)+$", "")
+    }
+
+    val subjectsChanged   = scala.collection.mutable.HashSet.empty[String]
+    val predicatesChanged = scala.collection.mutable.HashSet.empty[String]
+    val objectsChanged    = scala.collection.mutable.HashSet.empty[String]
+
+    val oldStatements = scala.collection.mutable.ArrayBuffer.empty[Statement]
+    val newStatements = scala.collection.mutable.ArrayBuffer.empty[Statement]
+
+    val existingStatements: StmtIterator = model.listStatements
+    while (existingStatements.hasNext) {
+      val statement = existingStatements.nextStatement
+
+      logger.debug(s"statement=$statement")
+
+      val (sbj, prd, obj) = (statement.getSubject, statement.getPredicate, statement.getObject)
+
+      var any_change = false
+
+      var (n_sbj, n_prd, n_obj) = (sbj, prd, obj)
+
+      if (oldNameSpace == sbj.getURI) {
+        // URI of the registration itself (presumably an ontology resource)
+        n_sbj = model.createResource(newNameSpace)
+        subjectsChanged += sbj.getURI
+        any_change = true
+      }
+      else if (inOldNamespace(sbj)) {
+        n_sbj = model.createResource(newNameSpace + "/" + sbj.getLocalName)
+        subjectsChanged += sbj.getURI
+        any_change = true
+      }
+
+      if (inOldNamespace(prd)) {
+        n_prd = model.createProperty(newNameSpace + "/" + prd.getLocalName)
+        predicatesChanged += prd.getURI
+        any_change = true
+      }
+
+      obj match {
+        case r: Resource if inOldNamespace(r) =>
+          n_obj = model.createResource(newNameSpace + "/" + r.getLocalName)
+          objectsChanged += r.getURI
+          any_change = true
+        case _ =>
+      }
+
+      if (any_change) {
+        oldStatements.add(statement)
+        val newStatement = model.createStatement(n_sbj, n_prd, n_obj)
+        newStatements.add(newStatement)
+      }
+    }
+
+    oldStatements foreach model.remove
+    newStatements foreach model.add
+
+    model.setNsPrefix("", newNameSpace + "/")
+
+    if (logger.underlying.isDebugEnabled) {
+      logger.debug(s"replaceNamespace: statements affected=${newStatements.size} " +
+        s"subjectsChanged=${subjectsChanged.size} " +
+        s"predicatesChanged=${predicatesChanged.size}, objectsChanged=${objectsChanged.size}")
+
+      logger.debug("RESULTING MODEL:")
+      logger.debug(s" prefixMap=${model.getNsPrefixMap}")
+      logger.debug(s" statements:")
+      val existingStatements: StmtIterator = model.listStatements
+      while (existingStatements.hasNext) {
+        logger.debug(s"   ${existingStatements.nextStatement}")
+      }
+    }
+  }
 }
