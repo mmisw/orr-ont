@@ -207,20 +207,15 @@ object ontUtil extends AnyRef with Logging {
 
   }
   /**
-    * Modifies all statements having its subject, predicate or object in the given old namespace,
-    * so those components get transferred to the given new namespace.
+    * Modifies all statements having its subject, predicate or object in the given old namespace
+    * or equal to that old namespace, so those components get "transferred" to the given new namespace.
     *
     * Any trailing separators ('#' or '/') in oldNamespace are ignored.
     *
-    * The separator in the new namespace is always '/'.
+    * Except for exact matches with old namespace, the separator in the new namespace is always '/'.
     *
-    * Adapted from UnversionedConverter._replaceNameSpace in old Ont.
+    * Based on UnversionedConverter._replaceNameSpace in old Ont, but with some modifications.
     *
-    * TODO this old implementation ignores the possibility of predicates or objects being
-    * defined elsewhere, which should not be modified.
-    * A more appropriate implementation could be:
-    *  1- get the list of URIs of the subjects in the old namespace
-    *  2- only modify the statements having any of its components in that list
     */
   def replaceNamespace(model: OntModel, oldNameSpace: String, newNameSpace: String): Unit = {
     require(!newNameSpace.endsWith("/"))  // we add the "/" separator here
@@ -271,11 +266,23 @@ object ontUtil extends AnyRef with Logging {
       }
 
       obj match {
-        case r: Resource if inOldNamespace(r) =>
-          n_obj = model.createResource(newNameSpace + "/" + r.getLocalName)
-          objectsChanged += r.getURI
-          any_change = true
-        case _ =>
+        case r: Resource =>
+          if (oldNameSpace == r.getURI) {
+            n_obj = model.createResource(newNameSpace)
+            objectsChanged += r.getURI
+            any_change = true
+          }
+          else if (inOldNamespace(r)) {
+            n_obj = model.createResource(newNameSpace + "/" + r.getLocalName)
+            objectsChanged += r.getURI
+            any_change = true
+          }
+        case l: Literal =>
+          if (oldNameSpace == l.getLexicalForm) {
+            n_obj = model.createLiteral(newNameSpace)
+            objectsChanged += oldNameSpace
+            any_change = true
+          }
       }
 
       if (any_change) {
