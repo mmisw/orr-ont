@@ -1,11 +1,16 @@
 ## change log ##
 
-* 2016-04-23: 0.3.1:
+* 2016-04-22-24: 0.3.1:
+  - written fully-hosted file: include xml:base and remove unused namespace prefixes
+  - files involved fully-hosted registration starting from upload:
+      ```
+      .../uploads/<username>/1461535308734.rdf
+      .../onts/http:||example.net|ont|<org>|<short-name>|<version>|file_orig.rdf
+      .../onts/http:||example.net|ont|<org>|<short-name>|<version>|file.rdf
+      ```  
   - for "fully-hosted" registration, new `originalUri` parameter to perform "transfer" 
     of associated namespace to given `uri`.
   - first consider owl:Ontology for possibleOntologyUris. If none, then consider the other options.
-
-* 2016-04-22: 0.3.1:
   - also consider skos:Collection for possibleOntologyUris in uploaded file
   - add tests for `POST /ts/_init`
   

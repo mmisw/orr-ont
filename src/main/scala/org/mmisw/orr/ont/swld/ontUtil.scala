@@ -8,6 +8,8 @@ import com.typesafe.scalalogging.{StrictLogging => Logging}
 import com.github.jsonldjava.jena.JenaJSONLD
 import org.mmisw.orr.ont.vocabulary.{Omv, OmvMmi}
 
+import scala.collection.JavaConversions._
+
 
 object ontUtil extends AnyRef with Logging {
 
@@ -199,10 +201,34 @@ object ontUtil extends AnyRef with Logging {
     case _              => null
   })
 
-  def writeModel(uri: String, model: Model, format: String, toFile: File): Unit = {
+  def removeUnusedNsPrefixes(model: Model): Unit = {
+    val usedPrefixes = scala.collection.mutable.HashSet.empty[String]
+    val ns: NsIterator = model.listNameSpaces
+    while (ns.hasNext) {
+        val namespace: String = ns.nextNs
+        val prefix = model.getNsURIPrefix(namespace)
+        if (prefix != null) {
+          usedPrefixes.add(prefix)
+        }
+    }
+    val pm = model.getNsPrefixMap
+    for (prefix <- pm.keySet) {
+      if (!usedPrefixes.contains(prefix)) {
+        model.removeNsPrefix(prefix)
+      }
+    }
+  }
+
+  def writeModel(base: String, model: Model, format: String, toFile: File): Unit = {
     val writer = model.getWriter(format2lang(format).get)
+
+    // set these props and let jena decide which will actually apply depending on the format
+    writer.setProperty("xmlbase", base)
+    writer.setProperty("showXmlDeclaration", "true")
+    writer.setProperty("relativeURIs", "same-document")
+
     val os = new FileOutputStream(toFile)
-    try writer.write(model, os, uri)
+    try writer.write(model, os, base)
     finally os.close()
 
   }
@@ -220,8 +246,6 @@ object ontUtil extends AnyRef with Logging {
   def replaceNamespace(model: OntModel, oldNameSpace: String, newNameSpace: String): Unit = {
     require(!newNameSpace.endsWith("/"))  // we add the "/" separator here
     logger.debug(s"replaceNamespace: moving terms from $oldNameSpace to $newNameSpace")
-
-    import scala.collection.JavaConversions._
 
     def inOldNamespace(r: Resource) = {
       val ns = r.getNameSpace
@@ -295,6 +319,7 @@ object ontUtil extends AnyRef with Logging {
     oldStatements foreach model.remove
     newStatements foreach model.add
 
+    removeUnusedNsPrefixes(model)
     model.setNsPrefix("", newNameSpace + "/")
 
     if (logger.underlying.isDebugEnabled) {
