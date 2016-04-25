@@ -289,6 +289,7 @@ class UserController(implicit setup: Setup) extends BaseController
     if (checkIsUserOrAdminOrExtra(dbUser.userName)) {
       res = res.copy(
         email      = Some(dbUser.email),
+        role       = if (isAdminOrExtra(dbUser)) Some("admin") else None,
         phone      = dbUser.phone,
         registered = Some(dbUser.registered),
         updated    = dbUser.updated

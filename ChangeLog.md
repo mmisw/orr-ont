@@ -1,6 +1,7 @@
 ## change log ##
 
 * 2016-04-22-24: 0.3.1:
+  - include role (only when "admin") in GET /user/:userName response for admin or same user
   - written fully-hosted file: include xml:base and remove unused namespace prefixes
   - files involved fully-hosted registration starting from upload:
       ```

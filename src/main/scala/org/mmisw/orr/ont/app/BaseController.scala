@@ -181,4 +181,6 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
     case None => missing("userName")
     case Some(userName) => verifyUser(userName)
   }
+
+  protected def isAdminOrExtra(u: db.User): Boolean = "admin" == u.userName || extra.contains(u.userName)
 }
