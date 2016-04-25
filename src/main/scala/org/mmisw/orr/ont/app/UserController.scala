@@ -30,8 +30,7 @@ class UserController(implicit setup: Setup) extends BaseController
    */
   get("/:userName") {
     val userName = require(params, "userName")
-    val res = getUserResult(getUser(userName))
-    res.copy(organizations = orgService.getUserOrganizations(userName))
+    getUserResult(getUser(userName), withOrgs = true)
   }
 
   // username reminder
@@ -280,7 +279,7 @@ class UserController(implicit setup: Setup) extends BaseController
 
   ///////////////////////////////////////////////////////////////////////////
 
-  def getUserResult(dbUser: db.User): UserResult = {
+  def getUserResult(dbUser: db.User, withOrgs: Boolean = false): UserResult = {
     var res = UserResult(
       userName   = dbUser.userName,
       firstName  = Some(dbUser.firstName),
@@ -294,6 +293,7 @@ class UserController(implicit setup: Setup) extends BaseController
         registered = Some(dbUser.registered),
         updated    = dbUser.updated
       )
+      if (withOrgs) res = res.copy(organizations = orgService.getUserOrganizations(dbUser.userName))
     }
     res
   }
