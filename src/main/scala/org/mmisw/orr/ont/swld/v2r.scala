@@ -1,30 +1,29 @@
 package org.mmisw.orr.ont.swld
 
 import com.hp.hpl.jena.rdf.model.{Model, ModelFactory, Property}
-import com.hp.hpl.jena.vocabulary.{OWL, RDF, RDFS}
+import com.hp.hpl.jena.vocabulary.{OWL, RDF}
+import org.json4s._
+import org.json4s.native.Serialization
+import org.json4s.native.Serialization.{writePretty, write}
 
 
-case class Element(name:    Option[String] = None,
-                   uri:     Option[String] = None,
-                   label:   Option[String] = None
+case class Element(name:   Option[String] = None,
+                   uri:    Option[String] = None,
+                   label:  Option[String] = None
                   ) {
 
-  def getUri(namespace: String) = {
-    uri.getOrElse(namespace + name.get)
-  }
+  def getUri(namespace: String) = uri.getOrElse(namespace + name.get)
 
-  def getLabel: String = {
-    label.getOrElse(name.getOrElse{
-      val u = uri.getOrElse("")
-      val i = Math.max(u.lastIndexOf('/'), u.lastIndexOf('#'))
-      if (i >= 0 && i < u.length - 1) u.substring(i + 1) else u
-    })
-  }
+  def getLabel: String = label.getOrElse(name.getOrElse {
+    val u = uri.getOrElse("")
+    val i = Math.max(u.lastIndexOf('/'), u.lastIndexOf('#'))
+    if (i >= 0 && i < u.length - 1) u.substring(i + 1) else u
+  })
 }
 
-case class Vocab(`class`:  Element,
-                 properties:    List[Element],
-                 terms:         List[List[String]]
+case class Vocab(`class`:     Element,
+                 properties:  List[Element],
+                 terms:       List[List[String]]
                 ) {
 
   def addStatements(namespace: String, model: Model): Unit = {
@@ -58,8 +57,10 @@ case class Vocab(`class`:  Element,
 }
 
 case class Voc2Rdf(namespace: String,
-                   vocabs: List[Vocab]
+                   vocabs:    List[Vocab]
                   ) {
+
+  implicit val formats = Serialization.formats(NoTypeHints)
 
   def getModel: Model = {
     val model = ModelFactory.createDefaultModel()
@@ -67,5 +68,7 @@ case class Voc2Rdf(namespace: String,
     model
   }
 
-}
+  def toJson: String = write(this)
 
+  def toPrettyJson: String = writePretty(this)
+}
