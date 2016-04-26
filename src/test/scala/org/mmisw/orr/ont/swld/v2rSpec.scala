@@ -9,8 +9,8 @@ import org.json4s.native.JsonMethods._
 class v2rSpec extends Specification {
   implicit val formats = DefaultFormats
 
-  val v2r1 = Voc2Rdf(
-    namespace = "http://ns/",
+  val vr1 = V2RModel(
+    namespace = None,
     vocabs = List(
       Vocab(
         `class` = Element(name = Some("Parameter")),
@@ -29,7 +29,6 @@ class v2rSpec extends Specification {
   val jsonInput =
     """
       |{
-      |  "namespace": "http://ns/",
       |  "vocabs": [
       |    {
       |      "class": {
@@ -54,33 +53,52 @@ class v2rSpec extends Specification {
   val json  = parse(jsonInput)
 
   """v2r""" should {
-    """parse json""" in {
-      val v2r = json.extract[Voc2Rdf]
-      v2r === v2r1
-    }
+    """create expected model with given namespace""" in {
+      val ns1 = "http://ns/"
 
-    """create expected model""" in {
-      val model = v2r1.getModel
+      val model = v2r.getModel(vr1, Some(ns1))
 
-      ontUtil.writeModel(v2r1.namespace, model, "n3", new java.io.File("/tmp/v2r1.n3"))
-      ontUtil.writeModel(v2r1.namespace, model, "jsonld", new java.io.File("/tmp/v2r1.jsonld"))
-      ontUtil.writeModel(v2r1.namespace, model, "rj", new java.io.File("/tmp/v2r1.rj"))
+      //ontUtil.writeModel(ns1, model, "n3",     new java.io.File("/tmp/vr1.n3"))
+      //ontUtil.writeModel(ns1, model, "jsonld", new java.io.File("/tmp/vr1.jsonld"))
+      //ontUtil.writeModel(ns1, model, "rj",     new java.io.File("/tmp/vr1.rj"))
 
-      val Parameter  = model.createResource("http://ns/Parameter")
-      val pressure   = model.createResource("http://ns/pressure")
-      val definition = model.createProperty("http://ns/definition")
+      val Parameter  = model.createResource(ns1 + "Parameter")
+      val pressure   = model.createResource(ns1 + "pressure")
+      val definition = model.createProperty(ns1 + "definition")
       val someProp   = model.createProperty("http://some/prop")
 
-      model.contains(Parameter,  RDF.`type`, OWL.Class)            must_== true
-      model.contains(definition, RDF.`type`, OWL.DatatypeProperty) must_== true
+      model.contains(Parameter,  RDF.`type`, OWL.Class)            === true
+      model.contains(definition, RDF.`type`, OWL.DatatypeProperty) === true
 
       ontUtil.getValue(pressure, definition) === Some("Definition of pressure")
       ontUtil.getValue(pressure, someProp)   === Some("value of some/prop")
     }
 
-    """serialize into "v2r" json format""" in {
-      val v2r1Json = parse(v2r1.toJson)
-      Diff(JNothing, JNothing, JNothing) === json.diff(v2r1Json)
+    """create expected model (no namespace)""" in {
+      val model = v2r.getModel(vr1)
+
+      //ontUtil.writeModel(null, model, "n3", new java.io.File("/tmp/vr1_no_ns.n3"))
+
+      val Parameter  = model.createResource("Parameter")
+      val pressure   = model.createResource("pressure")
+      val definition = model.createProperty("definition")
+      val someProp   = model.createProperty("http://some/prop")
+
+      model.contains(Parameter,  RDF.`type`, OWL.Class)            === true
+      model.contains(definition, RDF.`type`, OWL.DatatypeProperty) === true
+
+      ontUtil.getValue(pressure, definition) === Some("Definition of pressure")
+      ontUtil.getValue(pressure, someProp)   === Some("value of some/prop")
+    }
+
+    """obtain expected model by parsing direct json input""" in {
+      val v2r = json.extract[V2RModel]
+      v2r === vr1
+    }
+
+    """serialize model into json format with not diff with direct json input""" in {
+      val vr1Json = parse(vr1.toJson)
+      Diff(JNothing, JNothing, JNothing) === json.diff(vr1Json)
     }
   }
 }

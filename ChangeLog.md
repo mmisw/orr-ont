@@ -1,6 +1,7 @@
 ## change log ##
 
-* 2016-04-22-25: 0.3.1:
+* 2016-04-22-25,26: 0.3.1:
+  - make namespace optional in V2RModel
   - preliminaries for v2r format
 
 * 2016-04-22-24: 0.3.1:

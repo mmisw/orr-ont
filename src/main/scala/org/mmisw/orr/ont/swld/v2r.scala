@@ -12,7 +12,7 @@ case class Element(name:   Option[String] = None,
                    label:  Option[String] = None
                   ) {
 
-  def getUri(namespace: String) = uri.getOrElse(namespace + name.get)
+  def getUri(namespaceOpt: Option[String]) = uri.getOrElse(namespaceOpt.getOrElse("") + name.get)
 
   def getLabel: String = label.getOrElse(name.getOrElse {
     val u = uri.getOrElse("")
@@ -26,12 +26,12 @@ case class Vocab(`class`:     Element,
                  terms:       List[List[String]]
                 ) {
 
-  def addStatements(namespace: String, model: Model): Unit = {
-    val clazz = model.createResource(`class`.getUri(namespace))
+  def addStatements(model: Model, namespaceOpt: Option[String] = None): Unit = {
+    val clazz = model.createResource(`class`.getUri(namespaceOpt))
     model.add(clazz, RDF.`type`, OWL.Class)
 
     val propList: List[Property] = properties map { pe =>
-      val property = model.createProperty(pe.getUri(namespace))
+      val property = model.createProperty(pe.getUri(namespaceOpt))
       if (pe.uri.isEmpty) model.add(property, RDF.`type`, OWL.DatatypeProperty)
       //Else, we don't define any attributes for the given property
       property
@@ -40,7 +40,7 @@ case class Vocab(`class`:     Element,
     terms foreach { cols =>
       val termName = cols.head
 
-      val term = model.createResource(namespace + termName)
+      val term = model.createResource(namespaceOpt.getOrElse("") + termName)
       model.add(term, RDF.`type`, clazz)
 
       val numCols = Math.min(propList.size, cols.size - 1)
@@ -56,19 +56,33 @@ case class Vocab(`class`:     Element,
   }
 }
 
-case class Voc2Rdf(namespace: String,
-                   vocabs:    List[Vocab]
-                  ) {
+case class V2RModel(namespace: Option[String],
+                    vocabs:    List[Vocab]
+                   ) {
+
+  def addStatements(model: Model, namespaceOpt: Option[String] = None): Unit = {
+    vocabs foreach (_.addStatements(model, namespaceOpt orElse namespace))
+  }
 
   implicit val formats = Serialization.formats(NoTypeHints)
-
-  def getModel: Model = {
-    val model = ModelFactory.createDefaultModel()
-    vocabs foreach (_.addStatements(namespace, model))
-    model
-  }
 
   def toJson: String = write(this)
 
   def toPrettyJson: String = writePretty(this)
+}
+
+object v2r {
+
+  /**
+    * Gets the jena model corresponding to the given V2RModel.
+    * @param vr            model
+    * @param namespaceOpt  If given, this is used as the resulting namespace in the model.
+    *                      If not, the namespace of the V2RModel is used (if defined)
+    * @return
+    */
+  def getModel(vr: V2RModel, namespaceOpt: Option[String] = None): Model = {
+    val model = ModelFactory.createDefaultModel()
+    vr.addStatements(model, namespaceOpt)
+    model
+  }
 }
