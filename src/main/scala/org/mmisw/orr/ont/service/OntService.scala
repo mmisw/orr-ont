@@ -146,14 +146,15 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     else try {
       val (fromFile, fromFormat) = {
         // TODO needs revision
-        val tryFormats = List("rdf", "v2r", "owx")
+        val tryFormats = ontUtil.storedFormats
         def doTry(formats: List[String]): (File, String) = formats match {
           case format :: rest =>
             val file = new File(versionDir, "file." + format)
             if (file.exists()) (file, format)
             else doTry(rest)
           case Nil =>
-            throw CannotCreateFormat(uri, version, reqFormat, s"Not base file with format in $tryFormats was found")
+            throw CannotCreateFormat(uri, version, reqFormat,
+              s"Not base file was found with format in: ${tryFormats.mkString(", ")}")
         }
         doTry(tryFormats)
       }

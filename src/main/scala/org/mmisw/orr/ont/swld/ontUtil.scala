@@ -51,6 +51,9 @@ object ontUtil extends AnyRef with Logging {
     } yield doIt(fromLang, toLang)
   }
 
+  // TODO review along with mapping in storedFormat method
+  val storedFormats = List("rdf", "n3", "owx", "jsonld", "v2r")
+
   // for the files actually stored
   def storedFormat(format: String) = format.toLowerCase match {
     case "owx"              => "owx"    // https://www.w3.org/TR/owl-xml-serialization/
@@ -58,7 +61,7 @@ object ontUtil extends AnyRef with Logging {
     case "owl"  | "rdf"     => "rdf"
     case "json" | "jsonld"  => "jsonld"
     case "ttl"  | "n3"      => "n3"
-    case f => f
+    case f => f   // TODO explicitly include other formats we are providing, "rj",
   }
 
   def getPropsFromOntMetadata(uri: String, file: File, format: String): Map[String,String] = {

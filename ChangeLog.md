@@ -1,6 +1,8 @@
 ## change log ##
 
 * 2016-04-22-27: 0.3.1:
+  - introduce ontUtil.storedFormats intended to capture all formats used to store ontology serializations
+    TODO This is basically working but needs overall unification
   - SelfHostedOntController.portalDispatch: adjustments in contentType so dispatch of orr-portal also
     works well while exercising it with `sbt container:start`
   
