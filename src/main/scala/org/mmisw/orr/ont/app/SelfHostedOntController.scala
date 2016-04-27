@@ -23,14 +23,13 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
     with Logging {
 
   get("/(.*)".r) {
-    val reqFormat = getRequestedFormat
     val pathInfo = request.pathInfo
-
-    logger.debug(s"SelfHostedOntController: reqFormat=$reqFormat request.pathInfo=$pathInfo")
-
     if (pathInfo.startsWith("/api")) {
       pass()
     }
+
+    val reqFormat = getRequestedFormat
+    logger.debug(s"SelfHostedOntController: reqFormat=$reqFormat request.pathInfo=$pathInfo")
 
     if (!portalDispatch(pathInfo, reqFormat)) {
       // skip leading slash if any
