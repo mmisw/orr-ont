@@ -13,14 +13,15 @@ class v2rSpec extends Specification {
     namespace = None,
     vocabs = List(
       Vocab(
-        `class` = Element(name = Some("Parameter")),
+        `class` = IdL(name = Some("Parameter")),
         properties = List(
-          Element(name = Some("definition")),
-          Element(uri = Some("http://some/prop"))
+          IdL(name = Some("definition")),
+          IdL(uri = Some("http://some/prop"))
         ),
         terms = List(
-          List("pressure",
-            "Definition of pressure", "value of some/prop")
+          Term(name = Some("pressure"),
+               attributes = List("Definition of pressure", "value of some/prop")
+          )
         )
       )
     )
@@ -43,7 +44,10 @@ class v2rSpec extends Specification {
       |         }
       |      ],
       |      "terms": [
-      |        ["pressure", "Definition of pressure", "value of some/prop"]
+      |        {
+      |          "name": "pressure",
+      |          "attributes": ["Definition of pressure", "value of some/prop"]
+      |        }
       |      ]
       |    }
       |  ]
@@ -97,6 +101,7 @@ class v2rSpec extends Specification {
     }
 
     """serialize model into json format with not diff with direct json input""" in {
+      //println(s"\n\nvr1JsonString=${vr1.toPrettyJson}\n\n")
       val vr1Json = parse(vr1.toJson)
       Diff(JNothing, JNothing, JNothing) === json.diff(vr1Json)
     }

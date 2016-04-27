@@ -12,10 +12,10 @@ import org.json4s.native.Serialization
 import org.json4s.native.Serialization.{write, writePretty}
 
 
-case class Element(name:   Option[String] = None,
-                   uri:    Option[String] = None,
-                   label:  Option[String] = None
-                  ) {
+case class IdL(name:  Option[String] = None,
+               uri:   Option[String] = None,
+               label: Option[String] = None
+              ) {
 
   def getUri(namespaceOpt: Option[String]) = uri.getOrElse(namespaceOpt.getOrElse("") + name.get)
 
@@ -26,9 +26,16 @@ case class Element(name:   Option[String] = None,
   })
 }
 
-case class Vocab(`class`:     Element,
-                 properties:  List[Element],
-                 terms:       List[List[String]]
+case class Term(name:  Option[String] = None,
+                uri:   Option[String] = None,
+                attributes: List[String]
+               ) {
+  def getUri(namespaceOpt: Option[String]) = uri.getOrElse(namespaceOpt.getOrElse("") + name.get)
+}
+
+case class Vocab(`class`:     IdL,
+                 properties:  List[IdL],
+                 terms:       List[Term]
                 ) {
 
   def addStatements(model: Model, namespaceOpt: Option[String] = None): Unit = {
@@ -42,19 +49,22 @@ case class Vocab(`class`:     Element,
       property
     }
 
-    terms foreach { cols =>
-      val termName = cols.head
+    terms foreach { term =>
+      val termUri = term.getUri(namespaceOpt)
 
-      val term = model.createResource(namespaceOpt.getOrElse("") + termName)
-      model.add(term, RDF.`type`, clazz)
+      val termResource = model.createResource(termUri)
+      model.add(termResource, RDF.`type`, clazz)
 
-      val numCols = Math.min(propList.size, cols.size - 1)
+      if (propList.size != term.attributes.size) {
+        println(s"WARN: for term=$termUri, number of attributes is different from number of properties")
+      }
+      val numCols = Math.min(propList.size, term.attributes.size)
 
       var i = 0
       while (i < numCols) {
         val prop  = propList(i)
-        val value = cols(i + 1)
-        model.add(term, prop, value)
+        val value = term.attributes(i)
+        model.add(termResource, prop, value)
         i += 1
       }
     }
@@ -80,6 +90,7 @@ object v2r extends AnyRef with Logging {
 
   /**
     * Gets the jena model corresponding to the given V2RModel.
+ *
     * @param vr            model
     * @param namespaceOpt  If given, this is used as the resulting namespace in the model.
     *                      If not, the namespace of the V2RModel is used (if defined)

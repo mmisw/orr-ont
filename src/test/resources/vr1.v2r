@@ -1,5 +1,4 @@
 {
-  "namespace": "http://mynamespace/",
   "vocabs": [
     {
       "class": {
@@ -14,7 +13,10 @@
         }
       ],
       "terms": [
-        ["pressure", "Definition of pressure", "value of some/prop"]
+        {
+          "name": "pressure",
+          "attributes": ["Definition of pressure", "value of some/prop"]
+        }
       ]
     }
   ]
