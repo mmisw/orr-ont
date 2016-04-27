@@ -1,5 +1,9 @@
 ## change log ##
 
+* 2016-04-22-27: 0.3.1:
+  - SelfHostedOntController.portalDispatch: adjustments in contentType so dispatch of orr-portal also
+    works well while exercising it with `sbt container:start`
+  
 * 2016-04-22-25,26: 0.3.1:
   - v2r: vocab terms is now List[Term], with term's attributes as List[JValue] to allow,
     per property, to either associate an individual value or an array of such values.

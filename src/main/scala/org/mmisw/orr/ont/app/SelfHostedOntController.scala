@@ -54,6 +54,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
       val isUiResource = List("/vendor", "/js", "/img", "/css") exists pathInfo.startsWith
 
       if (isUiResource) {
+        contentType = null  // so, the following sets the content type according to the resource
         serveStaticResource() getOrElse error(404, s"${request.getRequestURI}: resource not found")
         true
       }
@@ -64,6 +65,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
         val indexRequest = new HttpServletRequestWrapper(request) {
           override def getPathInfo = "/index.html"
         }
+        contentType = formats("html") // make sure html is responded
         servletContext.getNamedDispatcher("default").forward(indexRequest, response)
         true
       }
