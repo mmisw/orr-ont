@@ -53,6 +53,7 @@ object ontUtil extends AnyRef with Logging {
   // for the files actually stored
   def storedFormat(format: String) = format.toLowerCase match {
     case "owl"              => "owl"
+    case "v2r"              => "v2r"
     case "rdf"              => "rdf"
     case "json" | "jsonld"  => "jsonld"
     case "ttl"  | "n3"      => "n3"
@@ -181,7 +182,7 @@ object ontUtil extends AnyRef with Logging {
     finally is.close()
   }
 
-  private def createDefaultOntModel: OntModel = {
+  def createDefaultOntModel: OntModel = {
     val spec: OntModelSpec = new OntModelSpec(OntModelSpec.OWL_MEM)
     spec.setDocumentManager(new OntDocumentManager)
     ModelFactory.createOntologyModel(spec, null)
@@ -190,6 +191,7 @@ object ontUtil extends AnyRef with Logging {
   // https://jena.apache.org/documentation/io/
   def format2lang(format: String) = Option(format.toLowerCase match {
     case "owl"          => "OWL/XML"  // to use OWL API
+    case "v2r"          => "V2R"      // see v2r module
     case "rdf"          => "RDF/XML"
     case "jsonld"       => "JSON-LD"
     case "n3"           => "N3"

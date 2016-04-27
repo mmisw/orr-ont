@@ -1,6 +1,7 @@
 ## change log ##
 
 * 2016-04-22-25,26: 0.3.1:
+  - initial support for .v2r format in upload operation
   - make namespace optional in V2RModel
   - preliminaries for v2r format
 

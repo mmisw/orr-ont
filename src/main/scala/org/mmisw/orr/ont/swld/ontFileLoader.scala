@@ -37,6 +37,9 @@ object ontFileLoader extends AnyRef with Logging {
     else if ("OWL/XML" == lang) {
       owlApiHelper.loadOntModel(file)
     }
+    else if ("V2R" == lang) {
+      v2r.loadOntModel(file)
+    }
     //else if ("voc2skos" == lang) {
     //  model = Voc2Skos.loadOntModel(file)
     //}

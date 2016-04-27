@@ -1,10 +1,15 @@
 package org.mmisw.orr.ont.swld
 
-import com.hp.hpl.jena.rdf.model.{Model, ModelFactory, Property}
+import java.io.File
+
+import com.hp.hpl.jena.ontology.OntModel
+import com.hp.hpl.jena.rdf.model.{Model, Property}
 import com.hp.hpl.jena.vocabulary.{OWL, RDF}
+import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.json4s._
+import org.json4s.native.JsonMethods._
 import org.json4s.native.Serialization
-import org.json4s.native.Serialization.{writePretty, write}
+import org.json4s.native.Serialization.{write, writePretty}
 
 
 case class Element(name:   Option[String] = None,
@@ -71,7 +76,7 @@ case class V2RModel(namespace: Option[String],
   def toPrettyJson: String = writePretty(this)
 }
 
-object v2r {
+object v2r extends AnyRef with Logging {
 
   /**
     * Gets the jena model corresponding to the given V2RModel.
@@ -80,9 +85,31 @@ object v2r {
     *                      If not, the namespace of the V2RModel is used (if defined)
     * @return
     */
-  def getModel(vr: V2RModel, namespaceOpt: Option[String] = None): Model = {
-    val model = ModelFactory.createDefaultModel()
-    vr.addStatements(model, namespaceOpt)
-    model
+  def getModel(vr: V2RModel, namespaceOpt: Option[String] = None): OntModel = {
+    val ontModel = ontUtil.createDefaultOntModel
+    vr.addStatements(ontModel, namespaceOpt)
+    ontModel
   }
+
+  def loadOntModel(file: File): OntModelLoadedResult = {
+    logger.debug("v2r.loadOntModel: loading file=" + file)
+
+    // need to use RDF for saving (see OntService.getOntologyFile)
+    val rdfFilename = file.getName.replaceAll("\\.v2r$", "\\.rdf")
+    val rdfFile = new File(file.getParent, rdfFilename)
+
+    implicit val formats = DefaultFormats
+    val json  = parse(file)
+    val vr = json.extract[V2RModel]
+
+    val namespaceOpt = vr.namespace orElse Some(rdfFile.getCanonicalFile.toURI.toString + "/")
+
+    val model = v2r.getModel(vr, namespaceOpt)
+
+    logger.debug("v2r.loadOntModel: saving RDF/XML in =" + rdfFile)
+    ontUtil.writeModel(namespaceOpt.get, model, "rdf", rdfFile)
+
+    OntModelLoadedResult(rdfFile, "rdf", model)
+  }
+
 }

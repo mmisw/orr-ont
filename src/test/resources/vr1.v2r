@@ -1,0 +1,21 @@
+{
+  "namespace": "http://mynamespace/",
+  "vocabs": [
+    {
+      "class": {
+        "name": "Parameter"
+      },
+      "properties": [
+        {
+          "name": "definition"
+        },
+        {
+          "uri": "http://some/prop"
+        }
+      ],
+      "terms": [
+        ["pressure", "Definition of pressure", "value of some/prop"]
+      ]
+    }
+  ]
+}

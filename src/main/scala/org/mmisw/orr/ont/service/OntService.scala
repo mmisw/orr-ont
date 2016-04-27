@@ -144,7 +144,10 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
       (file, actualFormat)
     }
     else try {
-      // TODO determine base format for conversions
+      // TODO possibly adjust scheme for conversions so the originally submitted
+      // format is used to support the conversions.
+      // Current scheme: we use RDF/XML as the base format always -- other initial formats
+      // (OWL/XML, V2R) are immediately converted and also saved in RDF/XML at time of registration.
       val fromFile = new File(versionDir, "file.rdf")
       ontUtil.convert(uri, fromFile, fromFormat = "rdf", file, toFormat = actualFormat) match {
         case Some(resFile) => (resFile, actualFormat)
