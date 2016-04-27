@@ -17,7 +17,7 @@ case class IdL(name:  Option[String] = None,
                label: Option[String] = None
               ) {
 
-  def getUri(namespaceOpt: Option[String]) = uri.getOrElse(namespaceOpt.getOrElse("") + name.get)
+  def getUri(namespaceOpt: Option[String] = None) = uri.getOrElse(namespaceOpt.getOrElse("") + name.get)
 
   def getLabel: String = label.getOrElse(name.getOrElse {
     val u = uri.getOrElse("")
@@ -26,11 +26,11 @@ case class IdL(name:  Option[String] = None,
   })
 }
 
-case class Term(name:  Option[String] = None,
-                uri:   Option[String] = None,
-                attributes: List[String]
+case class Term(name:        Option[String] = None,
+                uri:         Option[String] = None,
+                attributes:  List[JValue]
                ) {
-  def getUri(namespaceOpt: Option[String]) = uri.getOrElse(namespaceOpt.getOrElse("") + name.get)
+  def getUri(namespaceOpt: Option[String] = None) = uri.getOrElse(namespaceOpt.getOrElse("") + name.get)
 }
 
 case class Vocab(`class`:     IdL,
@@ -58,14 +58,24 @@ case class Vocab(`class`:     IdL,
       if (propList.size != term.attributes.size) {
         println(s"WARN: for term=$termUri, number of attributes is different from number of properties")
       }
-      val numCols = Math.min(propList.size, term.attributes.size)
 
-      var i = 0
-      while (i < numCols) {
-        val prop  = propList(i)
-        val value = term.attributes(i)
-        model.add(termResource, prop, value)
-        i += 1
+      (propList zip term.attributes) foreach { pa: (Property, JValue) =>
+        val (prop, attr) = pa
+
+        val primitive: PartialFunction[JValue, Unit] = {
+          case JString(v)   => model.add(       termResource, prop, v)
+          case JBool(v)     => model.addLiteral(termResource, prop, v)
+          case JInt(v)      => model.add(       termResource, prop, v.toString())   // BigInteger
+          case JDouble(v)   => model.addLiteral(termResource, prop, v)
+
+          case j => println(s"WARN: for term=$termUri, prop=$prop, value $j not handled")
+        }
+
+        val array: PartialFunction[JValue, Unit] = {
+          case JArray(arr) => arr foreach primitive
+        }
+
+        (array orElse primitive)(attr)
       }
     }
   }

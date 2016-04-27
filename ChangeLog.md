@@ -1,7 +1,8 @@
 ## change log ##
 
 * 2016-04-22-25,26: 0.3.1:
-  - v2r: vocab terms is now List[Term]
+  - v2r: vocab terms is now List[Term], with term's attributes as List[JValue] to allow,
+    per property, to either associate an individual value or an array of such values.
   - uploaded "owx" (OWL/XML) file is now stored in that format as the original.
   - general adjustments related with OWL/XML: "owx" is the associated request format and also
     the extension of stored file. Mime type is "application/owl+xml". Extension and mime type 

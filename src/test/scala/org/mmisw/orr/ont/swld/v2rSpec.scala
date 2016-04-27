@@ -20,41 +20,20 @@ class v2rSpec extends Specification {
         ),
         terms = List(
           Term(name = Some("pressure"),
-               attributes = List("Definition of pressure", "value of some/prop")
+               attributes = List(
+                 JString("Definition of pressure"),
+                 JArray(List(
+                  JString("one value for some/prop"),
+                  JString("other value for some/prop")
+                 ))
+               )
           )
         )
       )
     )
   )
 
-  val jsonInput =
-    """
-      |{
-      |  "vocabs": [
-      |    {
-      |      "class": {
-      |        "name": "Parameter"
-      |      },
-      |      "properties": [
-      |         {
-      |           "name": "definition"
-      |         },
-      |         {
-      |           "uri": "http://some/prop"
-      |         }
-      |      ],
-      |      "terms": [
-      |        {
-      |          "name": "pressure",
-      |          "attributes": ["Definition of pressure", "value of some/prop"]
-      |        }
-      |      ]
-      |    }
-      |  ]
-      |}
-    """.stripMargin
-
-  val json  = parse(jsonInput)
+  val json = parse(new java.io.File("src/test/resources/vr1.v2r"))
 
   """v2r""" should {
     """create expected model with given namespace""" in {
@@ -62,7 +41,7 @@ class v2rSpec extends Specification {
 
       val model = v2r.getModel(vr1, Some(ns1))
 
-      //ontUtil.writeModel(ns1, model, "n3",     new java.io.File("/tmp/vr1.n3"))
+      ontUtil.writeModel(ns1, model, "n3",     new java.io.File("/tmp/vr1.n3"))
       //ontUtil.writeModel(ns1, model, "jsonld", new java.io.File("/tmp/vr1.jsonld"))
       //ontUtil.writeModel(ns1, model, "rj",     new java.io.File("/tmp/vr1.rj"))
 
@@ -74,8 +53,8 @@ class v2rSpec extends Specification {
       model.contains(Parameter,  RDF.`type`, OWL.Class)            === true
       model.contains(definition, RDF.`type`, OWL.DatatypeProperty) === true
 
-      ontUtil.getValue(pressure, definition) === Some("Definition of pressure")
-      ontUtil.getValue(pressure, someProp)   === Some("value of some/prop")
+      ontUtil.getValues(pressure, definition).toSet === Set("Definition of pressure")
+      ontUtil.getValues(pressure, someProp).toSet   === Set("one value for some/prop", "other value for some/prop")
     }
 
     """create expected model (no namespace)""" in {
@@ -91,8 +70,8 @@ class v2rSpec extends Specification {
       model.contains(Parameter,  RDF.`type`, OWL.Class)            === true
       model.contains(definition, RDF.`type`, OWL.DatatypeProperty) === true
 
-      ontUtil.getValue(pressure, definition) === Some("Definition of pressure")
-      ontUtil.getValue(pressure, someProp)   === Some("value of some/prop")
+      ontUtil.getValues(pressure, definition).toSet === Set("Definition of pressure")
+      ontUtil.getValues(pressure, someProp).toSet   === Set("one value for some/prop", "other value for some/prop")
     }
 
     """obtain expected model by parsing direct json input""" in {

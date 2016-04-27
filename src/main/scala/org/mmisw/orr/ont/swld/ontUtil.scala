@@ -84,6 +84,17 @@ object ontUtil extends AnyRef with Logging {
     else resourceType
   }
 
+  def getValues(sub: Resource, pro: Property): List[String] = {
+    var list = List[String]()
+    val it = sub.listProperties(pro)
+    if (it != null) while (it.hasNext) {
+      val stmt = it.next()
+      val nodeString = nodeAsString(stmt.getObject)
+      list = nodeString :: list
+    }
+    list
+  }
+
   def getValue(sub: Resource, pro: Property): Option[String] = {
     for {
       sta <- Option(sub.getProperty(pro))
