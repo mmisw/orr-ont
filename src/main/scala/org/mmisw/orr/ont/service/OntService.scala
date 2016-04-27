@@ -146,7 +146,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     else try {
       val (fromFile, fromFormat) = {
         // TODO needs revision
-        val tryFormats = List("rdf", "v2r", "owl")
+        val tryFormats = List("rdf", "v2r", "owx")
         def doTry(formats: List[String]): (File, String) = formats match {
           case format :: rest =>
             val file = new File(versionDir, "file." + format)

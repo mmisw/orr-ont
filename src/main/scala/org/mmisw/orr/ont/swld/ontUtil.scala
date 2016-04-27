@@ -17,8 +17,9 @@ object ontUtil extends AnyRef with Logging {
 
   // todo review
   val mimeMappings: Map[String, String] = Map(
-      "rdf"     -> "application/rdf+xml"
-    , "owl"     -> "application/rdf+xml"
+      "rdf"     -> "application/rdf+xml"    // https://www.w3.org/TR/REC-rdf-syntax/
+    , "owl"     -> "application/rdf+xml"    // https://www.w3.org/TR/REC-rdf-syntax/
+    , "owx"     -> "application/owl+xml"    // https://www.w3.org/TR/owl-xml-serialization/
     , "v2r"     -> "application/v2r+json"
     , "jsonld"  -> "application/json+ld"    // http://www.ietf.org/rfc/rfc6839.txt
     , "n3"      -> "text/n3"                // http://www.w3.org/TeamSubmission/n3/
@@ -52,9 +53,9 @@ object ontUtil extends AnyRef with Logging {
 
   // for the files actually stored
   def storedFormat(format: String) = format.toLowerCase match {
-    case "owl"              => "owl"
+    case "owx"              => "owx"    // https://www.w3.org/TR/owl-xml-serialization/
     case "v2r"              => "v2r"
-    case "rdf"              => "rdf"
+    case "owl"  | "rdf"     => "rdf"
     case "json" | "jsonld"  => "jsonld"
     case "ttl"  | "n3"      => "n3"
     case f => f
@@ -167,17 +168,13 @@ object ontUtil extends AnyRef with Logging {
   def loadOntModel(uri: String, file: File, format: String): OntModel = {
     val lang = format2lang(storedFormat(format)).getOrElse(throw new IllegalArgumentException)
     logger.debug(s"Loading uri='$uri' file=$file lang=$lang")
-    val ontModel = createDefaultOntModel
-    ontModel.setDynamicImports(false)
-    ontModel.getDocumentManager.setProcessImports(false)
-    readModel(uri, file, lang, ontModel)
-    ontModel
+    readModel2(uri, file, lang)
   }
 
   private def readModel2(uri: String, file: File, lang: String): OntModel = {
     val path = file.getAbsolutePath
     logger.debug(s"readModel: path='$path' lang='$lang'")
-    if ("OWL/XML" == lang) {
+    if ("OWX" == lang) {
       owlApiHelper.loadOntModel(file).ontModel
     }
     else if ("V2R" == lang) {
@@ -185,6 +182,8 @@ object ontUtil extends AnyRef with Logging {
     }
     else {
       val ontModel = createDefaultOntModel
+      ontModel.setDynamicImports(false)
+      ontModel.getDocumentManager.setProcessImports(false)
       readModel(uri, file, lang, ontModel)
       ontModel
     }
@@ -206,9 +205,9 @@ object ontUtil extends AnyRef with Logging {
 
   // https://jena.apache.org/documentation/io/
   def format2lang(format: String) = Option(format.toLowerCase match {
-    case "owl"          => "OWL/XML"  // to use OWL API
+    case "owx"          => "OWX"      // to use OWL API
     case "v2r"          => "V2R"      // see v2r module
-    case "rdf"          => "RDF/XML"
+    case "owl" | "rdf"  => "RDF/XML"
     case "jsonld"       => "JSON-LD"
     case "n3"           => "N3"
     case "ttl"          => "Turtle"

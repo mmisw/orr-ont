@@ -435,17 +435,17 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     }
   }
 
-  "Upload OWL file (POST /ont/upload)" should {
-    val owlFile = new File("src/test/resources/ice-of-land-origin.owl")
+  "Upload OWL/XML file (POST /ont/upload)" should {
+    val owxFile = new File("src/test/resources/ice-of-land-origin.owl")
     "succeed with user credentials and return expected info" in {
-      post("/ont/upload", Map("format" -> "owl"), Map("file" -> owlFile), headers = userHeaders) {
+      post("/ont/upload", Map("format" -> "owx"), Map("file" -> owxFile), headers = userHeaders) {
         status must_== 200
         val b = body
         println(s"upload response body=$b")
         val uploadedFileInfo = parse(b).extract[UploadedFileInfo]
         println(s"uploadedFileInfo=$uploadedFileInfo")
         uploadedFileInfo.userName must_== userName
-        uploadedFileInfo.format must_== "rdf"
+        uploadedFileInfo.format must_== "owx"
         val possibleOntologyUris = uploadedFileInfo.possibleOntologyUris
         val uris = possibleOntologyUris.keySet
         uris must_== Set("http://purl.org/wmo/seaice/iceOfLandOrigin#")

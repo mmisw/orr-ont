@@ -1,9 +1,12 @@
 ## change log ##
 
 * 2016-04-22-25,26: 0.3.1:
+  - uploaded "owx" (OWL/XML) file is now stored in that format as the original.
+  - general adjustments related with OWL/XML: "owx" is the associated request format and also
+    the extension of stored file. Mime type is "application/owl+xml". Extension and mime type 
+    according to https://www.w3.org/TR/owl-xml-serialization/
   - uploaded "v2r" file is stored in that format as the original in final 
     version directory destination (that is not its conversion to rdf as the original)
-    TODO do similarly for "owl" (OWL/XML)
   - initial support for .v2r format in upload operation
   - make namespace optional in V2RModel
   - preliminaries for v2r format
