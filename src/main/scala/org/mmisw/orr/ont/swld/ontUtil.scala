@@ -19,6 +19,7 @@ object ontUtil extends AnyRef with Logging {
   val mimeMappings: Map[String, String] = Map(
       "rdf"     -> "application/rdf+xml"
     , "owl"     -> "application/rdf+xml"
+    , "v2r"     -> "application/v2r+json"
     , "jsonld"  -> "application/json+ld"    // http://www.ietf.org/rfc/rfc6839.txt
     , "n3"      -> "text/n3"                // http://www.w3.org/TeamSubmission/n3/
     , "ttl"     -> "text/turtle"            // http://www.w3.org/TeamSubmission/turtle/
@@ -35,8 +36,7 @@ object ontUtil extends AnyRef with Logging {
       if (fromLang == toLang) fromFile
       else {
         logger.info(s"ontUtil.convert: path=$fromFile toLang=$toLang")
-        val model = ModelFactory.createDefaultModel()
-        readModel(uri, fromFile, fromLang, model)
+        val model = readModel2(uri, fromFile, fromLang)
         val writer = model.getWriter(toLang)
         val os = new FileOutputStream(toFile)
         try writer.write(model, os, uri)
@@ -172,6 +172,22 @@ object ontUtil extends AnyRef with Logging {
     ontModel.getDocumentManager.setProcessImports(false)
     readModel(uri, file, lang, ontModel)
     ontModel
+  }
+
+  private def readModel2(uri: String, file: File, lang: String): OntModel = {
+    val path = file.getAbsolutePath
+    logger.debug(s"readModel: path='$path' lang='$lang'")
+    if ("OWL/XML" == lang) {
+      owlApiHelper.loadOntModel(file).ontModel
+    }
+    else if ("V2R" == lang) {
+      v2r.loadOntModel(file).ontModel
+    }
+    else {
+      val ontModel = createDefaultOntModel
+      readModel(uri, file, lang, ontModel)
+      ontModel
+    }
   }
 
   private def readModel(uri: String, file: File, lang: String, model: Model): Unit = {

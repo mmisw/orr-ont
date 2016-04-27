@@ -1,6 +1,9 @@
 ## change log ##
 
 * 2016-04-22-25,26: 0.3.1:
+  - uploaded "v2r" file is stored in that format as the original in final 
+    version directory destination (that is not its conversion to rdf as the original)
+    TODO do similarly for "owl" (OWL/XML)
   - initial support for .v2r format in upload operation
   - make namespace optional in V2RModel
   - preliminaries for v2r format

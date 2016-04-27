@@ -94,22 +94,13 @@ object v2r extends AnyRef with Logging {
   def loadOntModel(file: File): OntModelLoadedResult = {
     logger.debug("v2r.loadOntModel: loading file=" + file)
 
-    // need to use RDF for saving (see OntService.getOntologyFile)
-    val rdfFilename = file.getName.replaceAll("\\.v2r$", "\\.rdf")
-    val rdfFile = new File(file.getParent, rdfFilename)
-
     implicit val formats = DefaultFormats
     val json  = parse(file)
     val vr = json.extract[V2RModel]
 
-    val namespaceOpt = vr.namespace orElse Some(rdfFile.getCanonicalFile.toURI.toString + "/")
-
+    val namespaceOpt = vr.namespace orElse Some(file.getCanonicalFile.toURI.toString + "/")
     val model = v2r.getModel(vr, namespaceOpt)
-
-    logger.debug("v2r.loadOntModel: saving RDF/XML in =" + rdfFile)
-    ontUtil.writeModel(namespaceOpt.get, model, "rdf", rdfFile)
-
-    OntModelLoadedResult(rdfFile, "rdf", model)
+    OntModelLoadedResult(file, "v2r", model)
   }
 
 }
