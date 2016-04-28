@@ -1,6 +1,8 @@
 ## change log ##
 
 * 2016-04-22-27: 0.3.1:
+  - report format in OntologySummaryResult as a possible mechanism to help UI decide on corresponding dispatch
+    (eg., for v2r at this moment)
   - introduce ontUtil.storedFormats intended to capture all formats used to store ontology serializations
     TODO This is basically working but needs overall unification
   - SelfHostedOntController.portalDispatch: adjustments in contentType so dispatch of orr-portal also

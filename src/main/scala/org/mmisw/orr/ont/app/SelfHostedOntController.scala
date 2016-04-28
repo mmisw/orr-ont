@@ -143,11 +143,13 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
 
     if (reqFormat == "!md") {
       val ores = OntologySummaryResult(
-        ont.uri,
-        version,
-        ontVersion.name,
-        orgName = ont.orgName,
-        versions = Some(ont.sortedVersionKeys))
+        uri      = ont.uri,
+        version  = version,
+        name     = ontVersion.name,
+        orgName  = ont.orgName,
+        versions = Some(ont.sortedVersionKeys),
+        format   = Option(ontVersion.format)
+      )
       grater[OntologySummaryResult].toCompactJSON(ores)
     }
     else {

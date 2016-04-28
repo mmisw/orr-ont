@@ -80,16 +80,17 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     val resourceTypeOpt = ontVersion.resourceType map ontUtil.simplifyResourceType
     OntologySummaryResult(
-      ont.uri,
-      version,
-      ontVersion.name,
-      submitter = if (privileged) Some(ontVersion.userName) else None,
-      orgName = ont.orgName,
-      author = ontVersion.author,
-      status = ontVersion.status,
+      uri          = ont.uri,
+      version      = version,
+      name         = ontVersion.name,
+      submitter    = if (privileged) Some(ontVersion.userName) else None,
+      orgName      = ont.orgName,
+      author       = ontVersion.author,
+      status       = ontVersion.status,
       ontologyType = ontVersion.ontologyType,
       resourceType = resourceTypeOpt,
-      versions = versionsOpt
+      versions     = versionsOpt,
+      format       = Option(ontVersion.format)
     )
   }
 
@@ -421,7 +422,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
         ontUtil.writeModel(uri, ontModel, ontFileWriter.format, destFile)
     }
 
-    ontUtil.getPropsFromOntMetadata(uri, destFile, ontFileWriter.format)
+    ontUtil.getPropsFromOntMetadata(uri, destFile, ontFileWriter.format) updated("format", ontFileWriter.format)
   }
 
   private val baseDir = setup.filesConfig.getString("baseDirectory")

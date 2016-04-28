@@ -52,5 +52,6 @@ case class OntologySummaryResult(
             status:         Option[String] = None,
             ontologyType:   Option[String] = None,
             resourceType:   Option[String] = None,
-            versions:       Option[List[String]] = None
+            versions:       Option[List[String]] = None,
+            format:         Option[String] = None
             )
