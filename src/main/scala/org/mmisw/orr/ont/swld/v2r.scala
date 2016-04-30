@@ -81,27 +81,25 @@ case class Vocab(`class`:     IdL,
 }
 
 case class MdEntry(uri:     String,
-                   values:  List[JValue]
+                   value:   JValue
                   ) {
 
   def addStatements(ontology: Ontology): Unit = {
     val model = Option(ontology.getModel).getOrElse(throw new RuntimeException("ontology must have model"))
     val property = model.createProperty(uri)
 
-    values foreach { jValue =>
-      val primitive: PartialFunction[JValue, Unit] = {
-        case JString(v)   => model.add(       ontology, property, v)
-        case JBool(v)     => model.addLiteral(ontology, property, v)
-        case JInt(v)      => model.add(       ontology, property, v.toString())   // BigInteger
-        case JDouble(v)   => model.addLiteral(ontology, property, v)
+    val primitive: PartialFunction[JValue, Unit] = {
+      case JString(v)   => model.add(       ontology, property, v)
+      case JBool(v)     => model.addLiteral(ontology, property, v)
+      case JInt(v)      => model.add(       ontology, property, v.toString())   // BigInteger
+      case JDouble(v)   => model.addLiteral(ontology, property, v)
 
-        case j => println(s"WARN: for property=$property, value $j not handled")
-      }
-
-      val array: PartialFunction[JValue, Unit] = { case JArray(arr) => arr foreach primitive }
-
-      (array orElse primitive)(jValue)
+      case j => println(s"WARN: for property=$property, value $j not handled")
     }
+
+    val array: PartialFunction[JValue, Unit] = { case JArray(arr) => arr foreach primitive }
+
+    (array orElse primitive)(value)
   }
 }
 

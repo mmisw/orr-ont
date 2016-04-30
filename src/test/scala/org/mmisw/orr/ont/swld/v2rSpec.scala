@@ -1,6 +1,6 @@
 package org.mmisw.orr.ont.swld
 
-import com.hp.hpl.jena.vocabulary.{OWL, RDF}
+import com.hp.hpl.jena.vocabulary.{DC_11, OWL, RDF, RDFS}
 import org.specs2.mutable.Specification
 import org.json4s._
 import org.json4s.native.JsonMethods._
@@ -11,7 +11,14 @@ class v2rSpec extends Specification {
 
   val vr1 = V2RModel(
     uri = None,
-    metadata = None,
+    metadata = Some(List(
+      MdEntry(DC_11.description.getURI,
+        JString("some description (dc:description)")),
+      MdEntry(RDFS.comment.getURI,
+        JArray(List(
+          JString("a comment (rdfs:comment)"),
+          JString("another comment (rdfs:comment)"))))
+    )),
     vocabs = List(
       Vocab(
         `class` = IdL(name = Some("Parameter")),
@@ -46,6 +53,13 @@ class v2rSpec extends Specification {
       //ontUtil.writeModel(uri1+"/", model, "jsonld", new java.io.File("/tmp/vr1.jsonld"))
       //ontUtil.writeModel(uri1+"/", model, "rj",     new java.io.File("/tmp/vr1.rj"))
 
+      // metadata:
+      val uri1Ont    = model.createResource(uri1)
+      model.contains(   uri1Ont, RDF.`type`, OWL.Ontology) === true
+      ontUtil.getValues(uri1Ont, DC_11.description).toSet  === Set("some description (dc:description)")
+      ontUtil.getValues(uri1Ont, RDFS.comment).toSet       === Set("a comment (rdfs:comment)", "another comment (rdfs:comment)")
+
+      // contents:
       val Parameter  = model.createResource(uri1 + "/Parameter")
       val pressure   = model.createResource(uri1 + "/pressure")
       val definition = model.createProperty(uri1 + "/definition")
