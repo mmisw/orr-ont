@@ -16,7 +16,6 @@ case class IdL(name:  Option[String] = None,
                uri:   Option[String] = None,
                label: Option[String] = None
               ) {
-
   def getUri(namespaceOpt: Option[String] = None) =
     uri.getOrElse(namespaceOpt.getOrElse("") + name.get)
 
@@ -31,7 +30,8 @@ case class Term(name:        Option[String] = None,
                 uri:         Option[String] = None,
                 attributes:  List[JValue]
                ) {
-  def getUri(namespaceOpt: Option[String] = None) = uri.getOrElse(namespaceOpt.getOrElse("") + name.get)
+  def getUri(namespaceOpt: Option[String] = None) =
+    uri.getOrElse(namespaceOpt.getOrElse("") + name.get)
 }
 
 case class Vocab(`class`:     IdL,
@@ -61,7 +61,7 @@ case class Vocab(`class`:     IdL,
       }
 
       (propList zip term.attributes) foreach { pa: (Property, JValue) =>
-        val (prop, attr) = pa
+        val (prop, jValue) = pa
 
         val primitive: PartialFunction[JValue, Unit] = {
           case JString(v)   => model.add(       termResource, prop, v)
@@ -72,11 +72,9 @@ case class Vocab(`class`:     IdL,
           case j => println(s"WARN: for term=$termUri, prop=$prop, value $j not handled")
         }
 
-        val array: PartialFunction[JValue, Unit] = {
-          case JArray(arr) => arr foreach primitive
-        }
+        val array: PartialFunction[JValue, Unit] = { case JArray(arr) => arr foreach primitive }
 
-        (array orElse primitive)(attr)
+        (array orElse primitive)(jValue)
       }
     }
   }
@@ -100,32 +98,32 @@ case class MdEntry(uri:     String,
         case j => println(s"WARN: for property=$property, value $j not handled")
       }
 
-      val array: PartialFunction[JValue, Unit] = {
-        case JArray(arr) => arr foreach primitive
-      }
+      val array: PartialFunction[JValue, Unit] = { case JArray(arr) => arr foreach primitive }
 
       (array orElse primitive)(jValue)
     }
   }
 }
 
-case class V2RModel(namespace: Option[String],
+case class V2RModel(uri:       Option[String],
                     metadata:  Option[List[MdEntry]],
                     vocabs:    List[Vocab]
                    ) {
 
-  def addStatements(model: OntModel, namespaceOpt: Option[String] = None): Unit = {
-    val nsOpt: Option[String] = namespaceOpt orElse namespace
+  def addStatements(model: OntModel, altUriOpt: Option[String] = None): Unit = {
+    val uriOpt: Option[String] = altUriOpt orElse uri
 
+    // ontology metadata:
     for {
       mdEntries <- metadata
-      ns        <- nsOpt
+      uri       <- uriOpt     // only add metadata if we do have a defined URI
       mdEntry   <- mdEntries
     } {
-      mdEntry.addStatements(model.createOntology(ns))
+      mdEntry.addStatements(model.createOntology(uri))
     }
 
-    vocabs foreach (_.addStatements(model, nsOpt))
+    // ontology contents:
+    vocabs foreach (_.addStatements(model, uriOpt map (_ + "/")))
   }
 
   implicit val formats = Serialization.formats(NoTypeHints)
@@ -141,13 +139,13 @@ object v2r extends AnyRef with Logging {
     * Gets the jena model corresponding to the given V2RModel.
     *
     * @param vr            model
-    * @param namespaceOpt  If given, this is used as the resulting namespace in the model.
-    *                      If not, the namespace of the V2RModel is used (if defined)
-    * @return
+    * @param altUriOpt     If given, this is used as the base URI for the model.
+    *                      If not, the URI of the V2RModel is used (if defined)
+    * @return OntModel
     */
-  def getModel(vr: V2RModel, namespaceOpt: Option[String] = None): OntModel = {
+  def getModel(vr: V2RModel, altUriOpt: Option[String] = None): OntModel = {
     val ontModel = ontUtil.createDefaultOntModel
-    vr.addStatements(ontModel, namespaceOpt)
+    vr.addStatements(ontModel, altUriOpt)
     ontModel
   }
 
@@ -158,8 +156,8 @@ object v2r extends AnyRef with Logging {
     val json  = parse(file)
     val vr = json.extract[V2RModel]
 
-    val namespaceOpt = vr.namespace orElse Some(file.getCanonicalFile.toURI.toString + "/")
-    val model = v2r.getModel(vr, namespaceOpt)
+    val altUriOpt = vr.uri orElse Some(file.getCanonicalFile.toURI.toString)
+    val model = getModel(vr, altUriOpt)
     OntModelLoadedResult(file, "v2r", model)
   }
 

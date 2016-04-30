@@ -1,6 +1,7 @@
 ## change log ##
 
 * 2016-04-22-30: 0.3.1:
+  - v2r: specify URI at first level (namespace is always uri + "/")
   - v2r: add metadata
   
 * 2016-04-22-27: 0.3.1:

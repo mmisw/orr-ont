@@ -10,7 +10,7 @@ class v2rSpec extends Specification {
   implicit val formats = DefaultFormats
 
   val vr1 = V2RModel(
-    namespace = None,
+    uri = None,
     metadata = None,
     vocabs = List(
       Vocab(
@@ -37,18 +37,18 @@ class v2rSpec extends Specification {
   val json = parse(new java.io.File("src/test/resources/vr1.v2r"))
 
   """v2r""" should {
-    """create expected model with given namespace""" in {
-      val ns1 = "http://ns/"
+    """create expected model with given URI""" in {
+      val uri1 = "http://v2r-vocab"
 
-      val model = v2r.getModel(vr1, Some(ns1))
+      val model = v2r.getModel(vr1, Some(uri1))
 
-      ontUtil.writeModel(ns1, model, "n3",     new java.io.File("/tmp/vr1.n3"))
-      //ontUtil.writeModel(ns1, model, "jsonld", new java.io.File("/tmp/vr1.jsonld"))
-      //ontUtil.writeModel(ns1, model, "rj",     new java.io.File("/tmp/vr1.rj"))
+      ontUtil.writeModel(uri1+"/", model, "n3",     new java.io.File("/tmp/vr1.n3"))
+      //ontUtil.writeModel(uri1+"/", model, "jsonld", new java.io.File("/tmp/vr1.jsonld"))
+      //ontUtil.writeModel(uri1+"/", model, "rj",     new java.io.File("/tmp/vr1.rj"))
 
-      val Parameter  = model.createResource(ns1 + "Parameter")
-      val pressure   = model.createResource(ns1 + "pressure")
-      val definition = model.createProperty(ns1 + "definition")
+      val Parameter  = model.createResource(uri1 + "/Parameter")
+      val pressure   = model.createResource(uri1 + "/pressure")
+      val definition = model.createProperty(uri1 + "/definition")
       val someProp   = model.createProperty("http://some/prop")
 
       model.contains(Parameter,  RDF.`type`, OWL.Class)            === true
@@ -58,10 +58,10 @@ class v2rSpec extends Specification {
       ontUtil.getValues(pressure, someProp).toSet   === Set("one value for some/prop", "other value for some/prop")
     }
 
-    """create expected model (no namespace)""" in {
+    """create expected model (no URI)""" in {
       val model = v2r.getModel(vr1)
 
-      //ontUtil.writeModel(null, model, "n3", new java.io.File("/tmp/vr1_no_ns.n3"))
+      //ontUtil.writeModel(null, model, "n3", new java.io.File("/tmp/vr1_no_uri.n3"))
 
       val Parameter  = model.createResource("Parameter")
       val pressure   = model.createResource("pressure")
