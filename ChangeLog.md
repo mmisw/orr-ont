@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-04-22-30: 0.3.1:
+  - v2r: add metadata
+  
 * 2016-04-22-27: 0.3.1:
   - report format in OntologySummaryResult as a possible mechanism to help UI decide on corresponding dispatch
     (eg., for v2r at this moment)

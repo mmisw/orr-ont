@@ -2,7 +2,7 @@ package org.mmisw.orr.ont.swld
 
 import java.io.File
 
-import com.hp.hpl.jena.ontology.OntModel
+import com.hp.hpl.jena.ontology.{OntModel, Ontology}
 import com.hp.hpl.jena.rdf.model.{Model, Property}
 import com.hp.hpl.jena.vocabulary.{OWL, RDF}
 import com.typesafe.scalalogging.{StrictLogging => Logging}
@@ -17,7 +17,8 @@ case class IdL(name:  Option[String] = None,
                label: Option[String] = None
               ) {
 
-  def getUri(namespaceOpt: Option[String] = None) = uri.getOrElse(namespaceOpt.getOrElse("") + name.get)
+  def getUri(namespaceOpt: Option[String] = None) =
+    uri.getOrElse(namespaceOpt.getOrElse("") + name.get)
 
   def getLabel: String = label.getOrElse(name.getOrElse {
     val u = uri.getOrElse("")
@@ -81,12 +82,50 @@ case class Vocab(`class`:     IdL,
   }
 }
 
+case class MdEntry(uri:     String,
+                   values:  List[JValue]
+                  ) {
+
+  def addStatements(ontology: Ontology): Unit = {
+    val model = Option(ontology.getModel).getOrElse(throw new RuntimeException("ontology must have model"))
+    val property = model.createProperty(uri)
+
+    values foreach { jValue =>
+      val primitive: PartialFunction[JValue, Unit] = {
+        case JString(v)   => model.add(       ontology, property, v)
+        case JBool(v)     => model.addLiteral(ontology, property, v)
+        case JInt(v)      => model.add(       ontology, property, v.toString())   // BigInteger
+        case JDouble(v)   => model.addLiteral(ontology, property, v)
+
+        case j => println(s"WARN: for property=$property, value $j not handled")
+      }
+
+      val array: PartialFunction[JValue, Unit] = {
+        case JArray(arr) => arr foreach primitive
+      }
+
+      (array orElse primitive)(jValue)
+    }
+  }
+}
+
 case class V2RModel(namespace: Option[String],
+                    metadata:  Option[List[MdEntry]],
                     vocabs:    List[Vocab]
                    ) {
 
-  def addStatements(model: Model, namespaceOpt: Option[String] = None): Unit = {
-    vocabs foreach (_.addStatements(model, namespaceOpt orElse namespace))
+  def addStatements(model: OntModel, namespaceOpt: Option[String] = None): Unit = {
+    val nsOpt: Option[String] = namespaceOpt orElse namespace
+
+    for {
+      mdEntries <- metadata
+      ns        <- nsOpt
+      mdEntry   <- mdEntries
+    } {
+      mdEntry.addStatements(model.createOntology(ns))
+    }
+
+    vocabs foreach (_.addStatements(model, nsOpt))
   }
 
   implicit val formats = Serialization.formats(NoTypeHints)
@@ -100,7 +139,7 @@ object v2r extends AnyRef with Logging {
 
   /**
     * Gets the jena model corresponding to the given V2RModel.
- *
+    *
     * @param vr            model
     * @param namespaceOpt  If given, this is used as the resulting namespace in the model.
     *                      If not, the namespace of the V2RModel is used (if defined)

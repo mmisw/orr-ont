@@ -11,6 +11,7 @@ class v2rSpec extends Specification {
 
   val vr1 = V2RModel(
     namespace = None,
+    metadata = None,
     vocabs = List(
       Vocab(
         `class` = IdL(name = Some("Parameter")),
