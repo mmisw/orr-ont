@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.swld.{PossibleOntologyInfo, ontFileLoader, ontUtil}
-import org.mmisw.orr.ont.{OntologyResult, OntologySummaryResult, Setup}
+import org.mmisw.orr.ont.{OntologyRegistrationResult, OntologySummaryResult, Setup}
 
 import scala.util.{Failure, Success, Try}
 
@@ -209,7 +209,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
       case Success(_) =>
-        OntologyResult(uri, version = Some(version), registered = Some(ontVersion.date))
+        OntologyRegistrationResult(uri, version = Some(version), registered = Some(ontVersion.date))
 
       case Failure(exc) => throw CannotInsertOntology(uri, exc.getMessage)
           // perhaps duplicate key in concurrent registration
@@ -257,7 +257,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
-        OntologyResult(uri, version = Some(version), updated = Some(ontVersion.date))
+        OntologyRegistrationResult(uri, version = Some(version), updated = Some(ontVersion.date))
 
       case Failure(exc)  => throw CannotInsertOntologyVersion(uri, version, exc.getMessage)
     }
@@ -285,7 +285,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
-        OntologyResult(uri, version = Some(version), updated = Some(ontVersion.date))
+        OntologyRegistrationResult(uri, version = Some(version), updated = Some(ontVersion.date))
 
       case Failure(exc)  => throw CannotUpdateOntologyVersion(uri, version, exc.getMessage)
     }
@@ -304,7 +304,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
-        OntologyResult(uri, version = Some(version), removed = Some(DateTime.now())) //TODO
+        OntologyRegistrationResult(uri, version = Some(version), removed = Some(DateTime.now())) //TODO
 
       case Failure(exc)  => throw CannotDeleteOntologyVersion(uri, version, exc.getMessage)
     }
@@ -319,7 +319,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(ontDAO.remove(ont, WriteConcern.Safe)) match {
       case Success(result) =>
-        OntologyResult(uri, removed = Some(DateTime.now())) //TODO
+        OntologyRegistrationResult(uri, removed = Some(DateTime.now())) //TODO
 
       case Failure(exc)  => throw CannotDeleteOntology(uri, exc.getMessage)
     }

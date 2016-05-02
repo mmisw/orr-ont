@@ -35,7 +35,7 @@ case class OrgResult(
             removed:     Option[DateTime] = None,
             members:     Option[Set[String]] = None)
 
-case class OntologyResult(
+case class OntologyRegistrationResult(
             uri:         String,
             version:     Option[String] = None,
             registered:  Option[DateTime] = None,

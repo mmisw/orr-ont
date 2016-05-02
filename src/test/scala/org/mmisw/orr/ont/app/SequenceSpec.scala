@@ -468,7 +468,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         val b = body
         logger.debug(s"response body=$b  status=$status")
         status must_== 201
-        val res = parse(b).extract[OntologyResult]
+        val res = parse(b).extract[OntologyRegistrationResult]
         registeredVersion = res.version
         logger.debug(s"registeredVersion=$registeredVersion")
         res.uri must_== uploadedOntUri
@@ -500,7 +500,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     "succeed with org member credentials" in {
       post("/ont", map1, Map("file" -> ont1File), headers = userHeaders) {
         status must_== 201
-        val res = parse(body).extract[OntologyResult]
+        val res = parse(body).extract[OntologyRegistrationResult]
         registeredVersion = res.version
         logger.debug(s"registeredVersion=$registeredVersion")
         res.uri must_== ont1Uri
@@ -523,7 +523,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
       )
       post("/ont", map2, Map("file" -> ont1File), headers = adminHeaders) {
         status must_== 201
-        val res = parse(body).extract[OntologyResult]
+        val res = parse(body).extract[OntologyRegistrationResult]
         res.uri must_== map2("uri")
       }
     }
@@ -615,7 +615,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
       Thread.sleep(1500) // so automatically assigned new version is diff.
       put("/ont", params = map2, files = Map("file" -> ont1File), headers = userHeaders) {
         status must_== 200
-        val res = parse(body).extract[OntologyResult]
+        val res = parse(body).extract[OntologyRegistrationResult]
         registeredVersion = res.version
         logger.debug(s"registeredVersion=$registeredVersion")
         res.uri must_== ont1Uri
@@ -626,7 +626,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
       Thread.sleep(1500) // so automatically assigned new version is diff.
       put("/ont", params = map2, files = Map("file" -> ont1File), headers = adminHeaders) {
         status must_== 200
-        val res = parse(body).extract[OntologyResult]
+        val res = parse(body).extract[OntologyRegistrationResult]
         registeredVersion = res.version
         logger.debug(s"registeredVersion=$registeredVersion")
         res.uri must_== ont1Uri
@@ -673,7 +673,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
       Thread.sleep(1500) // so automatically assigned new version is diff.
       put("/ont", params = map2 + ("version" -> registeredVersion.get), files = Map("file" -> ont1File), headers = userHeaders) {
         status must_== 200
-        val res = parse(body).extract[OntologyResult]
+        val res = parse(body).extract[OntologyRegistrationResult]
         res.uri must_== ont1Uri
       }
     }
@@ -682,7 +682,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
       Thread.sleep(1500) // so automatically assigned new version is diff.
       put("/ont", params = map2, files = Map("file" -> ont1File), headers = adminHeaders) {
         status must_== 200
-        val res = parse(body).extract[OntologyResult]
+        val res = parse(body).extract[OntologyRegistrationResult]
         res.uri must_== ont1Uri
       }
     }
@@ -871,7 +871,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
       )
       delete("/ont", map, headers = userHeaders) {
         status must_== 200
-        val res = parse(body).extract[OntologyResult]
+        val res = parse(body).extract[OntologyRegistrationResult]
         res.uri must_== ont1Uri
       }
     }
@@ -902,7 +902,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
       )
       delete("/ont", map, headers = userHeaders) {
         status must_== 200
-        val res = parse(body).extract[OntologyResult]
+        val res = parse(body).extract[OntologyRegistrationResult]
         res.uri must_== ont1Uri
       }
     }
