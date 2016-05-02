@@ -41,8 +41,9 @@ class OntController(implicit setup: Setup,
       case None =>
         val query = getQueryFromParams(params.keySet) - "jwt"  // - sigParamName)
         val onts = ontService.getOntologies(query, checkIsAdminOrExtra)
-        // TODO what exactly to report for the list of ontologies?
-        onts map grater[OntologySummaryResult].toCompactJSON
+        onts map { osr =>
+          grater[OntologySummaryResult].asDBObject(osr)//.toCompactJSON
+        }
     }
   }
 
@@ -246,7 +247,7 @@ class OntController(implicit setup: Setup,
     // format is the one given if any, or the one in the db:
     val reqFormat = params.get("format").getOrElse(ontVersion.format)
 
-    // todo: determine mechanism to request for file contents or metadata:  format=!md is preliminary
+    // todo: determine mechanism to request for metadata:  format=!md is preliminary
 
     if (reqFormat == "!md") {
       // include 'versions' if no particular version requested.
@@ -254,7 +255,10 @@ class OntController(implicit setup: Setup,
         case None    => Some(ont.sortedVersionKeys)
         case Some(_) => None
       }
-      val ores = ontService.getOntologySummaryResult(ont, ontVersion, version, checkIsAdminOrExtra, versionsOpt)
+      val ores = ontService.getOntologySummaryResult(ont, ontVersion, version,
+        privileged = checkIsAdminOrExtra,
+        includeMetadata = true,
+        versionsOpt)
       grater[OntologySummaryResult].toCompactJSON(ores)
     }
     else {

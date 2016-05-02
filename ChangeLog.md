@@ -1,7 +1,7 @@
 ## change log ##
 
 * 2016-05-01: 0.3.1:
-  - report metadata in OntologySummaryResult
+  - report metadata in OntologySummaryResult but only for specific URI (not for list of ontologies)
   - capture all ontology metadata in OntologyVersion so it gets saved in the db
   - minor refactor: writeOntologyFile now returns all the ontology metadata, while the interim
     extractSomeProps uses that metadata to extract the special values that are going in the 

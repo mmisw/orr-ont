@@ -138,7 +138,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
     // TODO(low priority): perhaps use the saved ontVersion.format when there's no explicit requested
     // format e.g, when there's no "format" param and the accept header only has "*/*" ?
 
-    // TODO determine mechanism to request for file contents or metadata:  format=!md is preliminary
+    // TODO determine mechanism to request for metadata:  format=!md is preliminary
     // TODO review common dispatch from ontService to avoid code duplication
 
     if (reqFormat == "!md") {
@@ -147,7 +147,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
         version  = version,
         name     = ontVersion.name,
         orgName  = ont.orgName,
-        metadata = ontVersion.metadata,
+        metadata = Some(ontVersion.metadata),
         versions = Some(ont.sortedVersionKeys),
         format   = Option(ontVersion.format)
       )
