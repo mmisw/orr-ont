@@ -147,14 +147,14 @@ object v2r extends AnyRef with Logging {
     ontModel
   }
 
-  def loadOntModel(file: File): OntModelLoadedResult = {
-    logger.debug("v2r.loadOntModel: loading file=" + file)
+  def loadOntModel(file: File, uriOpt: Option[String] = None): OntModelLoadedResult = {
+    logger.debug(s"v2r.loadOntModel: loading file=$file uriOpt=$uriOpt")
 
     implicit val formats = DefaultFormats
-    val json  = parse(file)
-    val vr = json.extract[V2RModel]
+    val json = parse(file)
+    val vr   = json.extract[V2RModel]
 
-    val altUriOpt = vr.uri orElse Some(file.getCanonicalFile.toURI.toString)
+    val altUriOpt = uriOpt orElse Some(file.getCanonicalFile.toURI.toString)
     val model = getModel(vr, altUriOpt)
     OntModelLoadedResult(file, "v2r", model)
   }
