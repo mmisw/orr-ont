@@ -68,6 +68,8 @@ object ontUtil extends AnyRef with Logging {
                               file: File,
                               format: String
                              ): Map[String,List[String]] = {
+
+    logger.debug(s"getPropsFromOntMetadata: uri=$uri file=$file format=$format")
     val ontModel = loadOntModel(uri, file, format)
     Option(ontModel.getOntology(uri)) match {
       case Some(ontology) =>
@@ -136,8 +138,8 @@ object ontUtil extends AnyRef with Logging {
     map
   }
 
-  ///////////////////////////////////////////////////////////////////////////
-  // private
+  def toOntMdList(md: Map[String,List[String]]): List[Map[String, AnyRef]] =
+    md.map(uv => Map("uri" -> uv._1, "values" -> uv._2)).toList
 
   private def nodeAsString(n: RDFNode): String =
     if (n.isResource) n.asResource().getURI
@@ -198,7 +200,7 @@ object ontUtil extends AnyRef with Logging {
       owlApiHelper.loadOntModel(file).ontModel
     }
     else if ("V2R" == lang) {
-      v2r.loadOntModel(file).ontModel
+      v2r.loadOntModel(file, Some(uri)).ontModel
     }
     else {
       val ontModel = createDefaultOntModel

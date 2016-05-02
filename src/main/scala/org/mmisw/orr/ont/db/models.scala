@@ -2,7 +2,6 @@ package org.mmisw.orr.ont.db
 
 import org.joda.time.DateTime
 import com.novus.salat.annotations._
-import scala.util.{Success, Failure, Try}
 
 
 case class Ontology(
@@ -20,6 +19,7 @@ case class OntologyVersion(
             date:            DateTime,
             status:          Option[String] = None,
             author:          Option[String] = None,    // content creator
+            metadata:        List[Map[String, AnyRef]] = List.empty,
             ontologyType:    Option[String] = None,
             resourceType:    Option[String] = None
             )

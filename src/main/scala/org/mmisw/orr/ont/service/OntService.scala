@@ -191,12 +191,16 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     val md = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
 
+    logger.debug(s"createOntology: md=$md")
+
+    // TODO remove these special entries in OntologyVersion
     val map = ontUtil.extractSomeProps(md)
     val ontologyTypeOpt = map.get("ontologyType")
     val resourceTypeOpt = map.get("resourceType")
 
     val ontVersion = OntologyVersion(name, userName, ontFileWriter.format, new DateTime(date),
                                      version_status, contact_name,
+                                     metadata = ontUtil.toOntMdList(md),
                                      ontologyType = ontologyTypeOpt,
                                      resourceType = resourceTypeOpt)
 
@@ -230,12 +234,16 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     val md = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
 
+    logger.debug(s"createOntologyVersion: md=$md")
+
+    // TODO remove these special entries in OntologyVersion
     val map = ontUtil.extractSomeProps(md)
     val ontologyTypeOpt = map.get("ontologyType")
     val resourceTypeOpt = map.get("resourceType")
 
     var ontVersion = OntologyVersion("", userName, ontFileWriter.format, new DateTime(date),
                                      version_status, contact_name,
+                                     metadata = ontUtil.toOntMdList(md),
                                      ontologyType = ontologyTypeOpt,
                                      resourceType = resourceTypeOpt)
 
