@@ -90,7 +90,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
       orgName      = ont.orgName,
       author       = ontVersion.author,
       status       = ontVersion.status,
-      metadata     = if (includeMetadata) Some(ontVersion.metadata) else None,
+      metadata     = if (includeMetadata) Some(ontUtil.toOntMdMap(ontVersion.metadata)) else None,
       ontologyType = ontVersion.ontologyType,
       resourceType = resourceTypeOpt,
       versions     = versionsOpt,

@@ -6,6 +6,7 @@ import java.io.{File, FileInputStream, FileOutputStream}
 
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import com.github.jsonldjava.jena.JenaJSONLD
+import com.mongodb.{BasicDBList, BasicDBObject}
 import org.mmisw.orr.ont.vocabulary.{Omv, OmvMmi}
 
 import scala.collection.JavaConversions._
@@ -140,6 +141,24 @@ object ontUtil extends AnyRef with Logging {
 
   def toOntMdList(md: Map[String,List[String]]): List[Map[String, AnyRef]] =
     md.map(uv => Map("uri" -> uv._1, "values" -> uv._2)).toList
+
+  /**
+    * Helper to convert from OntologyVersion.database entry type `List[Map[String, AnyRef]]`
+    * into a standard map for reporting via OntologySummaryResult
+    * @param list  List[AnyRef] as we need to deal with BasicDBObject
+    */
+  def toOntMdMap(list: List[AnyRef]): Map[String,List[String]] = {
+    // Note: not `list: List[Map[String, AnyRef]]`
+    val map = scala.collection.mutable.HashMap[String, List[String]]()
+    list foreach { a =>
+      val m = a.asInstanceOf[BasicDBObject]
+      val uri    = m.get("uri").asInstanceOf[String]
+      val dbList = m.get("values").asInstanceOf[BasicDBList]
+      val values = (dbList map (_.toString)).toList
+      map += (uri -> values)
+    }
+    map.toMap
+  }
 
   private def nodeAsString(n: RDFNode): String =
     if (n.isResource) n.asResource().getURI

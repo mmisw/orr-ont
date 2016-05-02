@@ -8,6 +8,7 @@ import com.novus.salat.global._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.service.{NoSuch, NoSuchOntFormat, OntService}
+import org.mmisw.orr.ont.swld.ontUtil
 import org.mmisw.orr.ont.{OntologySummaryResult, Setup}
 
 import scala.util.{Failure, Success, Try}
@@ -147,7 +148,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
         version  = version,
         name     = ontVersion.name,
         orgName  = ont.orgName,
-        metadata = Some(ontVersion.metadata),
+        metadata = Some(ontUtil.toOntMdMap(ontVersion.metadata)),
         versions = Some(ont.sortedVersionKeys),
         format   = Option(ontVersion.format)
       )
