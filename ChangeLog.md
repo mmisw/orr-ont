@@ -1,5 +1,10 @@
 ## change log ##
 
+* 2016-05-01: 0.3.1:
+  - minor refactor: writeOntologyFile now returns all the ontology metadata, while the interim
+    extractSomeProps uses that metadata to extract the special values that are going in the 
+    OntologyVersion object (these special values will be removed later on)
+  
 * 2016-04-30: 0.3.1:
   - v2r: specify URI at first level (namespace is always uri + "/")
   - v2r: add metadata

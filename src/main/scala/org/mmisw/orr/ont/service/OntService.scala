@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.swld.{PossibleOntologyInfo, ontFileLoader, ontUtil}
-import org.mmisw.orr.ont.{OntologySummaryResult, OntologyResult, Setup}
+import org.mmisw.orr.ont.{OntologyResult, OntologySummaryResult, Setup}
 
 import scala.util.{Failure, Success, Try}
 
@@ -189,8 +189,9 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     validateUri(uri)
 
-    val map = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
+    val md = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
 
+    val map = ontUtil.extractSomeProps(md)
     val ontologyTypeOpt = map.get("ontologyType")
     val resourceTypeOpt = map.get("resourceType")
 
@@ -227,8 +228,9 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     verifyOwner(userName, ont)
 
-    val map = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
+    val md = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
 
+    val map = ontUtil.extractSomeProps(md)
     val ontologyTypeOpt = map.get("ontologyType")
     val resourceTypeOpt = map.get("resourceType")
 
@@ -399,7 +401,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                                 originalUriOpt: Option[String],
                                 version:        String,
                                 ontFileWriter:  OntFileWriter
-                               ): Map[String,String] = {
+                               ): Map[String,List[String]] = {
 
     val versionDir = getVersionDirectory(uri, version)
     val destFile = new File(versionDir, s"file.${ontFileWriter.format}")
@@ -422,7 +424,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
         ontUtil.writeModel(uri, ontModel, ontFileWriter.format, destFile)
     }
 
-    ontUtil.getPropsFromOntMetadata(uri, destFile, ontFileWriter.format) updated("format", ontFileWriter.format)
+    ontUtil.getPropsFromOntMetadata(uri, destFile, ontFileWriter.format)
   }
 
   private val baseDir = setup.filesConfig.getString("baseDirectory")

@@ -64,18 +64,21 @@ object ontUtil extends AnyRef with Logging {
     case f => f   // TODO explicitly include other formats we are providing, "rj",
   }
 
-  def getPropsFromOntMetadata(uri: String, file: File, format: String): Map[String,String] = {
+  def getPropsFromOntMetadata(uri: String,
+                              file: File,
+                              format: String
+                             ): Map[String,List[String]] = {
     val ontModel = loadOntModel(uri, file, format)
     Option(ontModel.getOntology(uri)) match {
       case Some(ontology) =>
-        try extractSomeProps(ontology)
+        try extractAttributes(ontology)
         catch {
           case ex: Throwable =>
             ex.printStackTrace()
-            Map[String, String]()
+            Map.empty
         }
 
-      case _ => Map[String, String]()
+      case _ => Map.empty
     }
   }
 
@@ -143,15 +146,18 @@ object ontUtil extends AnyRef with Logging {
   /**
    * ad hoc initial mechanism to report some of the ontology metadata.
    */
-  private def extractSomeProps(ontology: Ontology): Map[String,String] = {
+  def extractSomeProps(md: Map[String,List[String]]): Map[String,String] = {
+
     var map = Map[String, String]()
 
-    val values1 = listPropertyValues(ontology, OmvMmi.hasResourceType)
-    if (values1.nonEmpty) map = map.updated("resourceType", values1.head)
+    val resourceTypeListOpt = md.get(OmvMmi.hasResourceType.getURI)
+    if (resourceTypeListOpt.isDefined) {
+      map = map.updated("resourceType", resourceTypeListOpt.get.head)
+    }
 
-    val values2 = listPropertyValues(ontology, Omv.usedOntologyEngineeringTool)
-    if (values2.nonEmpty) {
-      val usedOntologyEngineeringTool = values2.head
+    val ontologyTypeListOpt = md.get(Omv.usedOntologyEngineeringTool.getURI)
+    if (ontologyTypeListOpt.isDefined) {
+      val usedOntologyEngineeringTool = ontologyTypeListOpt.head.head
       val ontologyType = if (usedOntologyEngineeringTool == OmvMmi.voc2rdf.getURI)
         "vocabulary"
       else if (usedOntologyEngineeringTool == OmvMmi.vine.getURI)
