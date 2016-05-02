@@ -50,6 +50,7 @@ case class OntologySummaryResult(
             orgName:        Option[String] = None,
             author:         Option[String] = None,
             status:         Option[String] = None,
+            metadata:       List[Map[String, AnyRef]] = List.empty,
             ontologyType:   Option[String] = None,
             resourceType:   Option[String] = None,
             versions:       Option[List[String]] = None,

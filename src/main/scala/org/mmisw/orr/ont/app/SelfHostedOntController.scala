@@ -147,6 +147,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
         version  = version,
         name     = ontVersion.name,
         orgName  = ont.orgName,
+        metadata = ontVersion.metadata,
         versions = Some(ont.sortedVersionKeys),
         format   = Option(ontVersion.format)
       )
