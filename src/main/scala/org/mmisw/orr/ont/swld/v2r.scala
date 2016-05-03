@@ -78,7 +78,7 @@ case class V2RModel(uri:       Option[String],
                     vocabs:    List[Vocab]
                    ) {
 
-  def addStatements(model: OntModel, altUriOpt: Option[String] = None): Unit = {
+  def addStatements(model: OntModel, altUriOpt: Option[String] = None): Option[String] = {
     val uriOpt: Option[String] = altUriOpt orElse uri
 
     // ontology metadata (only add if we do have a defined URI)
@@ -89,6 +89,8 @@ case class V2RModel(uri:       Option[String],
 
     // ontology data:
     vocabs foreach (_.addStatements(model, uriOpt map (_ + "/")))
+
+    uriOpt
   }
 
   implicit val formats = Serialization.formats(NoTypeHints)
@@ -110,7 +112,8 @@ object v2r extends AnyRef with Logging {
     */
   def getModel(vr: V2RModel, altUriOpt: Option[String] = None): OntModel = {
     val ontModel = ontUtil.createDefaultOntModel
-    vr.addStatements(ontModel, altUriOpt)
+    val uriOpt = vr.addStatements(ontModel, altUriOpt)
+    uriOpt foreach(uri => ontModel.setNsPrefix("", uri + "/"))
     ontModel
   }
 

@@ -1,6 +1,8 @@
 ## change log ##
 
 * 2016-05-03: 0.3.1:
+  - v2r: set empty prefix for namespace associated with ontology uri in the jena model
+    (this way the resulting serializations (n3, rdf/xml..) look nicer)
   - PUT /ont: 
     - accept optional 'metadata' parameter to create new version only with changes in metadata.
     - creation of new version: requires specification of new contents. Options:
