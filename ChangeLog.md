@@ -1,6 +1,13 @@
 ## change log ##
 
 * 2016-05-03: 0.3.1:
+  - PUT /ont: 
+    - accept optional 'metadata' parameter to create new version only with changes in metadata.
+    - creation of new version: requires specification of new contents. Options:
+      - file upload (in same request, or previously uploaded file) for the new full ontology contents
+      - full contents in embedded 'contents' parameter
+      - 'metadata' parameter for new version with given metadata on top of a base version
+
   - accept embedded contents in ontology submission
   
 * 2016-05-01: 0.3.1:

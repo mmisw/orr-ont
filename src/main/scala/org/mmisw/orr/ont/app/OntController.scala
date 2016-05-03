@@ -7,8 +7,11 @@ import com.mongodb.casbah.Imports._
 import com.novus.salat._
 import com.novus.salat.global._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
+import org.json4s.native.JsonMethods._
 import org.mmisw.orr.ont._
+import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.service._
+import org.mmisw.orr.ont.swld.{MdEntry, V2RModel, ontUtil}
 import org.scalatra.Created
 import org.scalatra.servlet.{FileItem, FileUploadSupport, SizeConstraintExceededException}
 
@@ -122,11 +125,19 @@ class OntController(implicit setup: Setup,
         bug(s"currently I expect registered ont to have org associated")
     }
 
-    val ontFileWriter = getOntFileWriter(user)
+    val ontFileWriterOpt: Option[OntFileWriter] = getOntFileWriterOpt(user) orElse {
+      params.get("metadata") map (getOntFileWriterWithMetadata(uri, versionOpt, _))
+    }
 
     versionOpt match {
-      case Some(version) => updateOntologyVersion(uri, originalUriOpt, version, user)
-      case None          => createOntologyVersion(uri, originalUriOpt, user, ontFileWriter)
+      case None =>
+        val ontFileWriter = ontFileWriterOpt.getOrElse(
+          error(400, "creation of new version requires specification of contents " +
+            "(file upload, embedded contents, or new metadata"))
+        createOntologyVersion(uri, originalUriOpt, user, ontFileWriter)
+
+      case Some(version) =>
+        updateOntologyVersion(uri, originalUriOpt, version, user)
     }
   }
 
@@ -187,6 +198,31 @@ class OntController(implicit setup: Setup,
     override def write(destFile: File) {
       java.nio.file.Files.write(destFile.toPath,
         contents.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+    }
+  }
+
+  // used to create new version based on another version where all metadata gets replaced
+  private case class UpdateWithMetadataWriter(format:       String,
+                                              ont:          Ontology,
+                                              ontVersion:   OntologyVersion,
+                                              version:      String,
+                                              newMetadata:  List[MdEntry]
+                                             ) extends AnyRef with OntFileWriter {
+    override def write(destFile: File): Unit = {
+      val uri = ont.uri
+
+      val (file, actualFormat) = getOntologyFile(uri, version, format)
+      if (actualFormat == "v2r") {
+        val oldV2r = parse(file).extract[V2RModel]
+        val newV2r = oldV2r.copy(metadata = Some(newMetadata))
+        java.nio.file.Files.write(destFile.toPath,
+          newV2r.toPrettyJson.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+      }
+      else {
+        val ontModel = ontUtil.loadOntModel(uri, file, actualFormat)
+        ontUtil.replaceMetadata(uri, ontModel, newMetadata)
+        ontUtil.writeModel(uri, ontModel, actualFormat, destFile)
+      }
     }
   }
 
@@ -278,14 +314,27 @@ class OntController(implicit setup: Setup,
     }
   }
 
-  /** get OntFileWriter according to given relevant parameters */
+  /**
+    * Gets OntFileWriter for purposes of brand new ontology registration
+    * according to given relevant parameters.
+    */
   private def getOntFileWriter(user: db.User): OntFileWriter = {
-    if (fileParams.isDefinedAt("file"))
+    getOntFileWriterOpt(user).getOrElse(
+      error(400, s"no suitable parameters were specified to indicate contents"))
+  }
+
+  /**
+    * Gets OntFileWriter for purposes on new **version**
+    * according to given relevant parameters
+    */
+  private def getOntFileWriterOpt(user: db.User): Option[OntFileWriter] = {
+    Option(if (fileParams.isDefinedAt("file"))
       getOntFileWriterForJustUploadedFile
     else if (params.isDefinedAt("contents"))
       getOntFileWriterForGivenContents
-    else
+    else if (params.isDefinedAt("uploadedFilename") && params.isDefinedAt("uploadedFormat"))
       getOntFileWriterForPreviouslyUploadedFile(user.userName)
+    else null)
   }
 
   private def getOntFileWriterForJustUploadedFile: OntFileWriter = {
@@ -313,6 +362,16 @@ class OntController(implicit setup: Setup,
     val format   = require(params, "uploadedFormat")
     logger.debug(s"getOntFileWriterForPreviouslyUploadedFile: filename=$filename format=$format")
     FileWriter(format, ontService.getUploadedFile(userName, filename))
+  }
+
+  private def getOntFileWriterWithMetadata(uri: String,
+                                           versionOpt: Option[String],
+                                           metadata: String
+                                          ): OntFileWriter = {
+
+    val (ont, ontVersion, version) = resolveOntology(uri, versionOpt)
+    val newMetadata = parse(metadata).extract[List[MdEntry]]
+    UpdateWithMetadataWriter(ontVersion.format, ont, ontVersion, version, newMetadata)
   }
 
   private def getVersion = {

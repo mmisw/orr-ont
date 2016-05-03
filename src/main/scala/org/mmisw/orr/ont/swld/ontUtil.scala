@@ -7,6 +7,8 @@ import java.io.{File, FileInputStream, FileOutputStream}
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import com.github.jsonldjava.jena.JenaJSONLD
 import com.mongodb.{BasicDBList, BasicDBObject}
+import org.json4s.JsonAST.{JArray, JString}
+import org.json4s._
 import org.mmisw.orr.ont.vocabulary.{Omv, OmvMmi}
 
 import scala.collection.JavaConversions._
@@ -145,6 +147,7 @@ object ontUtil extends AnyRef with Logging {
   /**
     * Helper to convert from OntologyVersion.database entry type `List[Map[String, AnyRef]]`
     * into a standard map for reporting via OntologySummaryResult
+    *
     * @param list  List[AnyRef] as we need to deal with BasicDBObject
     */
   def toOntMdMap(list: List[AnyRef]): Map[String,List[String]] = {
@@ -393,5 +396,38 @@ object ontUtil extends AnyRef with Logging {
         logger.debug(s"   ${existingStatements.nextStatement}")
       }
     }
+  }
+
+  /**
+    * Updates the model by setting the metadata for the Ontology resource identified by the given uri.
+    */
+  def replaceMetadata(uri: String, model: OntModel, newMetadata: List[MdEntry]): Unit = {
+    logger.debug(s"replaceMetadata: uri:$uri newMetadata=$newMetadata")
+
+    // remove any previous metadata
+    Option(model.getOntology(uri)) foreach { model.removeAll(_, null, null) }
+
+    // add the new metadata
+    val ontology = model.createOntology(uri)
+    val addOntPropValues = addPropertyValues(model, ontology)_
+    newMetadata foreach { mdEntry =>
+      val property = model.createProperty(mdEntry.uri)
+      addOntPropValues(property, mdEntry.value)
+    }
+  }
+
+  def addPropertyValues(model: OntModel, subject: Resource)(property: Property, jValue: JValue): Unit = {
+    val primitive: PartialFunction[JValue, Unit] = {
+      case JString(v)   => model.add(       subject, property, v)
+      case JBool(v)     => model.addLiteral(subject, property, v)
+      case JInt(v)      => model.add(       subject, property, v.toString())   // BigInteger
+      case JDouble(v)   => model.addLiteral(subject, property, v)
+
+      case j => logger.warn(s"addPropertyValues: subject=$subject, property=$property: value $j not handled")
+    }
+
+    val array: PartialFunction[JValue, Unit] = { case JArray(arr) => arr foreach primitive }
+
+    (array orElse primitive)(jValue)
   }
 }
