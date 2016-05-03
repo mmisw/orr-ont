@@ -531,6 +531,31 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     // TODO "succeed with no explicit org"?
   }
 
+  "Register a new ont (POST /ont) with embedded ontology contents" should {
+    "succeed (with appropriate parameters)" in {
+      import scala.collection.JavaConversions._
+      val contents: String = {
+        java.nio.file.Files.readAllLines(ont1File.toPath,
+          java.nio.charset.StandardCharsets.UTF_8).mkString("")
+      }
+      val embeddedUri  = "http://embedded-contents"
+      val params = Map("uri" -> embeddedUri,
+        "name"     -> "some ont name",
+        "orgName"  -> orgName,
+        "userName" -> userName,
+        "format"   -> format,
+        "contents" -> contents
+      )
+
+      post("/ont", params, headers = userHeaders) {
+        status must_== 201
+        val res = parse(body).extract[OntologyRegistrationResult]
+        res.uri must_== embeddedUri
+      }
+    }
+
+  }
+
   "Get an ont with given uri (GET /ont)" should {
     "return the latest version" in {
       val map = Map("uri" -> ont1Uri, "format" -> "!md")

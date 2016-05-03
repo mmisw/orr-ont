@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-05-03: 0.3.1:
+  - accept embedded contents in ontology submission
+  
 * 2016-05-01: 0.3.1:
   - report metadata in OntologySummaryResult but only for specific URI (not for list of ontologies)
   - capture all ontology metadata in OntologyVersion so it gets saved in the db

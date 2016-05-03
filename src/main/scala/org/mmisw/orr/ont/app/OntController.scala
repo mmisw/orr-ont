@@ -165,18 +165,28 @@ class OntController(implicit setup: Setup,
 
   ///////////////////////////////////////////////////////////////////////////
 
+  // used for just uploaded file
   private case class FileItemWriter(format: String, fileItem: FileItem) extends AnyRef with OntFileWriter {
     override def write(destFile: File) {
       fileItem.write(destFile)
     }
   }
 
+  // used for previously uploaded file
   private case class FileWriter(format: String, file: File) extends AnyRef with OntFileWriter {
     override def write(destFile: File) {
       java.nio.file.Files.copy(
         java.nio.file.Paths.get(file.getPath),
         java.nio.file.Paths.get(destFile.getPath),
         java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+    }
+  }
+
+  // used for embedded contents
+  private case class StringWriter(format: String, contents: String) extends AnyRef with OntFileWriter {
+    override def write(destFile: File) {
+      java.nio.file.Files.write(destFile.toPath,
+        contents.getBytes(java.nio.charset.StandardCharsets.UTF_8))
     }
   }
 
@@ -272,6 +282,8 @@ class OntController(implicit setup: Setup,
   private def getOntFileWriter(user: db.User): OntFileWriter = {
     if (fileParams.isDefinedAt("file"))
       getOntFileWriterForJustUploadedFile
+    else if (params.isDefinedAt("contents"))
+      getOntFileWriterForGivenContents
     else
       getOntFileWriterForPreviouslyUploadedFile(user.userName)
   }
@@ -282,21 +294,25 @@ class OntController(implicit setup: Setup,
     // todo make format param optional
     val format = require(params, "format")
 
-    logger.info(s"uploaded file=${fileItem.getName} size=${fileItem.getSize} format=$format")
+    logger.debug(s"uploaded file=${fileItem.getName} size=${fileItem.getSize} format=$format")
     //val fileContents = new String(fileItem.get(), fileItem.charset.getOrElse("utf8"))
     //val contentType = file.contentType.getOrElse("application/octet-stream")
 
     FileItemWriter(format, fileItem)
   }
 
+  private def getOntFileWriterForGivenContents: OntFileWriter = {
+    val contents = require(params, "contents")
+    val format   = require(params, "format")
+    logger.debug(s"getOntFileWriterForGivenContents: format=$format contents=`$contents`")
+    StringWriter(format, contents)
+  }
+
   private def getOntFileWriterForPreviouslyUploadedFile(userName: String): OntFileWriter = {
     val filename = require(params, "uploadedFilename")
     val format   = require(params, "uploadedFormat")
-
-    logger.info(s"getOntFileWriterForPreviouslyUploadedFile: filename=$filename format=$format")
-
-    val file = ontService.getUploadedFile(userName, filename)
-    FileWriter(format, file)
+    logger.debug(s"getOntFileWriterForPreviouslyUploadedFile: filename=$filename format=$format")
+    FileWriter(format, ontService.getUploadedFile(userName, filename))
   }
 
   private def getVersion = {
