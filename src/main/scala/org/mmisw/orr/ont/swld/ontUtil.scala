@@ -408,15 +408,18 @@ object ontUtil extends AnyRef with Logging {
     Option(model.getOntology(uri)) foreach { model.removeAll(_, null, null) }
 
     // add the new metadata
-    val ontology = model.createOntology(uri)
+    addMetadata(model, model.createOntology(uri), newMetadata)
+  }
+
+  def addMetadata(model: OntModel, ontology: Ontology, metadata: List[MdEntry]): Unit = {
     val addOntPropValues = addPropertyValues(model, ontology)_
-    newMetadata foreach { mdEntry =>
+    metadata foreach { mdEntry =>
       val property = model.createProperty(mdEntry.uri)
       addOntPropValues(property, mdEntry.value)
     }
   }
 
-  def addPropertyValues(model: OntModel, subject: Resource)(property: Property, jValue: JValue): Unit = {
+  def addPropertyValues(model: Model, subject: Resource)(property: Property, jValue: JValue): Unit = {
     val primitive: PartialFunction[JValue, Unit] = {
       case JString(v)   => model.add(       subject, property, v)
       case JBool(v)     => model.addLiteral(subject, property, v)

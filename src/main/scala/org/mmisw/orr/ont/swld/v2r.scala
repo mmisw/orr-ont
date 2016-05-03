@@ -2,7 +2,7 @@ package org.mmisw.orr.ont.swld
 
 import java.io.File
 
-import com.hp.hpl.jena.ontology.{OntModel, Ontology}
+import com.hp.hpl.jena.ontology.OntModel
 import com.hp.hpl.jena.rdf.model.{Model, Property}
 import com.hp.hpl.jena.vocabulary.{OWL, RDF}
 import com.typesafe.scalalogging.{StrictLogging => Logging}
@@ -60,21 +60,10 @@ case class Vocab(`class`:     IdL,
         println(s"WARN: for term=$termUri, number of attributes is different from number of properties")
       }
 
+      val addTermPropValues = ontUtil.addPropertyValues(model, termResource)_
       (propList zip term.attributes) foreach { pa: (Property, JValue) =>
         val (prop, jValue) = pa
-
-        val primitive: PartialFunction[JValue, Unit] = {
-          case JString(v)   => model.add(       termResource, prop, v)
-          case JBool(v)     => model.addLiteral(termResource, prop, v)
-          case JInt(v)      => model.add(       termResource, prop, v.toString())   // BigInteger
-          case JDouble(v)   => model.addLiteral(termResource, prop, v)
-
-          case j => println(s"WARN: for term=$termUri, prop=$prop, value $j not handled")
-        }
-
-        val array: PartialFunction[JValue, Unit] = { case JArray(arr) => arr foreach primitive }
-
-        (array orElse primitive)(jValue)
+        addTermPropValues(prop, jValue)
       }
     }
   }
@@ -82,26 +71,7 @@ case class Vocab(`class`:     IdL,
 
 case class MdEntry(uri:     String,
                    value:   JValue
-                  ) {
-
-  def addStatements(ontology: Ontology): Unit = {
-    val model = Option(ontology.getModel).getOrElse(throw new RuntimeException("ontology must have model"))
-    val property = model.createProperty(uri)
-
-    val primitive: PartialFunction[JValue, Unit] = {
-      case JString(v)   => model.add(       ontology, property, v)
-      case JBool(v)     => model.addLiteral(ontology, property, v)
-      case JInt(v)      => model.add(       ontology, property, v.toString())   // BigInteger
-      case JDouble(v)   => model.addLiteral(ontology, property, v)
-
-      case j => println(s"WARN: for property=$property, value $j not handled")
-    }
-
-    val array: PartialFunction[JValue, Unit] = { case JArray(arr) => arr foreach primitive }
-
-    (array orElse primitive)(value)
-  }
-}
+                  )
 
 case class V2RModel(uri:       Option[String],
                     metadata:  Option[List[MdEntry]],
@@ -111,16 +81,13 @@ case class V2RModel(uri:       Option[String],
   def addStatements(model: OntModel, altUriOpt: Option[String] = None): Unit = {
     val uriOpt: Option[String] = altUriOpt orElse uri
 
-    // ontology metadata:
-    for {
-      mdEntries <- metadata
-      uri       <- uriOpt     // only add metadata if we do have a defined URI
-      mdEntry   <- mdEntries
-    } {
-      mdEntry.addStatements(model.createOntology(uri))
+    // ontology metadata (only add if we do have a defined URI)
+    for (uri <- uriOpt) {
+      val ontology = model.createOntology(uri)
+      metadata foreach { ontUtil.addMetadata(model, ontology, _) }
     }
 
-    // ontology contents:
+    // ontology data:
     vocabs foreach (_.addStatements(model, uriOpt map (_ + "/")))
   }
 
