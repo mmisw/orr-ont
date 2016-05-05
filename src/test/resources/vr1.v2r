@@ -1,17 +1,12 @@
 {
-  "metadata": [
-    {
-      "uri": "http://purl.org/dc/elements/1.1/description",
-      "value": "some description (dc:description)"
-    },
-    {
-      "uri": "http://www.w3.org/2000/01/rdf-schema#comment",
-      "value": [
-        "a comment (rdfs:comment)",
-        "another comment (rdfs:comment)"
-      ]
-    }
-  ],
+  "metadata": {
+    "http://purl.org/dc/elements/1.1/description":
+      "some description (dc:description)",
+    "http://www.w3.org/2000/01/rdf-schema#comment" : [
+      "a comment (rdfs:comment)",
+      "another comment (rdfs:comment)"
+    ]
+  },
   "vocabs": [
     {
       "class": {

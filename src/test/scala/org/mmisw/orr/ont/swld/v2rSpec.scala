@@ -11,13 +11,11 @@ class v2rSpec extends Specification {
 
   val vr1 = V2RModel(
     uri = None,
-    metadata = Some(List(
-      MdEntry(DC_11.description.getURI,
-        JString("some description (dc:description)")),
-      MdEntry(RDFS.comment.getURI,
-        JArray(List(
+    metadata = Some(Map(
+      DC_11.description.getURI -> JString("some description (dc:description)"),
+      RDFS.comment.getURI -> JArray(List(
           JString("a comment (rdfs:comment)"),
-          JString("another comment (rdfs:comment)"))))
+          JString("another comment (rdfs:comment)")))
     )),
     vocabs = List(
       Vocab(

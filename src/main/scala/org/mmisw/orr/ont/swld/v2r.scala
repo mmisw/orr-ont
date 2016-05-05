@@ -69,12 +69,8 @@ case class Vocab(`class`:     IdL,
   }
 }
 
-case class MdEntry(uri:     String,
-                   value:   JValue
-                  )
-
 case class V2RModel(uri:       Option[String],
-                    metadata:  Option[List[MdEntry]],
+                    metadata:  Option[Map[String, JValue]],
                     vocabs:    List[Vocab]
                    ) {
 

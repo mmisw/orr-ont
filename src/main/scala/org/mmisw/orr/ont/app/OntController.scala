@@ -7,11 +7,12 @@ import com.mongodb.casbah.Imports._
 import com.novus.salat._
 import com.novus.salat.global._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
+import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.mmisw.orr.ont._
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.service._
-import org.mmisw.orr.ont.swld.{MdEntry, V2RModel, ontUtil}
+import org.mmisw.orr.ont.swld.{V2RModel, ontUtil}
 import org.scalatra.Created
 import org.scalatra.servlet.{FileItem, FileUploadSupport, SizeConstraintExceededException}
 
@@ -206,7 +207,7 @@ class OntController(implicit setup: Setup,
                                               ont:          Ontology,
                                               ontVersion:   OntologyVersion,
                                               version:      String,
-                                              newMetadata:  List[MdEntry]
+                                              newMetadata:  Map[String, JValue]
                                              ) extends AnyRef with OntFileWriter {
     override def write(destFile: File): Unit = {
       val uri = ont.uri
@@ -370,7 +371,8 @@ class OntController(implicit setup: Setup,
                                           ): OntFileWriter = {
 
     val (ont, ontVersion, version) = resolveOntology(uri, versionOpt)
-    val newMetadata = parse(metadata).extract[List[MdEntry]]
+    logger.debug(s"getOntFileWriterWithMetadata: metadata=`$metadata`")
+    val newMetadata = parse(metadata).extract[Map[String, JValue]]
     UpdateWithMetadataWriter(ontVersion.format, ont, ontVersion, version, newMetadata)
   }
 

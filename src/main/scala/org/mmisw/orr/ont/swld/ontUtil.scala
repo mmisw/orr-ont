@@ -401,7 +401,7 @@ object ontUtil extends AnyRef with Logging {
   /**
     * Updates the model by setting the metadata for the Ontology resource identified by the given uri.
     */
-  def replaceMetadata(uri: String, model: OntModel, newMetadata: List[MdEntry]): Unit = {
+  def replaceMetadata(uri: String, model: OntModel, newMetadata: Map[String, JValue]): Unit = {
     logger.debug(s"replaceMetadata: uri:$uri newMetadata=$newMetadata")
 
     // remove any previous metadata
@@ -411,11 +411,11 @@ object ontUtil extends AnyRef with Logging {
     addMetadata(model, model.createOntology(uri), newMetadata)
   }
 
-  def addMetadata(model: OntModel, ontology: Ontology, metadata: List[MdEntry]): Unit = {
+  def addMetadata(model: OntModel, ontology: Ontology, metadata: Map[String, JValue]): Unit = {
     val addOntPropValues = addPropertyValues(model, ontology)_
-    metadata foreach { mdEntry =>
-      val property = model.createProperty(mdEntry.uri)
-      addOntPropValues(property, mdEntry.value)
+    metadata foreach { case (uri, value) =>
+      val property = model.createProperty(uri)
+      addOntPropValues(property, value)
     }
   }
 
