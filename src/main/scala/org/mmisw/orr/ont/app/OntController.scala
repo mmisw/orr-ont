@@ -71,11 +71,11 @@ class OntController(implicit setup: Setup,
    * Registers a new ontology entry.
    */
   post("/") {
-    val uri            = require(params, "uri")
-    val originalUriOpt = params.get("originalUri")  // for fully-hosted mode
-    val name           = require(params, "name")
-    val orgName        = require(params, "orgName")
-    val user           = verifyUser(params.get("userName"))
+    val uri            = requireParam("uri")
+    val originalUriOpt = getParam("originalUri")  // for fully-hosted mode
+    val name           = requireParam("name")
+    val orgName        = requireParam("orgName")
+    val user           = verifyUser(getParam("userName"))
 
     // TODO allow absent orgName so user can submit on her own behalf?
 
