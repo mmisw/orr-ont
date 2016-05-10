@@ -42,7 +42,7 @@ class OrgController(implicit setup: Setup) extends BaseController
     val orgName = require(params, "orgName")
     val org = getOrg(orgName)
 
-    verifyIsAuthenticatedUser(org.members + "admin")
+    verifyIsUserOrAdminOrExtra(org.members)
 
     val map = body()
 

@@ -1,5 +1,12 @@
 ## change log ##
 
+* 2016-05-09: 0.3.1:
+  - add getParam/requireParam helpers to retrieve request parameters from either 
+    the body or the regular params. Used in OntController to facilitate requests 
+    with either mechanism (note that regular "form" parameters should be used 
+    when uploading a file --multipart/form-data)
+  - allow an admin to update/delete ontology (even if not a member of corresponding organization) 
+  
 * 2016-05-04: 0.3.1:
   - v2r: metadata is now an object indexed by the predicate URI:
   

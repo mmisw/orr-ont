@@ -105,10 +105,10 @@ class OntController(implicit setup: Setup,
    * Updates a given version or adds a new version.
    */
   put("/") {
-    val uri            = require(params, "uri")
-    val originalUriOpt = params.get("originalUri")  // for fully-hosted mode
-    val versionOpt     = params.get("version")
-    val user           = verifyUser(params.get("userName"))
+    val uri            = requireParam("uri")
+    val originalUriOpt = getParam("originalUri")  // for fully-hosted mode
+    val versionOpt     = getParam("version")
+    val user           = verifyUser(getParam("userName"))
 
     val (ont, _, _) = resolveOntology(uri, versionOpt)
 
@@ -119,7 +119,7 @@ class OntController(implicit setup: Setup,
             bug(s"org '$orgName' should exist")
 
           case Some(org) =>
-            verifyIsAuthenticatedUser(org.members + "admin")
+            verifyIsUserOrAdminOrExtra(org.members)
         }
 
       case None =>
@@ -127,18 +127,20 @@ class OntController(implicit setup: Setup,
     }
 
     val ontFileWriterOpt: Option[OntFileWriter] = getOntFileWriterOpt(user) orElse {
-      params.get("metadata") map (getOntFileWriterWithMetadata(uri, versionOpt, _))
+      getParam("metadata") map (getOntFileWriterWithMetadata(uri, versionOpt, _))
     }
+
+    val doVerifyOwner = false  // already verified above
 
     versionOpt match {
       case None =>
         val ontFileWriter = ontFileWriterOpt.getOrElse(
           error(400, "creation of new version requires specification of contents " +
             "(file upload, embedded contents, or new metadata"))
-        createOntologyVersion(uri, originalUriOpt, user, ontFileWriter)
+        createOntologyVersion(uri, originalUriOpt, user, ontFileWriter, doVerifyOwner)
 
       case Some(version) =>
-        updateOntologyVersion(uri, originalUriOpt, version, user)
+        updateOntologyVersion(uri, originalUriOpt, version, user, doVerifyOwner)
     }
   }
 
@@ -157,16 +159,18 @@ class OntController(implicit setup: Setup,
         orgsDAO.findOneById(orgName) match {
           case None => bug(s"org '$orgName' should exist")
 
-          case Some(org) => verifyIsAuthenticatedUser(org.members + "admin")
+          case Some(org) => verifyIsUserOrAdminOrExtra(org.members)
         }
 
       case None =>
         bug(s"currently I expect registered ont to have org associated")
     }
 
+    val doVerifyOwner = false  // already verified above
+
     versionOpt match {
-      case Some(version) => deleteOntologyVersion(uri, version, user)
-      case None          => deleteOntology(uri, user)
+      case Some(version) => deleteOntologyVersion(uri, version, user, doVerifyOwner)
+      case None          => deleteOntology(uri, user, doVerifyOwner)
     }
   }
 
@@ -331,9 +335,9 @@ class OntController(implicit setup: Setup,
   private def getOntFileWriterOpt(user: db.User): Option[OntFileWriter] = {
     Option(if (fileParams.isDefinedAt("file"))
       getOntFileWriterForJustUploadedFile
-    else if (params.isDefinedAt("contents"))
+    else if (getParam("contents").isDefined)
       getOntFileWriterForGivenContents
-    else if (params.isDefinedAt("uploadedFilename") && params.isDefinedAt("uploadedFormat"))
+    else if (getParam("uploadedFilename").isDefined && getParam("uploadedFormat").isDefined)
       getOntFileWriterForPreviouslyUploadedFile(user.userName)
     else null)
   }
@@ -342,7 +346,7 @@ class OntController(implicit setup: Setup,
     val fileItem = fileParams.getOrElse("file", missing("file"))
 
     // todo make format param optional
-    val format = require(params, "format")
+    val format = requireParam("format")
 
     logger.debug(s"uploaded file=${fileItem.getName} size=${fileItem.getSize} format=$format")
     //val fileContents = new String(fileItem.get(), fileItem.charset.getOrElse("utf8"))
@@ -352,15 +356,15 @@ class OntController(implicit setup: Setup,
   }
 
   private def getOntFileWriterForGivenContents: OntFileWriter = {
-    val contents = require(params, "contents")
-    val format   = require(params, "format")
+    val contents = requireParam("contents")
+    val format   = requireParam("format")
     logger.debug(s"getOntFileWriterForGivenContents: format=$format contents=`$contents`")
     StringWriter(format, contents)
   }
 
   private def getOntFileWriterForPreviouslyUploadedFile(userName: String): OntFileWriter = {
-    val filename = require(params, "uploadedFilename")
-    val format   = require(params, "uploadedFormat")
+    val filename = requireParam("uploadedFilename")
+    val format   = requireParam("uploadedFormat")
     logger.debug(s"getOntFileWriterForPreviouslyUploadedFile: filename=$filename format=$format")
     FileWriter(format, ontService.getUploadedFile(userName, filename))
   }
@@ -390,9 +394,10 @@ class OntController(implicit setup: Setup,
   private def createOntologyVersion(uri:            String,
                                     originalUriOpt: Option[String],
                                     user:           db.User,
-                                    ontFileWriter:  OntFileWriter
+                                    ontFileWriter:  OntFileWriter,
+                                    doVerifyOwner:  Boolean = true
                                    ) = {
-    val nameOpt = params.get("name")
+    val nameOpt = getParam("name")
     val (version, date) = getVersion
 
     // TODO capture version_status from parameter
@@ -402,7 +407,7 @@ class OntController(implicit setup: Setup,
     val contact_name: Option[String] = None
 
     Try(ontService.createOntologyVersion(uri, originalUriOpt, nameOpt, user.userName, version,
-            version_status, contact_name, date, ontFileWriter)) match {
+            version_status, contact_name, date, ontFileWriter, doVerifyOwner)) match {
       case Success(ontologyResult) =>
         loadOntologyInTripleStore(uri, reload = true)
         ontologyResult
@@ -422,11 +427,13 @@ class OntController(implicit setup: Setup,
   private def updateOntologyVersion(uri:            String,
                                     originalUriOpt: Option[String],
                                     version:        String,
-                                    user:           db.User
+                                    user:           db.User,
+                                    doVerifyOwner:  Boolean = true
                                    ) = {
-    val name = require(params, "name")
+    val name = requireParam("name")
 
-    Try(ontService.updateOntologyVersion(uri, originalUriOpt, version, name, user.userName)) match {
+    Try(ontService.updateOntologyVersion(uri, originalUriOpt, version, name, user.userName,
+            doVerifyOwner)) match {
       case Success(ontologyResult) =>
         loadOntologyInTripleStore(uri, reload = true)
         ontologyResult
@@ -452,9 +459,12 @@ class OntController(implicit setup: Setup,
   /**
    * Deletes a particular version.
    */
-  private def deleteOntologyVersion(uri: String, version: String, user: db.User) = {
+  private def deleteOntologyVersion(uri: String,
+                                    version: String,
+                                    user: db.User,
+                                    doVerifyOwner: Boolean = true) = {
 
-    Try(ontService.deleteOntologyVersion(uri, version,  user.userName)) match {
+    Try(ontService.deleteOntologyVersion(uri, version, user.userName, doVerifyOwner)) match {
       case Success(ontologyResult) => ontologyResult
 
       case Failure(exc: NoSuch)                       => error(404, exc.details)
@@ -467,8 +477,11 @@ class OntController(implicit setup: Setup,
   /**
    * Deletes a whole ontology entry.
    */
-  private def deleteOntology(uri: String, user: db.User) = {
-    Try(ontService.deleteOntology(uri, user.userName)) match {
+  private def deleteOntology(uri: String,
+                             user: db.User,
+                             doVerifyOwner: Boolean = true) = {
+
+    Try(ontService.deleteOntology(uri, user.userName, doVerifyOwner)) match {
       case Success(ontologyResult) => ontologyResult
 
       case Failure(exc: NoSuch)                       => error(404, exc.details)

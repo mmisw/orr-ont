@@ -230,11 +230,12 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                             version_status:  Option[String],
                             contact_name:    Option[String],
                             date:            String,
-                            ontFileWriter:   OntFileWriter) = {
+                            ontFileWriter:   OntFileWriter,
+                            doVerifyOwner:   Boolean = true) = {
 
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
 
-    verifyOwner(userName, ont)
+    if (doVerifyOwner) verifyOwner(userName, ont)
 
     val md = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
 
@@ -273,10 +274,12 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                             originalUriOpt: Option[String],
                             version:        String,
                             name:           String,
-                            userName:       String) = {
+                            userName:       String,
+                            doVerifyOwner:  Boolean = true) = {
 
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
-    verifyOwner(userName, ont)
+
+    if (doVerifyOwner) verifyOwner(userName, ont)
 
     var ontVersion = ont.versions.getOrElse(version, throw NoSuchOntVersion(uri, version))
 
@@ -297,9 +300,15 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   /**
    * Deletes a particular version.
    */
-  def deleteOntologyVersion(uri: String, version: String, userName: String) = {
+  def deleteOntologyVersion(uri:            String,
+                            version:        String,
+                            userName:       String,
+                            doVerifyOwner:  Boolean = true) = {
+
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
-    verifyOwner(userName, ont)
+
+    if (doVerifyOwner) verifyOwner(userName, ont)
+
     ont.versions.getOrElse(version, throw NoSuchOntVersion(uri, version))
 
     val update = ont.copy(versions = ont.versions - version)
@@ -316,9 +325,13 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   /**
    * Deletes a whole ontology entry.
    */
-  def deleteOntology(uri: String, userName: String) = {
+  def deleteOntology(uri:            String,
+                     userName:       String,
+                     doVerifyOwner:  Boolean = true) = {
+
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
-    verifyOwner(userName, ont)
+
+    if (doVerifyOwner) verifyOwner(userName, ont)
 
     Try(ontDAO.remove(ont, WriteConcern.Safe)) match {
       case Success(result) =>
