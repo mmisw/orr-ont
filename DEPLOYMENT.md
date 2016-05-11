@@ -24,12 +24,12 @@ The docker images comprising the ORR system are:
       export ORR_ONT_BASE_DIR=/opt/orr-ont-base-directory
     
 - Prepare your local `orr-ont` configuration file:
-  - Make a local copy (say, with name `orront.conf`) of the template from 
+  - Make a local copy, with the name `orront.conf`, of the template from 
     [here](https://raw.githubusercontent.com/mmisw/orr-ont/master/template.orront.conf)
     
         curl -o orront.conf https://raw.githubusercontent.com/mmisw/orr-ont/master/template.orront.conf
     
-  - edit `./orront.conf` if needed.
+  - edit `./orront.conf` as needed.
     
 
 ### Run the containers
@@ -51,8 +51,7 @@ Now open http://localhost/ont in your browser.
 
 ### Making your ORR instance visible to the world
 
-Currently this consists of exposing port 80 (or whatever the host port defined 
-under the `httpd` option in `docker-run`). 
+Currently this consists of exposing port 80 (as indicated under the `httpd` option in `docker-run`). 
 Check with your sysadmin. 
 
 > This part is still WiP particularly regarding HTTPS (port 443; certificates, etc.)
