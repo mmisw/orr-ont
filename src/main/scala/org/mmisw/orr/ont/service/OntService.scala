@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.swld.{PossibleOntologyInfo, ontFileLoader, ontUtil}
-import org.mmisw.orr.ont.{OntologySummaryResult, OntologyResult, Setup}
+import org.mmisw.orr.ont.{OntologyRegistrationResult, OntologySummaryResult, Setup}
 
 import scala.util.{Failure, Success, Try}
 
@@ -62,7 +62,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     ontDAO.find(query) map { ont =>
       getLatestVersion(ont) match {
         case Some((ontVersion, version)) =>
-          getOntologySummaryResult(ont, ontVersion, version, privileged)
+          getOntologySummaryResult(ont, ontVersion, version, privileged, includeMetadata = false)
 
         case None =>
           // This will be case when all versions have been deleted.
@@ -73,23 +73,28 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     }
   }
 
-  def getOntologySummaryResult(ont: Ontology, ontVersion: OntologyVersion, version: String,
+  def getOntologySummaryResult(ont: Ontology,
+                               ontVersion: OntologyVersion,
+                               version: String,
                                privileged: Boolean,
+                               includeMetadata: Boolean = false,
                                versionsOpt: Option[List[String]] = None
   ): OntologySummaryResult = {
 
     val resourceTypeOpt = ontVersion.resourceType map ontUtil.simplifyResourceType
     OntologySummaryResult(
-      ont.uri,
-      version,
-      ontVersion.name,
-      submitter = if (privileged) Some(ontVersion.userName) else None,
-      orgName = ont.orgName,
-      author = ontVersion.author,
-      status = ontVersion.status,
+      uri          = ont.uri,
+      version      = version,
+      name         = ontVersion.name,
+      submitter    = if (privileged) Some(ontVersion.userName) else None,
+      orgName      = ont.orgName,
+      author       = ontVersion.author,
+      status       = ontVersion.status,
+      metadata     = if (includeMetadata) Some(ontUtil.toOntMdMap(ontVersion.metadata)) else None,
       ontologyType = ontVersion.ontologyType,
       resourceType = resourceTypeOpt,
-      versions = versionsOpt
+      versions     = versionsOpt,
+      format       = Option(ontVersion.format)
     )
   }
 
@@ -144,9 +149,21 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
       (file, actualFormat)
     }
     else try {
-      // TODO determine base format for conversions
-      val fromFile = new File(versionDir, "file.rdf")
-      ontUtil.convert(uri, fromFile, fromFormat = "rdf", file, toFormat = actualFormat) match {
+      val (fromFile, fromFormat) = {
+        // TODO needs revision
+        val tryFormats = ontUtil.storedFormats
+        def doTry(formats: List[String]): (File, String) = formats match {
+          case format :: rest =>
+            val file = new File(versionDir, "file." + format)
+            if (file.exists()) (file, format)
+            else doTry(rest)
+          case Nil =>
+            throw CannotCreateFormat(uri, version, reqFormat,
+              s"Not base file was found with format in: ${tryFormats.mkString(", ")}")
+        }
+        doTry(tryFormats)
+      }
+      ontUtil.convert(uri, fromFile, fromFormat, file, toFormat = actualFormat) match {
         case Some(resFile) => (resFile, actualFormat)
         case _ => throw NoSuchOntFormat(uri, version, reqFormat) // TODO include accepted formats
       }
@@ -176,13 +193,18 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     validateUri(uri)
 
-    val map = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
+    val md = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
 
+    logger.debug(s"createOntology: md=$md")
+
+    // TODO remove these special entries in OntologyVersion
+    val map = ontUtil.extractSomeProps(md)
     val ontologyTypeOpt = map.get("ontologyType")
     val resourceTypeOpt = map.get("resourceType")
 
     val ontVersion = OntologyVersion(name, userName, ontFileWriter.format, new DateTime(date),
                                      version_status, contact_name,
+                                     metadata = ontUtil.toOntMdList(md),
                                      ontologyType = ontologyTypeOpt,
                                      resourceType = resourceTypeOpt)
 
@@ -190,7 +212,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
       case Success(_) =>
-        OntologyResult(uri, version = Some(version), registered = Some(ontVersion.date))
+        OntologyRegistrationResult(uri, version = Some(version), registered = Some(ontVersion.date))
 
       case Failure(exc) => throw CannotInsertOntology(uri, exc.getMessage)
           // perhaps duplicate key in concurrent registration
@@ -208,19 +230,25 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                             version_status:  Option[String],
                             contact_name:    Option[String],
                             date:            String,
-                            ontFileWriter:   OntFileWriter) = {
+                            ontFileWriter:   OntFileWriter,
+                            doVerifyOwner:   Boolean = true) = {
 
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
 
-    verifyOwner(userName, ont)
+    if (doVerifyOwner) verifyOwner(userName, ont)
 
-    val map = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
+    val md = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
 
+    logger.debug(s"createOntologyVersion: md=$md")
+
+    // TODO remove these special entries in OntologyVersion
+    val map = ontUtil.extractSomeProps(md)
     val ontologyTypeOpt = map.get("ontologyType")
     val resourceTypeOpt = map.get("resourceType")
 
     var ontVersion = OntologyVersion("", userName, ontFileWriter.format, new DateTime(date),
                                      version_status, contact_name,
+                                     metadata = ontUtil.toOntMdList(md),
                                      ontologyType = ontologyTypeOpt,
                                      resourceType = resourceTypeOpt)
 
@@ -233,7 +261,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
-        OntologyResult(uri, version = Some(version), updated = Some(ontVersion.date))
+        OntologyRegistrationResult(uri, version = Some(version), updated = Some(ontVersion.date))
 
       case Failure(exc)  => throw CannotInsertOntologyVersion(uri, version, exc.getMessage)
     }
@@ -246,10 +274,12 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                             originalUriOpt: Option[String],
                             version:        String,
                             name:           String,
-                            userName:       String) = {
+                            userName:       String,
+                            doVerifyOwner:  Boolean = true) = {
 
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
-    verifyOwner(userName, ont)
+
+    if (doVerifyOwner) verifyOwner(userName, ont)
 
     var ontVersion = ont.versions.getOrElse(version, throw NoSuchOntVersion(uri, version))
 
@@ -261,7 +291,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
-        OntologyResult(uri, version = Some(version), updated = Some(ontVersion.date))
+        OntologyRegistrationResult(uri, version = Some(version), updated = Some(ontVersion.date))
 
       case Failure(exc)  => throw CannotUpdateOntologyVersion(uri, version, exc.getMessage)
     }
@@ -270,9 +300,15 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   /**
    * Deletes a particular version.
    */
-  def deleteOntologyVersion(uri: String, version: String, userName: String) = {
+  def deleteOntologyVersion(uri:            String,
+                            version:        String,
+                            userName:       String,
+                            doVerifyOwner:  Boolean = true) = {
+
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
-    verifyOwner(userName, ont)
+
+    if (doVerifyOwner) verifyOwner(userName, ont)
+
     ont.versions.getOrElse(version, throw NoSuchOntVersion(uri, version))
 
     val update = ont.copy(versions = ont.versions - version)
@@ -280,7 +316,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
-        OntologyResult(uri, version = Some(version), removed = Some(DateTime.now())) //TODO
+        OntologyRegistrationResult(uri, version = Some(version), removed = Some(DateTime.now())) //TODO
 
       case Failure(exc)  => throw CannotDeleteOntologyVersion(uri, version, exc.getMessage)
     }
@@ -289,13 +325,17 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   /**
    * Deletes a whole ontology entry.
    */
-  def deleteOntology(uri: String, userName: String) = {
+  def deleteOntology(uri:            String,
+                     userName:       String,
+                     doVerifyOwner:  Boolean = true) = {
+
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
-    verifyOwner(userName, ont)
+
+    if (doVerifyOwner) verifyOwner(userName, ont)
 
     Try(ontDAO.remove(ont, WriteConcern.Safe)) match {
       case Success(result) =>
-        OntologyResult(uri, removed = Some(DateTime.now())) //TODO
+        OntologyRegistrationResult(uri, removed = Some(DateTime.now())) //TODO
 
       case Failure(exc)  => throw CannotDeleteOntology(uri, exc.getMessage)
     }
@@ -386,7 +426,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                                 originalUriOpt: Option[String],
                                 version:        String,
                                 ontFileWriter:  OntFileWriter
-                               ): Map[String,String] = {
+                               ): Map[String,List[String]] = {
 
     val versionDir = getVersionDirectory(uri, version)
     val destFile = new File(versionDir, s"file.${ontFileWriter.format}")

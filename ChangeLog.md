@@ -1,5 +1,83 @@
 ## change log ##
 
+* 2016-05-09: 0.3.1:
+  - add getParam/requireParam helpers to retrieve request parameters from either 
+    the body or the regular params. Used in OntController to facilitate requests 
+    with either mechanism (note that regular "form" parameters should be used 
+    when uploading a file --multipart/form-data)
+  - allow an admin to update/delete ontology (even if not a member of corresponding organization) 
+  
+* 2016-05-04: 0.3.1:
+  - v2r: metadata is now an object indexed by the predicate URI:
+  
+      ```      
+      "metadata": {
+          "http://purl.org/dc/elements/1.1/description": [
+              "some description (dc:description)"
+          ],
+          ...
+      }
+      ```
+      
+      It's only in the mongo database that the metadata is stored as an array
+      
+      ```
+		"metadata" : [ 
+		  {
+			  "uri" : "http://purl.org/dc/elements/1.1/description",
+			  "values" : [ 
+				  "some description (dc:description)"
+			  ]
+		  },
+		  ...
+		]
+      ```
+      (this because characters like dot cannot be used as field names)
+      
+* 2016-05-03: 0.3.1:
+  - v2r: set empty prefix for namespace associated with ontology uri in the jena model
+    (this way the resulting serializations (n3, rdf/xml..) look nicer)
+  - PUT /ont: 
+    - accept optional 'metadata' parameter to create new version only with changes in metadata.
+    - creation of new version: requires specification of new contents. Options:
+      - file upload (in same request, or previously uploaded file) for the new full ontology contents
+      - full contents in embedded 'contents' parameter
+      - 'metadata' parameter for new version with given metadata on top of a base version
+
+  - accept embedded contents in ontology submission
+  
+* 2016-05-01: 0.3.1:
+  - report metadata in OntologySummaryResult but only for specific URI (not for list of ontologies)
+  - capture all ontology metadata in OntologyVersion so it gets saved in the db
+  - minor refactor: writeOntologyFile now returns all the ontology metadata, while the interim
+    extractSomeProps uses that metadata to extract the special values that are going in the 
+    OntologyVersion object (these special values will be removed later on)
+  
+* 2016-04-30: 0.3.1:
+  - v2r: specify URI at first level (namespace is always uri + "/")
+  - v2r: add metadata
+  
+* 2016-04-22-27: 0.3.1:
+  - report format in OntologySummaryResult as a possible mechanism to help UI decide on corresponding dispatch
+    (eg., for v2r at this moment)
+  - introduce ontUtil.storedFormats intended to capture all formats used to store ontology serializations
+    TODO This is basically working but needs overall unification
+  - SelfHostedOntController.portalDispatch: adjustments in contentType so dispatch of orr-portal also
+    works well while exercising it with `sbt container:start`
+  
+* 2016-04-22-25,26: 0.3.1:
+  - v2r: vocab terms is now List[Term], with term's attributes as List[JValue] to allow,
+    per property, to either associate an individual value or an array of such values.
+  - uploaded "owx" (OWL/XML) file is now stored in that format as the original.
+  - general adjustments related with OWL/XML: "owx" is the associated request format and also
+    the extension of stored file. Mime type is "application/owl+xml". Extension and mime type 
+    according to https://www.w3.org/TR/owl-xml-serialization/
+  - uploaded "v2r" file is stored in that format as the original in final 
+    version directory destination (that is not its conversion to rdf as the original)
+  - initial support for .v2r format in upload operation
+  - make namespace optional in V2RModel
+  - preliminaries for v2r format
+
 * 2016-04-22-24: 0.3.1:
   - include role (only when "admin") in GET /user/:userName response for admin or same user
   - written fully-hosted file: include xml:base and remove unused namespace prefixes
@@ -24,8 +102,8 @@
     so we can have AG to load files directly from the share
 
   - triple store initialization: 
-  	- if missing, create AG repository (with name agraph.repoName in given configuration) 
-  	- if missing, create AG anonymous user (and give it read access to the agraph.repoName)
+    - if missing, create AG repository (with name agraph.repoName in given configuration) 
+    - if missing, create AG anonymous user (and give it read access to the agraph.repoName)
     - add `POST /ts/_init` to explicit execute triple store initialization (which will help 
       in case the call at orr-ont init time fails possibly due to AG server not running)
 
@@ -37,22 +115,22 @@
 
     ```json
     {
-		"filename": "1461089333462.rdf",
-		"format": "rdf",
-		"possibleOntologyUris": {
-			"http://example.org/ont1": {
-				"explanations": [
-					"Value of xml:base attribute"
-				],
-				"metadata": {
-					"<propURI>": [
-						"<propValue>", ...
-					],
-				}
-			}
-		},
-		"userName": "carueda"
-	}
+        "filename": "1461089333462.rdf",
+        "format": "rdf",
+        "possibleOntologyUris": {
+            "http://example.org/ont1": {
+                "explanations": [
+                    "Value of xml:base attribute"
+                ],
+                "metadata": {
+                    "<propURI>": [
+                        "<propValue>", ...
+                    ],
+                }
+            }
+        },
+        "userName": "carueda"
+    }
     ```
     
     Possible ontology names now handled by the client
@@ -68,25 +146,25 @@
   - initial version of POST /ont/upload to perform first step toward registering an ontology
     from an uploaded file.
     This operation returns the location of such local file as well as ontology basic 
-	information/metadata for the client (orr-portal) to continue registration sequence. 
-	The uploaded file is stored under baseDirectory/uploads/.
-	Various supporting elements copied from previous mmiorr project; TODO: clean up when time permits.
-	These elements include support for accepting file in OWL/XML (using OWL API library)
-	
+    information/metadata for the client (orr-portal) to continue registration sequence. 
+    The uploaded file is stored under baseDirectory/uploads/.
+    Various supporting elements copied from previous mmiorr project; TODO: clean up when time permits.
+    These elements include support for accepting file in OWL/XML (using OWL API library)
+    
   - POST /ont now also accepts info about previously uploaded file to perform the registration:
     - if "file" is given, then uploaded file is included in the request (as in previous version)
-	- else if "uploadedFilename", then gets the file from previously uploaded file
-	
+    - else if "uploadedFilename", then gets the file from previously uploaded file
+    
   - GET /user/username: include the organizations the requested user is member of
-	
+    
   - actually use a local copy of original http://purl.org/wmo/seaice/iceOfLandOrigin (which currently 
     redirects to http://ssiii.googlecode.com/svn/trunk/ontology/ice-of-land-origin.owl) as an OWL/XML
     file for testing purposes (I was initially using one with some changes made by ORR). 
   
 * 2016-04-10: 0.3.1:
   - include 'extra' list in verification of admin user
-	- use verifyIsAdminOrExtra() instead of verifyIsAuthenticatedUser("admin")
-	- use verifyIsUserOrAdminOrExtra(Set(userName)) instead of verifyIsAuthenticatedUser(userName, "admin")
+    - use verifyIsAdminOrExtra() instead of verifyIsAuthenticatedUser("admin")
+    - use verifyIsUserOrAdminOrExtra(Set(userName)) instead of verifyIsAuthenticatedUser(userName, "admin")
   
 * 2016-04-07: 0.3.1:
   - use input stream when reading in uploaded ontology and in ontology format conversion.
@@ -145,7 +223,7 @@
     See orr-portal's gulp "install" target (along with `--base` and `--dest`), which installs these resources.
   - In summary: "self-resolution" of the ORR Portal interface when the ORR Portal is installed
     under orr-ont application context. For HTML always dispatches /index.html for any requested path.
-  	
+    
   - add support method getRequestedFormat for content-negotiation: returns requested format with precedence to the "format" 
     parameter if given, otherwise according to the Accept header
     
@@ -153,14 +231,14 @@
 * 2015-11-13:
   - remove ./sbt, which continues to fail locally and on travis with: 
   ```
-		[info] Loading global plugins from /Users/carueda/.sbt/0.13/plugins
-		[info] Loading project definition from /Users/carueda/github/orr-ont/project
-		[info] Set current project to ORR Ont (in build file:/Users/carueda/github/orr-ont/)
-		[error] Not a valid command: warn
-		[error] Not a valid project ID: warn
-		[error] Expected ':' (if selecting a configuration)
-		[error] Not a valid key: warn (similar: run, clean, watch)
-		[error] warn
+        [info] Loading global plugins from /Users/carueda/.sbt/0.13/plugins
+        [info] Loading project definition from /Users/carueda/github/orr-ont/project
+        [info] Set current project to ORR Ont (in build file:/Users/carueda/github/orr-ont/)
+        [error] Not a valid command: warn
+        [error] Not a valid project ID: warn
+        [error] Expected ':' (if selecting a configuration)
+        [error] Not a valid key: warn (similar: run, clean, watch)
+        [error] warn
    ```
    But with my global sbt (sbt launcher version 0.13.7) all works just fine.
    (./sbt came from the g8 template and it used to work, but not even recent versions fix the problem)

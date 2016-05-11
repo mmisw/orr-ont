@@ -8,6 +8,7 @@ import com.novus.salat.global._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.service.{NoSuch, NoSuchOntFormat, OntService}
+import org.mmisw.orr.ont.swld.ontUtil
 import org.mmisw.orr.ont.{OntologySummaryResult, Setup}
 
 import scala.util.{Failure, Success, Try}
@@ -23,14 +24,13 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
     with Logging {
 
   get("/(.*)".r) {
-    val reqFormat = getRequestedFormat
     val pathInfo = request.pathInfo
-
-    logger.debug(s"SelfHostedOntController: reqFormat=$reqFormat request.pathInfo=$pathInfo")
-
     if (pathInfo.startsWith("/api")) {
       pass()
     }
+
+    val reqFormat = getRequestedFormat
+    logger.debug(s"SelfHostedOntController: reqFormat=$reqFormat request.pathInfo=$pathInfo")
 
     if (!portalDispatch(pathInfo, reqFormat)) {
       // skip leading slash if any
@@ -55,6 +55,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
       val isUiResource = List("/vendor", "/js", "/img", "/css") exists pathInfo.startsWith
 
       if (isUiResource) {
+        contentType = null  // so, the following sets the content type according to the resource
         serveStaticResource() getOrElse error(404, s"${request.getRequestURI}: resource not found")
         true
       }
@@ -65,6 +66,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
         val indexRequest = new HttpServletRequestWrapper(request) {
           override def getPathInfo = "/index.html"
         }
+        contentType = formats("html") // make sure html is responded
         servletContext.getNamedDispatcher("default").forward(indexRequest, response)
         true
       }
@@ -137,16 +139,19 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
     // TODO(low priority): perhaps use the saved ontVersion.format when there's no explicit requested
     // format e.g, when there's no "format" param and the accept header only has "*/*" ?
 
-    // TODO determine mechanism to request for file contents or metadata:  format=!md is preliminary
+    // TODO determine mechanism to request for metadata:  format=!md is preliminary
     // TODO review common dispatch from ontService to avoid code duplication
 
     if (reqFormat == "!md") {
       val ores = OntologySummaryResult(
-        ont.uri,
-        version,
-        ontVersion.name,
-        orgName = ont.orgName,
-        versions = Some(ont.sortedVersionKeys))
+        uri      = ont.uri,
+        version  = version,
+        name     = ontVersion.name,
+        orgName  = ont.orgName,
+        metadata = Some(ontUtil.toOntMdMap(ontVersion.metadata)),
+        versions = Some(ont.sortedVersionKeys),
+        format   = Option(ontVersion.format)
+      )
       grater[OntologySummaryResult].toCompactJSON(ores)
     }
     else {

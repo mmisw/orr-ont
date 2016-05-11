@@ -35,7 +35,7 @@ case class OrgResult(
             removed:     Option[DateTime] = None,
             members:     Option[Set[String]] = None)
 
-case class OntologyResult(
+case class OntologyRegistrationResult(
             uri:         String,
             version:     Option[String] = None,
             registered:  Option[DateTime] = None,
@@ -50,7 +50,9 @@ case class OntologySummaryResult(
             orgName:        Option[String] = None,
             author:         Option[String] = None,
             status:         Option[String] = None,
+            metadata:       Option[Map[String, AnyRef]] = None,
             ontologyType:   Option[String] = None,
             resourceType:   Option[String] = None,
-            versions:       Option[List[String]] = None
+            versions:       Option[List[String]] = None,
+            format:         Option[String] = None
             )

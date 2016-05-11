@@ -1,0 +1,34 @@
+{
+  "metadata": {
+    "http://purl.org/dc/elements/1.1/description":
+      "some description (dc:description)",
+    "http://www.w3.org/2000/01/rdf-schema#comment" : [
+      "a comment (rdfs:comment)",
+      "another comment (rdfs:comment)"
+    ]
+  },
+  "vocabs": [
+    {
+      "class": {
+        "name": "Parameter"
+      },
+      "properties": [
+        {
+          "name": "definition"
+        },
+        {
+          "uri": "http://some/prop"
+        }
+      ],
+      "terms": [
+        {
+          "name": "pressure",
+          "attributes": [
+            "Definition of pressure",
+            ["one value for some/prop", "other value for some/prop"]
+          ]
+        }
+      ]
+    }
+  ]
+}

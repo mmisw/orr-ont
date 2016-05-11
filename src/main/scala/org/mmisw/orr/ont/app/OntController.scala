@@ -7,8 +7,12 @@ import com.mongodb.casbah.Imports._
 import com.novus.salat._
 import com.novus.salat.global._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
+import org.json4s._
+import org.json4s.native.JsonMethods._
 import org.mmisw.orr.ont._
+import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.service._
+import org.mmisw.orr.ont.swld.{V2RModel, ontUtil}
 import org.scalatra.Created
 import org.scalatra.servlet.{FileItem, FileUploadSupport, SizeConstraintExceededException}
 
@@ -41,8 +45,9 @@ class OntController(implicit setup: Setup,
       case None =>
         val query = getQueryFromParams(params.keySet) - "jwt"  // - sigParamName)
         val onts = ontService.getOntologies(query, checkIsAdminOrExtra)
-        // TODO what exactly to report for the list of ontologies?
-        onts map grater[OntologySummaryResult].toCompactJSON
+        onts map { osr =>
+          grater[OntologySummaryResult].asDBObject(osr)//.toCompactJSON
+        }
     }
   }
 
@@ -66,11 +71,11 @@ class OntController(implicit setup: Setup,
    * Registers a new ontology entry.
    */
   post("/") {
-    val uri            = require(params, "uri")
-    val originalUriOpt = params.get("originalUri")  // for fully-hosted mode
-    val name           = require(params, "name")
-    val orgName        = require(params, "orgName")
-    val user           = verifyUser(params.get("userName"))
+    val uri            = requireParam("uri")
+    val originalUriOpt = getParam("originalUri")  // for fully-hosted mode
+    val name           = requireParam("name")
+    val orgName        = requireParam("orgName")
+    val user           = verifyUser(getParam("userName"))
 
     // TODO allow absent orgName so user can submit on her own behalf?
 
@@ -100,10 +105,10 @@ class OntController(implicit setup: Setup,
    * Updates a given version or adds a new version.
    */
   put("/") {
-    val uri            = require(params, "uri")
-    val originalUriOpt = params.get("originalUri")  // for fully-hosted mode
-    val versionOpt     = params.get("version")
-    val user           = verifyUser(params.get("userName"))
+    val uri            = requireParam("uri")
+    val originalUriOpt = getParam("originalUri")  // for fully-hosted mode
+    val versionOpt     = getParam("version")
+    val user           = verifyUser(getParam("userName"))
 
     val (ont, _, _) = resolveOntology(uri, versionOpt)
 
@@ -114,18 +119,28 @@ class OntController(implicit setup: Setup,
             bug(s"org '$orgName' should exist")
 
           case Some(org) =>
-            verifyIsAuthenticatedUser(org.members + "admin")
+            verifyIsUserOrAdminOrExtra(org.members)
         }
 
       case None =>
         bug(s"currently I expect registered ont to have org associated")
     }
 
-    val ontFileWriter = getOntFileWriter(user)
+    val ontFileWriterOpt: Option[OntFileWriter] = getOntFileWriterOpt(user) orElse {
+      getParam("metadata") map (getOntFileWriterWithMetadata(uri, versionOpt, _))
+    }
+
+    val doVerifyOwner = false  // already verified above
 
     versionOpt match {
-      case Some(version) => updateOntologyVersion(uri, originalUriOpt, version, user)
-      case None          => createOntologyVersion(uri, originalUriOpt, user, ontFileWriter)
+      case None =>
+        val ontFileWriter = ontFileWriterOpt.getOrElse(
+          error(400, "creation of new version requires specification of contents " +
+            "(file upload, embedded contents, or new metadata"))
+        createOntologyVersion(uri, originalUriOpt, user, ontFileWriter, doVerifyOwner)
+
+      case Some(version) =>
+        updateOntologyVersion(uri, originalUriOpt, version, user, doVerifyOwner)
     }
   }
 
@@ -144,16 +159,18 @@ class OntController(implicit setup: Setup,
         orgsDAO.findOneById(orgName) match {
           case None => bug(s"org '$orgName' should exist")
 
-          case Some(org) => verifyIsAuthenticatedUser(org.members + "admin")
+          case Some(org) => verifyIsUserOrAdminOrExtra(org.members)
         }
 
       case None =>
         bug(s"currently I expect registered ont to have org associated")
     }
 
+    val doVerifyOwner = false  // already verified above
+
     versionOpt match {
-      case Some(version) => deleteOntologyVersion(uri, version, user)
-      case None          => deleteOntology(uri, user)
+      case Some(version) => deleteOntologyVersion(uri, version, user, doVerifyOwner)
+      case None          => deleteOntology(uri, user, doVerifyOwner)
     }
   }
 
@@ -164,18 +181,53 @@ class OntController(implicit setup: Setup,
 
   ///////////////////////////////////////////////////////////////////////////
 
+  // used for just uploaded file
   private case class FileItemWriter(format: String, fileItem: FileItem) extends AnyRef with OntFileWriter {
     override def write(destFile: File) {
       fileItem.write(destFile)
     }
   }
 
+  // used for previously uploaded file
   private case class FileWriter(format: String, file: File) extends AnyRef with OntFileWriter {
     override def write(destFile: File) {
       java.nio.file.Files.copy(
         java.nio.file.Paths.get(file.getPath),
         java.nio.file.Paths.get(destFile.getPath),
         java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+    }
+  }
+
+  // used for embedded contents
+  private case class StringWriter(format: String, contents: String) extends AnyRef with OntFileWriter {
+    override def write(destFile: File) {
+      java.nio.file.Files.write(destFile.toPath,
+        contents.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+    }
+  }
+
+  // used to create new version based on another version where all metadata gets replaced
+  private case class UpdateWithMetadataWriter(format:       String,
+                                              ont:          Ontology,
+                                              ontVersion:   OntologyVersion,
+                                              version:      String,
+                                              newMetadata:  Map[String, JValue]
+                                             ) extends AnyRef with OntFileWriter {
+    override def write(destFile: File): Unit = {
+      val uri = ont.uri
+
+      val (file, actualFormat) = getOntologyFile(uri, version, format)
+      if (actualFormat == "v2r") {
+        val oldV2r = parse(file).extract[V2RModel]
+        val newV2r = oldV2r.copy(metadata = Some(newMetadata))
+        java.nio.file.Files.write(destFile.toPath,
+          newV2r.toPrettyJson.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+      }
+      else {
+        val ontModel = ontUtil.loadOntModel(uri, file, actualFormat)
+        ontUtil.replaceMetadata(uri, ontModel, newMetadata)
+        ontUtil.writeModel(uri, ontModel, actualFormat, destFile)
+      }
     }
   }
 
@@ -246,7 +298,7 @@ class OntController(implicit setup: Setup,
     // format is the one given if any, or the one in the db:
     val reqFormat = params.get("format").getOrElse(ontVersion.format)
 
-    // todo: determine mechanism to request for file contents or metadata:  format=!md is preliminary
+    // todo: determine mechanism to request for metadata:  format=!md is preliminary
 
     if (reqFormat == "!md") {
       // include 'versions' if no particular version requested.
@@ -254,7 +306,10 @@ class OntController(implicit setup: Setup,
         case None    => Some(ont.sortedVersionKeys)
         case Some(_) => None
       }
-      val ores = ontService.getOntologySummaryResult(ont, ontVersion, version, checkIsAdminOrExtra, versionsOpt)
+      val ores = ontService.getOntologySummaryResult(ont, ontVersion, version,
+        privileged = checkIsAdminOrExtra,
+        includeMetadata = true,
+        versionsOpt)
       grater[OntologySummaryResult].toCompactJSON(ores)
     }
     else {
@@ -264,35 +319,65 @@ class OntController(implicit setup: Setup,
     }
   }
 
-  /** get OntFileWriter according to given relevant parameters */
+  /**
+    * Gets OntFileWriter for purposes of brand new ontology registration
+    * according to given relevant parameters.
+    */
   private def getOntFileWriter(user: db.User): OntFileWriter = {
-    if (fileParams.isDefinedAt("file"))
+    getOntFileWriterOpt(user).getOrElse(
+      error(400, s"no suitable parameters were specified to indicate contents"))
+  }
+
+  /**
+    * Gets OntFileWriter for purposes on new **version**
+    * according to given relevant parameters
+    */
+  private def getOntFileWriterOpt(user: db.User): Option[OntFileWriter] = {
+    Option(if (fileParams.isDefinedAt("file"))
       getOntFileWriterForJustUploadedFile
-    else
+    else if (getParam("contents").isDefined)
+      getOntFileWriterForGivenContents
+    else if (getParam("uploadedFilename").isDefined && getParam("uploadedFormat").isDefined)
       getOntFileWriterForPreviouslyUploadedFile(user.userName)
+    else null)
   }
 
   private def getOntFileWriterForJustUploadedFile: OntFileWriter = {
     val fileItem = fileParams.getOrElse("file", missing("file"))
 
     // todo make format param optional
-    val format = require(params, "format")
+    val format = requireParam("format")
 
-    logger.info(s"uploaded file=${fileItem.getName} size=${fileItem.getSize} format=$format")
+    logger.debug(s"uploaded file=${fileItem.getName} size=${fileItem.getSize} format=$format")
     //val fileContents = new String(fileItem.get(), fileItem.charset.getOrElse("utf8"))
     //val contentType = file.contentType.getOrElse("application/octet-stream")
 
     FileItemWriter(format, fileItem)
   }
 
+  private def getOntFileWriterForGivenContents: OntFileWriter = {
+    val contents = requireParam("contents")
+    val format   = requireParam("format")
+    logger.debug(s"getOntFileWriterForGivenContents: format=$format contents=`$contents`")
+    StringWriter(format, contents)
+  }
+
   private def getOntFileWriterForPreviouslyUploadedFile(userName: String): OntFileWriter = {
-    val filename = require(params, "uploadedFilename")
-    val format   = require(params, "uploadedFormat")
+    val filename = requireParam("uploadedFilename")
+    val format   = requireParam("uploadedFormat")
+    logger.debug(s"getOntFileWriterForPreviouslyUploadedFile: filename=$filename format=$format")
+    FileWriter(format, ontService.getUploadedFile(userName, filename))
+  }
 
-    logger.info(s"getOntFileWriterForPreviouslyUploadedFile: filename=$filename format=$format")
+  private def getOntFileWriterWithMetadata(uri: String,
+                                           versionOpt: Option[String],
+                                           metadata: String
+                                          ): OntFileWriter = {
 
-    val file = ontService.getUploadedFile(userName, filename)
-    FileWriter(format, file)
+    val (ont, ontVersion, version) = resolveOntology(uri, versionOpt)
+    logger.debug(s"getOntFileWriterWithMetadata: metadata=`$metadata`")
+    val newMetadata = parse(metadata).extract[Map[String, JValue]]
+    UpdateWithMetadataWriter(ontVersion.format, ont, ontVersion, version, newMetadata)
   }
 
   private def getVersion = {
@@ -309,9 +394,10 @@ class OntController(implicit setup: Setup,
   private def createOntologyVersion(uri:            String,
                                     originalUriOpt: Option[String],
                                     user:           db.User,
-                                    ontFileWriter:  OntFileWriter
+                                    ontFileWriter:  OntFileWriter,
+                                    doVerifyOwner:  Boolean = true
                                    ) = {
-    val nameOpt = params.get("name")
+    val nameOpt = getParam("name")
     val (version, date) = getVersion
 
     // TODO capture version_status from parameter
@@ -321,7 +407,7 @@ class OntController(implicit setup: Setup,
     val contact_name: Option[String] = None
 
     Try(ontService.createOntologyVersion(uri, originalUriOpt, nameOpt, user.userName, version,
-            version_status, contact_name, date, ontFileWriter)) match {
+            version_status, contact_name, date, ontFileWriter, doVerifyOwner)) match {
       case Success(ontologyResult) =>
         loadOntologyInTripleStore(uri, reload = true)
         ontologyResult
@@ -341,11 +427,13 @@ class OntController(implicit setup: Setup,
   private def updateOntologyVersion(uri:            String,
                                     originalUriOpt: Option[String],
                                     version:        String,
-                                    user:           db.User
+                                    user:           db.User,
+                                    doVerifyOwner:  Boolean = true
                                    ) = {
-    val name = require(params, "name")
+    val name = requireParam("name")
 
-    Try(ontService.updateOntologyVersion(uri, originalUriOpt, version, name, user.userName)) match {
+    Try(ontService.updateOntologyVersion(uri, originalUriOpt, version, name, user.userName,
+            doVerifyOwner)) match {
       case Success(ontologyResult) =>
         loadOntologyInTripleStore(uri, reload = true)
         ontologyResult
@@ -371,9 +459,12 @@ class OntController(implicit setup: Setup,
   /**
    * Deletes a particular version.
    */
-  private def deleteOntologyVersion(uri: String, version: String, user: db.User) = {
+  private def deleteOntologyVersion(uri: String,
+                                    version: String,
+                                    user: db.User,
+                                    doVerifyOwner: Boolean = true) = {
 
-    Try(ontService.deleteOntologyVersion(uri, version,  user.userName)) match {
+    Try(ontService.deleteOntologyVersion(uri, version, user.userName, doVerifyOwner)) match {
       case Success(ontologyResult) => ontologyResult
 
       case Failure(exc: NoSuch)                       => error(404, exc.details)
@@ -386,8 +477,11 @@ class OntController(implicit setup: Setup,
   /**
    * Deletes a whole ontology entry.
    */
-  private def deleteOntology(uri: String, user: db.User) = {
-    Try(ontService.deleteOntology(uri, user.userName)) match {
+  private def deleteOntology(uri: String,
+                             user: db.User,
+                             doVerifyOwner: Boolean = true) = {
+
+    Try(ontService.deleteOntology(uri, user.userName, doVerifyOwner)) match {
       case Success(ontologyResult) => ontologyResult
 
       case Failure(exc: NoSuch)                       => error(404, exc.details)

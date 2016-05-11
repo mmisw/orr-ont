@@ -6,6 +6,9 @@ import java.io.{File, FileInputStream, FileOutputStream}
 
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import com.github.jsonldjava.jena.JenaJSONLD
+import com.mongodb.{BasicDBList, BasicDBObject}
+import org.json4s.JsonAST.{JArray, JString}
+import org.json4s._
 import org.mmisw.orr.ont.vocabulary.{Omv, OmvMmi}
 
 import scala.collection.JavaConversions._
@@ -17,8 +20,10 @@ object ontUtil extends AnyRef with Logging {
 
   // todo review
   val mimeMappings: Map[String, String] = Map(
-      "rdf"     -> "application/rdf+xml"
-    , "owl"     -> "application/rdf+xml"
+      "rdf"     -> "application/rdf+xml"    // https://www.w3.org/TR/REC-rdf-syntax/
+    , "owl"     -> "application/rdf+xml"    // https://www.w3.org/TR/REC-rdf-syntax/
+    , "owx"     -> "application/owl+xml"    // https://www.w3.org/TR/owl-xml-serialization/
+    , "v2r"     -> "application/v2r+json"
     , "jsonld"  -> "application/json+ld"    // http://www.ietf.org/rfc/rfc6839.txt
     , "n3"      -> "text/n3"                // http://www.w3.org/TeamSubmission/n3/
     , "ttl"     -> "text/turtle"            // http://www.w3.org/TeamSubmission/turtle/
@@ -35,8 +40,7 @@ object ontUtil extends AnyRef with Logging {
       if (fromLang == toLang) fromFile
       else {
         logger.info(s"ontUtil.convert: path=$fromFile toLang=$toLang")
-        val model = ModelFactory.createDefaultModel()
-        readModel(uri, fromFile, fromLang, model)
+        val model = readModel2(uri, fromFile, fromLang)
         val writer = model.getWriter(toLang)
         val os = new FileOutputStream(toFile)
         try writer.write(model, os, uri)
@@ -50,27 +54,36 @@ object ontUtil extends AnyRef with Logging {
     } yield doIt(fromLang, toLang)
   }
 
+  // TODO review along with mapping in storedFormat method
+  val storedFormats = List("rdf", "n3", "owx", "jsonld", "v2r")
+
   // for the files actually stored
   def storedFormat(format: String) = format.toLowerCase match {
-    case "owl"              => "owl"
-    case "rdf"              => "rdf"
+    case "owx"              => "owx"    // https://www.w3.org/TR/owl-xml-serialization/
+    case "v2r"              => "v2r"
+    case "owl"  | "rdf"     => "rdf"
     case "json" | "jsonld"  => "jsonld"
     case "ttl"  | "n3"      => "n3"
-    case f => f
+    case f => f   // TODO explicitly include other formats we are providing, "rj",
   }
 
-  def getPropsFromOntMetadata(uri: String, file: File, format: String): Map[String,String] = {
+  def getPropsFromOntMetadata(uri: String,
+                              file: File,
+                              format: String
+                             ): Map[String,List[String]] = {
+
+    logger.debug(s"getPropsFromOntMetadata: uri=$uri file=$file format=$format")
     val ontModel = loadOntModel(uri, file, format)
     Option(ontModel.getOntology(uri)) match {
       case Some(ontology) =>
-        try extractSomeProps(ontology)
+        try extractAttributes(ontology)
         catch {
           case ex: Throwable =>
             ex.printStackTrace()
-            Map[String, String]()
+            Map.empty
         }
 
-      case _ => Map[String, String]()
+      case _ => Map.empty
     }
   }
 
@@ -80,6 +93,17 @@ object ontUtil extends AnyRef with Logging {
     val idx = resourceType.lastIndexOf('/')
     if (idx >= 0 && idx < resourceType.length - 1) resourceType.substring(idx + 1)
     else resourceType
+  }
+
+  def getValues(sub: Resource, pro: Property): List[String] = {
+    var list = List[String]()
+    val it = sub.listProperties(pro)
+    if (it != null) while (it.hasNext) {
+      val stmt = it.next()
+      val nodeString = nodeAsString(stmt.getObject)
+      list = nodeString :: list
+    }
+    list
   }
 
   def getValue(sub: Resource, pro: Property): Option[String] = {
@@ -117,8 +141,27 @@ object ontUtil extends AnyRef with Logging {
     map
   }
 
-  ///////////////////////////////////////////////////////////////////////////
-  // private
+  def toOntMdList(md: Map[String,List[String]]): List[Map[String, AnyRef]] =
+    md.map(uv => Map("uri" -> uv._1, "values" -> uv._2)).toList
+
+  /**
+    * Helper to convert from OntologyVersion.database entry type `List[Map[String, AnyRef]]`
+    * into a standard map for reporting via OntologySummaryResult
+    *
+    * @param list  List[AnyRef] as we need to deal with BasicDBObject
+    */
+  def toOntMdMap(list: List[AnyRef]): Map[String,List[String]] = {
+    // Note: not `list: List[Map[String, AnyRef]]`
+    val map = scala.collection.mutable.HashMap[String, List[String]]()
+    list foreach { a =>
+      val m = a.asInstanceOf[BasicDBObject]
+      val uri    = m.get("uri").asInstanceOf[String]
+      val dbList = m.get("values").asInstanceOf[BasicDBList]
+      val values = (dbList map (_.toString)).toList
+      map += (uri -> values)
+    }
+    map.toMap
+  }
 
   private def nodeAsString(n: RDFNode): String =
     if (n.isResource) n.asResource().getURI
@@ -127,15 +170,18 @@ object ontUtil extends AnyRef with Logging {
   /**
    * ad hoc initial mechanism to report some of the ontology metadata.
    */
-  private def extractSomeProps(ontology: Ontology): Map[String,String] = {
+  def extractSomeProps(md: Map[String,List[String]]): Map[String,String] = {
+
     var map = Map[String, String]()
 
-    val values1 = listPropertyValues(ontology, OmvMmi.hasResourceType)
-    if (values1.nonEmpty) map = map.updated("resourceType", values1.head)
+    val resourceTypeListOpt = md.get(OmvMmi.hasResourceType.getURI)
+    if (resourceTypeListOpt.isDefined) {
+      map = map.updated("resourceType", resourceTypeListOpt.get.head)
+    }
 
-    val values2 = listPropertyValues(ontology, Omv.usedOntologyEngineeringTool)
-    if (values2.nonEmpty) {
-      val usedOntologyEngineeringTool = values2.head
+    val ontologyTypeListOpt = md.get(Omv.usedOntologyEngineeringTool.getURI)
+    if (ontologyTypeListOpt.isDefined) {
+      val usedOntologyEngineeringTool = ontologyTypeListOpt.head.head
       val ontologyType = if (usedOntologyEngineeringTool == OmvMmi.voc2rdf.getURI)
         "vocabulary"
       else if (usedOntologyEngineeringTool == OmvMmi.vine.getURI)
@@ -166,11 +212,25 @@ object ontUtil extends AnyRef with Logging {
   def loadOntModel(uri: String, file: File, format: String): OntModel = {
     val lang = format2lang(storedFormat(format)).getOrElse(throw new IllegalArgumentException)
     logger.debug(s"Loading uri='$uri' file=$file lang=$lang")
-    val ontModel = createDefaultOntModel
-    ontModel.setDynamicImports(false)
-    ontModel.getDocumentManager.setProcessImports(false)
-    readModel(uri, file, lang, ontModel)
-    ontModel
+    readModel2(uri, file, lang)
+  }
+
+  private def readModel2(uri: String, file: File, lang: String): OntModel = {
+    val path = file.getAbsolutePath
+    logger.debug(s"readModel: path='$path' lang='$lang'")
+    if ("OWX" == lang) {
+      owlApiHelper.loadOntModel(file).ontModel
+    }
+    else if ("V2R" == lang) {
+      v2r.loadOntModel(file, Some(uri)).ontModel
+    }
+    else {
+      val ontModel = createDefaultOntModel
+      ontModel.setDynamicImports(false)
+      ontModel.getDocumentManager.setProcessImports(false)
+      readModel(uri, file, lang, ontModel)
+      ontModel
+    }
   }
 
   private def readModel(uri: String, file: File, lang: String, model: Model): Unit = {
@@ -181,7 +241,7 @@ object ontUtil extends AnyRef with Logging {
     finally is.close()
   }
 
-  private def createDefaultOntModel: OntModel = {
+  def createDefaultOntModel: OntModel = {
     val spec: OntModelSpec = new OntModelSpec(OntModelSpec.OWL_MEM)
     spec.setDocumentManager(new OntDocumentManager)
     ModelFactory.createOntologyModel(spec, null)
@@ -189,8 +249,9 @@ object ontUtil extends AnyRef with Logging {
 
   // https://jena.apache.org/documentation/io/
   def format2lang(format: String) = Option(format.toLowerCase match {
-    case "owl"          => "OWL/XML"  // to use OWL API
-    case "rdf"          => "RDF/XML"
+    case "owx"          => "OWX"      // to use OWL API
+    case "v2r"          => "V2R"      // see v2r module
+    case "owl" | "rdf"  => "RDF/XML"
     case "jsonld"       => "JSON-LD"
     case "n3"           => "N3"
     case "ttl"          => "Turtle"
@@ -335,5 +396,41 @@ object ontUtil extends AnyRef with Logging {
         logger.debug(s"   ${existingStatements.nextStatement}")
       }
     }
+  }
+
+  /**
+    * Updates the model by setting the metadata for the Ontology resource identified by the given uri.
+    */
+  def replaceMetadata(uri: String, model: OntModel, newMetadata: Map[String, JValue]): Unit = {
+    logger.debug(s"replaceMetadata: uri:$uri newMetadata=$newMetadata")
+
+    // remove any previous metadata
+    Option(model.getOntology(uri)) foreach { model.removeAll(_, null, null) }
+
+    // add the new metadata
+    addMetadata(model, model.createOntology(uri), newMetadata)
+  }
+
+  def addMetadata(model: OntModel, ontology: Ontology, metadata: Map[String, JValue]): Unit = {
+    val addOntPropValues = addPropertyValues(model, ontology)_
+    metadata foreach { case (uri, value) =>
+      val property = model.createProperty(uri)
+      addOntPropValues(property, value)
+    }
+  }
+
+  def addPropertyValues(model: Model, subject: Resource)(property: Property, jValue: JValue): Unit = {
+    val primitive: PartialFunction[JValue, Unit] = {
+      case JString(v)   => model.add(       subject, property, v)
+      case JBool(v)     => model.addLiteral(subject, property, v)
+      case JInt(v)      => model.add(       subject, property, v.toString())   // BigInteger
+      case JDouble(v)   => model.addLiteral(subject, property, v)
+
+      case j => logger.warn(s"addPropertyValues: subject=$subject, property=$property: value $j not handled")
+    }
+
+    val array: PartialFunction[JValue, Unit] = { case JArray(arr) => arr foreach primitive }
+
+    (array orElse primitive)(jValue)
   }
 }

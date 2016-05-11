@@ -27,7 +27,7 @@ object AquaImporter extends App with Logging {
     if (!configFile.canRead) {
       throw new ServiceConfigurationError("Could not read configuration file " + configFile)
     }
-    ConfigFactory.parseFile(configFile)
+    ConfigFactory.parseFile(configFile).resolve()
   }
 
   implicit val setup = new Setup(config, emailer = new Emailer(config.getConfig("email")))

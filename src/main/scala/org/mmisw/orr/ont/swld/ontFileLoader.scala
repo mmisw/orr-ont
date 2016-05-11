@@ -34,8 +34,11 @@ object ontFileLoader extends AnyRef with Logging {
     if (Util2.JENA_LANGS.contains(lang)) {
       OntModelLoadedResult(file, fileType, Util2.loadOntModel(file, lang))
     }
-    else if ("OWL/XML" == lang) {
+    else if ("OWX" == lang) {
       owlApiHelper.loadOntModel(file)
+    }
+    else if ("V2R" == lang) {
+      v2r.loadOntModel(file)
     }
     //else if ("voc2skos" == lang) {
     //  model = Voc2Skos.loadOntModel(file)

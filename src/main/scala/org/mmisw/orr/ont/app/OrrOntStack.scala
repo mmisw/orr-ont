@@ -109,6 +109,15 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSuppor
     })
   }
 
+  /** Gets a param from the body or from the 'params' */
+  protected def getParam(name: String): Option[String] = {
+    val fromBody: Option[String] = for (body <- bodyOpt(); value <- getString(body, name)) yield value
+    fromBody.orElse(params.get(name))
+  }
+
+  /** Requires a param from the body or from the 'params' */
+  protected def requireParam(name: String): String = getParam(name).getOrElse(missing(name))
+
   before() {
     contentType = formats("json")
   }
