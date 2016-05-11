@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-05-11: 0.3.1:
+  - use official docker tomcat image as a basis for our orr-ont image
+  
 * 2016-05-09: 0.3.1:
   - add getParam/requireParam helpers to retrieve request parameters from either 
     the body or the regular params. Used in OntController to facilitate requests 

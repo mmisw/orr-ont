@@ -1,4 +1,4 @@
-FROM jeanblanchard/tomcat:8
+FROM tomcat:8.0
 
 MAINTAINER Carlos Rueda <carueda@gmail.com>
 
