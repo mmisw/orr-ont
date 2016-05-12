@@ -425,6 +425,7 @@ object ontUtil extends AnyRef with Logging {
       case JBool(v)     => model.addLiteral(subject, property, v)
       case JInt(v)      => model.add(       subject, property, v.toString())   // BigInteger
       case JDouble(v)   => model.addLiteral(subject, property, v)
+      case JNull        => // no value added
 
       case j => logger.warn(s"addPropertyValues: subject=$subject, property=$property: value $j not handled")
     }
