@@ -60,7 +60,11 @@ with TripleStoreService with Logging {
     val contentType = ontUtil.mimeMappings(actualFormat)
 
     val absPath = file.getAbsolutePath
-    logger.debug(s"loadUriFromLocal: uri=$uri reload=$reload absPath=$absPath contentType=$contentType")
+    logger.debug( s"""loadUriFromLocal:
+         |  uri=$uri reload=$reload
+         |  absPath=$absPath  contentType=$contentType
+         |  orrEndpoint=$orrEndpoint
+       """.stripMargin)
 
     val req = (svc / "statements")
       .setContentType(formats(actualFormat), charset = "UTF-8")
@@ -265,7 +269,6 @@ with TripleStoreService with Logging {
 
   private val agConfig = setup.config.getConfig("agraph")
 
-
   private val agHost     = agConfig.getString("host")
   private val agPort     = agConfig.getString("port")
   private val userName   = agConfig.getString("userName")
@@ -276,6 +279,4 @@ with TripleStoreService with Logging {
   private val orrEndpoint = s"$agEndpoint/repositories/$repoName"
 
   private val svc = host(orrEndpoint)
-
-
 }
