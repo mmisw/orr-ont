@@ -41,10 +41,7 @@ object ontUtil extends AnyRef with Logging {
       else {
         logger.info(s"ontUtil.convert: path=$fromFile toLang=$toLang")
         val model = readModel2(uri, fromFile, fromLang)
-        val writer = model.getWriter(toLang)
-        val os = new FileOutputStream(toFile)
-        try writer.write(model, os, uri)
-        finally os.close()
+        writeModelWithLang(uri, model, toLang, toFile)
         toFile
       }
     }
@@ -281,7 +278,11 @@ object ontUtil extends AnyRef with Logging {
   }
 
   def writeModel(base: String, model: Model, format: String, toFile: File): Unit = {
-    val writer = model.getWriter(format2lang(format).get)
+    writeModelWithLang(base, model, format2lang(format).get, toFile)
+  }
+
+  private def writeModelWithLang(base: String, model: Model, lang: String, toFile: File): Unit = {
+    val writer = model.getWriter(lang)
 
     // set these props and let jena decide which will actually apply depending on the format
     writer.setProperty("xmlbase", base)
@@ -291,8 +292,8 @@ object ontUtil extends AnyRef with Logging {
     val os = new FileOutputStream(toFile)
     try writer.write(model, os, base)
     finally os.close()
-
   }
+
   /**
     * Modifies all statements having its subject, predicate or object in the given old namespace
     * or equal to that old namespace, so those components get "transferred" to the given new namespace.

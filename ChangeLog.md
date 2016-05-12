@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-05-12: 0.3.1:
+  - use similar writeModel logic also in format conversion
+  
 * 2016-05-11: 0.3.1:
   - use official docker tomcat image as a basis for our orr-ont image
   
