@@ -183,17 +183,20 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                      name:           String,
                      version:        String,
                      version_status: Option[String],
-                     contact_name:   Option[String],
                      date:           String,
                      userName:       String,
                      orgName:        String,
-                     ontFileWriter:  OntFileWriter) = {
+                     ontFileWriter:  OntFileWriter,
+                     contact_name:   Option[String] = None  // for AquaImporter
+                    ) = {
 
     if (ontDAO.findOneById(uri).isDefined) throw OntologyAlreadyRegistered(uri)
 
     validateUri(uri)
 
     val md = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
+
+    val authorOpt: Option[String] = contact_name orElse ontUtil.extractAuthor(md)
 
     logger.debug(s"createOntology: md=$md")
 
@@ -203,7 +206,8 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     val resourceTypeOpt = map.get("resourceType")
 
     val ontVersion = OntologyVersion(name, userName, ontFileWriter.format, new DateTime(date),
-                                     version_status, contact_name,
+                                     status = version_status,
+                                     author = authorOpt,
                                      metadata = ontUtil.toOntMdList(md),
                                      ontologyType = ontologyTypeOpt,
                                      resourceType = resourceTypeOpt)
@@ -228,16 +232,19 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                             userName:        String,
                             version:         String,
                             version_status:  Option[String],
-                            contact_name:    Option[String],
                             date:            String,
                             ontFileWriter:   OntFileWriter,
-                            doVerifyOwner:   Boolean = true) = {
+                            doVerifyOwner:   Boolean = true,
+                            contact_name:    Option[String] = None  // for AquaImporter
+                           ) = {
 
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
 
     if (doVerifyOwner) verifyOwner(userName, ont)
 
     val md = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
+
+    val authorOpt: Option[String] = contact_name orElse ontUtil.extractAuthor(md)
 
     logger.debug(s"createOntologyVersion: md=$md")
 
@@ -247,7 +254,8 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     val resourceTypeOpt = map.get("resourceType")
 
     var ontVersion = OntologyVersion("", userName, ontFileWriter.format, new DateTime(date),
-                                     version_status, contact_name,
+                                     status = version_status,
+                                     author = authorOpt,
                                      metadata = ontUtil.toOntMdList(md),
                                      ontologyType = ontologyTypeOpt,
                                      resourceType = resourceTypeOpt)

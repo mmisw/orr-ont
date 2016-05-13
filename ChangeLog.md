@@ -1,6 +1,10 @@
 ## change log ##
 
 * 2016-05-12: 0.3.1:
+  - for OntologyVersion.author get the first value obtained in this order:
+    - contact_name from AquaImporter
+    - omvmmi.hasContentCreator
+    - omv.hasCreator
   - use similar writeModel logic also in format conversion
   
 * 2016-05-11: 0.3.1:

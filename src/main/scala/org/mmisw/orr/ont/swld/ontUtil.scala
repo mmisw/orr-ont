@@ -191,6 +191,10 @@ object ontUtil extends AnyRef with Logging {
     map
   }
 
+  def extractAuthor(md: Map[String,List[String]]): Option[String] = {
+    (md.get(OmvMmi.hasContentCreator.getURI) orElse md.get(Omv.hasCreator.getURI)) map (_.mkString(", "))
+  }
+
   private def listPropertyValues(ont: Ontology, prop: Property): List[String] =
     listPropertyValueNodes(ont, prop) map nodeAsString
 

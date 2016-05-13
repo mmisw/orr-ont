@@ -195,9 +195,9 @@ object AquaImporter extends App with Logging {
         firstSubmission = Some(dateCreated)
         ontService.createOntology(
           o.uri, None, o.display_label, o.version_number, o.version_status,
-          o.contact_name,
           o.date_created, users.get(o.user_id).get.username, orgName,
-          ontFileWriter)
+          ontFileWriter,
+          contact_name = o.contact_name)
         version_status  = o.version_status
       }
     }
@@ -211,8 +211,9 @@ object AquaImporter extends App with Logging {
         }
         ontService.createOntologyVersion(
           o.uri, None, Some(o.display_label), users.get(o.user_id).get.username,
-          o.version_number, version_status, o.contact_name,
-          o.date_created, ontFileWriter)
+          o.version_number, version_status,
+          o.date_created, ontFileWriter,
+          contact_name = o.contact_name)
       }
     }
 

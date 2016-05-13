@@ -90,15 +90,12 @@ class OntController(implicit setup: Setup,
     // TODO capture version_status from parameter
     val version_status: Option[String] = None
 
-    // TODO capture contact_name (from parameter, or by parsing ontology metadata)
-    val contact_name: Option[String] = None
-
     val (version, date) = getVersion
 
     val ontFileWriter = getOntFileWriter(user)
 
     Created(createOntology(uri, originalUriOpt, name, version,
-      version_status, contact_name, date, ontFileWriter, orgName))
+      version_status, date, ontFileWriter, orgName))
   }
 
   /*
@@ -236,7 +233,6 @@ class OntController(implicit setup: Setup,
                              name:            String,
                              version:         String,
                              version_status:  Option[String],
-                             contact_name:    Option[String],
                              date:            String,
                              ontFileWriter:   OntFileWriter,
                              orgName:         String
@@ -250,14 +246,13 @@ class OntController(implicit setup: Setup,
          | name:           $name
          | version:        $version
          | version_status: $version_status
-         | contact_name:   $contact_name
          | date:           $date
          | orgName:        $orgName
          | ontFileWriter.format: ${ontFileWriter.format}
          |""".stripMargin)
 
     Try(ontService.createOntology(uri, originalUriOpt, name, version, version_status,
-          contact_name, date, user.userName, orgName, ontFileWriter)) match {
+          date, user.userName, orgName, ontFileWriter)) match {
       case Success(ontologyResult) =>
         loadOntologyInTripleStore(uri, reload = false)
         ontologyResult
@@ -403,11 +398,8 @@ class OntController(implicit setup: Setup,
     // TODO capture version_status from parameter
     val version_status: Option[String] = None
 
-    // TODO capture contact_name (from parameter, or by parsing ontology metadata)
-    val contact_name: Option[String] = None
-
     Try(ontService.createOntologyVersion(uri, originalUriOpt, nameOpt, user.userName, version,
-            version_status, contact_name, date, ontFileWriter, doVerifyOwner)) match {
+            version_status, date, ontFileWriter, doVerifyOwner)) match {
       case Success(ontologyResult) =>
         loadOntologyInTripleStore(uri, reload = true)
         ontologyResult
