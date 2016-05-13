@@ -1,6 +1,11 @@
 ## change log ##
 
 * 2016-05-12: 0.3.1:
+  - Ontology model now with required ownerName entry instead of optional orgName.
+    The syntax for this string: `ownerName ::= <orgName> | ~<userName>`.
+    So now we accept submissions to be owned by the submitting user when no
+    organization is specified in the POST /ont request.
+    
   - for OntologyVersion.author get the first value obtained in this order:
     - contact_name from AquaImporter
     - omvmmi.hasContentCreator

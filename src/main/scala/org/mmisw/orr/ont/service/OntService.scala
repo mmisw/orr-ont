@@ -24,6 +24,26 @@ case class UploadedFileInfo(userName: String,
                             possibleOntologyUris: Map[String, PossibleOntologyInfo])
 
 
+sealed abstract class OntOwner
+case class OrgOntOwner(orgName: String) extends OntOwner
+case class UserOntOwner(userName: String) extends OntOwner
+
+object OntOwner {
+  val ownerNamePattern = "(~?)(.*)".r
+
+  def apply(ownerName: String): OntOwner = {
+    ownerName match {
+      case ownerNamePattern("", orgName)   => OrgOntOwner(orgName)
+      case ownerNamePattern("~", userName) => UserOntOwner(userName)
+    }
+  }
+
+  def unapply(arg: OntOwner): String = arg match {
+    case OrgOntOwner(orgName)   => orgName
+    case UserOntOwner(userName) => "~" + userName
+  }
+}
+
 /**
  * Ontology service
  */
@@ -87,7 +107,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
       version      = version,
       name         = ontVersion.name,
       submitter    = if (privileged) Some(ontVersion.userName) else None,
-      orgName      = ont.orgName,
+      ownerName    = Some(ont.ownerName),
       author       = ontVersion.author,
       status       = ontVersion.status,
       metadata     = if (includeMetadata) Some(ontUtil.toOntMdMap(ontVersion.metadata)) else None,
@@ -185,7 +205,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                      version_status: Option[String],
                      date:           String,
                      userName:       String,
-                     orgName:        String,
+                     ownerName:      String,
                      ontFileWriter:  OntFileWriter,
                      contact_name:   Option[String] = None  // for AquaImporter
                     ) = {
@@ -212,7 +232,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                                      ontologyType = ontologyTypeOpt,
                                      resourceType = resourceTypeOpt)
 
-    val ont = Ontology(uri, Some(orgName), versions = Map(version -> ontVersion))
+    val ont = Ontology(uri, ownerName, versions = Map(version -> ontVersion))
 
     Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
       case Success(_) =>
@@ -360,11 +380,9 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
    * Verifies the user can make changes or removals wrt to the given ont.
    */
   private def verifyOwner(userName: String, ont: Ontology): Unit = {
-    ont.orgName match {
-      case Some(orgName) => verifyOrgAndUser(orgName, userName)
-
-      case None => // TODO handle no-organization case
-        throw Bug(s"currently I expect registered ont to have org associated")
+    OntOwner(ont.ownerName) match {
+      case OrgOntOwner(orgName)        => verifyOrgAndUser(orgName, userName)
+      case UserOntOwner(ownerUserName) => verifyUserIsOwner(ownerUserName, userName)
     }
   }
 
@@ -378,6 +396,10 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
       case None => throw NoSuchOrg(orgName)
     }
+  }
+
+  private def verifyUserIsOwner(ownerUserName: String, userName: String): Unit = {
+    if (ownerUserName != userName) throw NotOntOwner(userName)
   }
 
   private def validateUri(uri: String) {

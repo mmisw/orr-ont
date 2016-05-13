@@ -6,7 +6,7 @@ import com.novus.salat.annotations._
 
 case class Ontology(
             @Key("_id") uri: String,
-            orgName:         Option[String],
+            ownerName:       String,  // <orgName> | ~<userName>
             versions:        Map[String, OntologyVersion] = Map.empty) {
 
   lazy val sortedVersionKeys = versions.keys.toList.sorted(Ordering[String].reverse)
