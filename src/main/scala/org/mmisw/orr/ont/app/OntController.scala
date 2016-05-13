@@ -74,17 +74,12 @@ class OntController(implicit setup: Setup,
     val uri            = requireParam("uri")
     val originalUriOpt = getParam("originalUri")  // for fully-hosted mode
     val name           = requireParam("name")
-    val orgName        = requireParam("orgName")
+    val orgNameOpt     = getParam("orgName")
     val user           = verifyUser(getParam("userName"))
 
-    // TODO allow absent orgName so user can submit on her own behalf?
-
-    orgsDAO.findOneById(orgName) match {
-      case None =>
-        error(400, s"'$orgName' invalid organization")
-
-      case Some(org) =>
-        verifyIsUserOrAdminOrExtra(org.members)
+    val ownerName = orgNameOpt match {
+      case Some(orgName) => verifyOrgName(orgName)
+      case None          => "~" + user.userName
     }
 
     // TODO capture version_status from parameter
@@ -95,7 +90,7 @@ class OntController(implicit setup: Setup,
     val ontFileWriter = getOntFileWriter(user)
 
     Created(createOntology(uri, originalUriOpt, name, version,
-      version_status, date, ontFileWriter, orgName))
+      version_status, date, ontFileWriter, ownerName))
   }
 
   /*
@@ -109,19 +104,7 @@ class OntController(implicit setup: Setup,
 
     val (ont, _, _) = resolveOntology(uri, versionOpt)
 
-    ont.orgName match {
-      case Some(orgName) =>
-        orgsDAO.findOneById(orgName) match {
-          case None =>
-            bug(s"org '$orgName' should exist")
-
-          case Some(org) =>
-            verifyIsUserOrAdminOrExtra(org.members)
-        }
-
-      case None =>
-        bug(s"currently I expect registered ont to have org associated")
-    }
+    verifyOwnerName(ont.ownerName)
 
     val ontFileWriterOpt: Option[OntFileWriter] = getOntFileWriterOpt(user) orElse {
       getParam("metadata") map (getOntFileWriterWithMetadata(uri, versionOpt, _))
@@ -141,6 +124,23 @@ class OntController(implicit setup: Setup,
     }
   }
 
+  private def verifyOwnerName(ownerName: String): Unit = {
+    OntOwner(ownerName) match {
+      case OrgOntOwner(orgName)   => verifyOrgName(orgName)
+      case UserOntOwner(userName) => verifyIsUserOrAdminOrExtra(Set(userName))
+    }
+  }
+
+  private def verifyOrgName(orgName: String): String = {
+    orgsDAO.findOneById(orgName) match {
+      case Some(org) =>
+        verifyIsUserOrAdminOrExtra(org.members)
+        orgName
+
+      case None => bug(s"org '$orgName' should exist")
+    }
+  }
+
   /*
    * Deletes a particular version or the whole ontology entry.
    */
@@ -151,17 +151,7 @@ class OntController(implicit setup: Setup,
 
     val (ont, _, _) = resolveOntology(uri, versionOpt)
 
-    ont.orgName match {
-      case Some(orgName) =>
-        orgsDAO.findOneById(orgName) match {
-          case None => bug(s"org '$orgName' should exist")
-
-          case Some(org) => verifyIsUserOrAdminOrExtra(org.members)
-        }
-
-      case None =>
-        bug(s"currently I expect registered ont to have org associated")
-    }
+    verifyOwnerName(ont.ownerName)
 
     val doVerifyOwner = false  // already verified above
 
@@ -235,7 +225,7 @@ class OntController(implicit setup: Setup,
                              version_status:  Option[String],
                              date:            String,
                              ontFileWriter:   OntFileWriter,
-                             orgName:         String
+                             ownerName:       String
                             ) = {
     val user = requireAuthenticatedUser
     logger.debug(s"""
@@ -247,12 +237,12 @@ class OntController(implicit setup: Setup,
          | version:        $version
          | version_status: $version_status
          | date:           $date
-         | orgName:        $orgName
+         | ownerName:      $ownerName
          | ontFileWriter.format: ${ontFileWriter.format}
          |""".stripMargin)
 
     Try(ontService.createOntology(uri, originalUriOpt, name, version, version_status,
-          date, user.userName, orgName, ontFileWriter)) match {
+          date, user.userName, ownerName, ontFileWriter)) match {
       case Success(ontologyResult) =>
         loadOntologyInTripleStore(uri, reload = false)
         ontologyResult
@@ -267,7 +257,8 @@ class OntController(implicit setup: Setup,
 
   /**
    * Preliminary mapping from given parameters to a query for filtering purposes
-   * @param keys keys to be considered
+    *
+    * @param keys keys to be considered
    * @return MongoDBObject
    */
   /*
@@ -277,7 +268,7 @@ class OntController(implicit setup: Setup,
    */
   private def getQueryFromParams(keys: Set[String]): MongoDBObject = {
     var query = MongoDBObject()
-    if (keys.size > 0) {
+    if (keys.nonEmpty) {
       keys foreach (key => query = query.updated(key, params.get(key).get))
       logger.debug(s"GET query=$query")
     }

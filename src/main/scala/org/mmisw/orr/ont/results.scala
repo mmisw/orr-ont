@@ -47,7 +47,7 @@ case class OntologySummaryResult(
             version:        String,
             name:           String,
             submitter:      Option[String] = None,
-            orgName:        Option[String] = None,
+            ownerName:      Option[String] = None,  // | <orgName> | ~<userName>
             author:         Option[String] = None,
             status:         Option[String] = None,
             metadata:       Option[Map[String, AnyRef]] = None,

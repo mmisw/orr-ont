@@ -608,14 +608,14 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     // </FORMATS>
   }
 
-  "Get onts with some filter parameters (GET /ont?orgName=nn)" should {
+  "Get onts with some filter parameters (GET /ont?ownerName=nn)" should {
     "return list containing submission above" in {
-      val map = Map("orgName" -> orgName)
+      val map = Map("ownerName" -> orgName)
       logger.info(s"get: $map")
       get("/ont", map) {
         status must_== 200
         val res = parse(body).extract[List[OntologySummaryResult]]
-        res.exists(_.orgName == Some(orgName)) must beTrue
+        res.exists(_.ownerName == Some(orgName)) must beTrue
       }
     }
   }

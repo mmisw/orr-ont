@@ -31,6 +31,9 @@ case class OntologyAlreadyRegistered(uri: String)
 case class NotAMember(userName: String, orgName: String)
   extends Invalid("userName" -> userName, "orgName" -> orgName, "error" -> "User is not a member of the organization")
 
+case class NotOntOwner(userName: String)
+  extends Invalid("userName" -> userName, "error" -> "User is not the owner of the ontology")
+
 case class InvalidUserName(userName: String)
   extends Invalid("userName" -> userName, "error" -> "Invalid userName")
 
