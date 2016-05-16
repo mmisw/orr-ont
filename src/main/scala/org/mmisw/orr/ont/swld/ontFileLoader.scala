@@ -40,6 +40,9 @@ object ontFileLoader extends AnyRef with Logging {
     else if ("V2R" == lang) {
       v2r.loadOntModel(file)
     }
+    else if ("M2R" == lang) {
+      m2r.loadOntModel(file)
+    }
     //else if ("voc2skos" == lang) {
     //  model = Voc2Skos.loadOntModel(file)
     //}

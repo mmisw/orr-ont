@@ -571,6 +571,23 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     }
   }
 
+  "Register a new m2r ont (POST /ont)" should {
+    "succeed" in {
+      // need a diff uri
+      val m2rMap = Map("uri" -> newOntUri(),
+        "name" -> "a m2r ontology",
+        "userName" -> userName,
+        "format" -> "m2r"
+      )
+      val m2rFile = new File("src/test/resources/mr1.m2r")
+      post("/ont", m2rMap, Map("file" -> m2rFile), headers = adminHeaders) {
+        status must_== 201
+        val res = parse(body).extract[OntologyRegistrationResult]
+        res.uri must_== m2rMap("uri")
+      }
+    }
+  }
+
   "Get an ont with given uri (GET /ont)" should {
     "return the latest version" in {
       val map = Map("uri" -> ont1Uri, "format" -> "!md")

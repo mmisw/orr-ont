@@ -23,7 +23,8 @@ object ontUtil extends AnyRef with Logging {
       "rdf"     -> "application/rdf+xml"    // https://www.w3.org/TR/REC-rdf-syntax/
     , "owl"     -> "application/rdf+xml"    // https://www.w3.org/TR/REC-rdf-syntax/
     , "owx"     -> "application/owl+xml"    // https://www.w3.org/TR/owl-xml-serialization/
-    , "v2r"     -> "application/v2r+json"
+    , "v2r"     -> "application/v2r+json"   // custom ORR vocabulary format
+    , "m2r"     -> "application/m2r+json"   // custom ORR mapping format
     , "jsonld"  -> "application/json+ld"    // http://www.ietf.org/rfc/rfc6839.txt
     , "n3"      -> "text/n3"                // http://www.w3.org/TeamSubmission/n3/
     , "ttl"     -> "text/turtle"            // http://www.w3.org/TeamSubmission/turtle/
@@ -52,12 +53,13 @@ object ontUtil extends AnyRef with Logging {
   }
 
   // TODO review along with mapping in storedFormat method
-  val storedFormats = List("rdf", "n3", "owx", "jsonld", "v2r")
+  val storedFormats = List("rdf", "n3", "owx", "jsonld", "v2r", "m2r")
 
   // for the files actually stored
   def storedFormat(format: String) = format.toLowerCase match {
     case "owx"              => "owx"    // https://www.w3.org/TR/owl-xml-serialization/
     case "v2r"              => "v2r"
+    case "m2r"              => "m2r"
     case "owl"  | "rdf"     => "rdf"
     case "json" | "jsonld"  => "jsonld"
     case "ttl"  | "n3"      => "n3"
@@ -225,6 +227,9 @@ object ontUtil extends AnyRef with Logging {
     else if ("V2R" == lang) {
       v2r.loadOntModel(file, Some(uri)).ontModel
     }
+    else if ("M2R" == lang) {
+      m2r.loadOntModel(file, Some(uri)).ontModel
+    }
     else {
       val ontModel = createDefaultOntModel
       ontModel.setDynamicImports(false)
@@ -252,6 +257,7 @@ object ontUtil extends AnyRef with Logging {
   def format2lang(format: String) = Option(format.toLowerCase match {
     case "owx"          => "OWX"      // to use OWL API
     case "v2r"          => "V2R"      // see v2r module
+    case "m2r"          => "M2R"      // see m2r module
     case "owl" | "rdf"  => "RDF/XML"
     case "jsonld"       => "JSON-LD"
     case "n3"           => "N3"

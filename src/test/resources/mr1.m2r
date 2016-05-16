@@ -1,0 +1,20 @@
+{
+  "metadata": {
+    "http://omv.ontoware.org/2005/05/ontology#name":
+      "An ORR mapping ontology"
+  },
+  "mappedOnts": ["http://mappedOnt1", "http://mappedOnt2"],
+  "mappings": [
+    {
+      "subjects":[
+        "http://s1",
+        "http://s2"
+      ],
+      "predicate":"http://example/relation",
+      "objects":[
+        "http://o1",
+        "http://o2"
+      ]
+    }
+  ]
+}
