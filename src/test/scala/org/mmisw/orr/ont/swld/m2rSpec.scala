@@ -1,9 +1,10 @@
 package org.mmisw.orr.ont.swld
 
+import com.hp.hpl.jena.rdf.model.Property
 import com.hp.hpl.jena.vocabulary.{OWL, RDF}
 import org.json4s._
 import org.json4s.native.JsonMethods._
-import org.mmisw.orr.ont.vocabulary.Omv
+import org.mmisw.orr.ont.vocabulary.{Omv, Skos}
 import org.specs2.mutable.Specification
 
 
@@ -20,13 +21,23 @@ class m2rSpec extends Specification {
     mappings = List(
       M2RMapGroup(
         subjects = List("http://s1", "http://s2"),
-        predicate = "http://example/relation",
+        predicate = Skos.closeMatch.getURI,
         objects = List("http://o1", "http://o2")
+      ),
+      M2RMapGroup(
+        subjects = List("http://s3"),
+        predicate = Skos.relatedMatch.getURI,
+        objects = List("http://o3")
+      ),
+      M2RMapGroup(
+        subjects = List("http://s4"),
+        predicate = OWL.sameAs.getURI,
+        objects = List("http://o4")
       )
     )
   )
 
-  //println(s"mr1 json:\n${mr1.toPrettyJson}")
+  println(s"mr1 json:\n${mr1.toPrettyJson}")
 
   val json = parse(new java.io.File("src/test/resources/mr1.m2r"))
 
@@ -53,16 +64,23 @@ class m2rSpec extends Specification {
       ontUtil.getValues(uri1Ont, Omv.name).toSet === Set("An ORR mapping ontology")
 
       // contents:
-      val s1Resource  = model.createResource("http://s1")
-      val s2Resource  = model.createResource("http://s2")
-      val o1Resource  = model.createResource("http://o1")
-      val o2Resource  = model.createResource("http://o2")
-      val relationProp = model.createProperty("http://example/relation")
+      def verifyTriple(predicateProperty: Property)(subjectUri: String, objectUri: String) = {
+        val subjectResource   = model.createResource(subjectUri)
+        val objectResource    = model.createResource(objectUri)
+        model.contains(subjectResource, predicateProperty, objectResource) === true
+      }
 
-      model.contains(s1Resource, relationProp, o1Resource)  === true
-      model.contains(s1Resource, relationProp, o2Resource)  === true
-      model.contains(s2Resource, relationProp, o1Resource)  === true
-      model.contains(s2Resource, relationProp, o2Resource)  === true
+      val verifyCloseMatch = verifyTriple(Skos.closeMatch)_
+      verifyCloseMatch("http://s1", "http://o1")
+      verifyCloseMatch("http://s1", "http://o2")
+      verifyCloseMatch("http://s2", "http://o1")
+      verifyCloseMatch("http://s2", "http://o2")
+
+      val verifyRelatedMatch = verifyTriple(Skos.relatedMatch)_
+      verifyRelatedMatch("http://s3", "http://o3")
+
+      val verifySameAs = verifyTriple(OWL.sameAs)_
+      verifySameAs("http://s4", "http://o4")
     }
 
     """obtain expected model by parsing direct json input""" in {

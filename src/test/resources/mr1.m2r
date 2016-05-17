@@ -10,10 +10,28 @@
         "http://s1",
         "http://s2"
       ],
-      "predicate":"http://example/relation",
+      "predicate": "http://www.w3.org/2004/02/skos/core#closeMatch",
       "objects":[
         "http://o1",
         "http://o2"
+      ]
+    },
+    {
+      "subjects":[
+        "http://s3"
+      ],
+      "predicate": "http://www.w3.org/2004/02/skos/core#relatedMatch",
+      "objects":[
+        "http://o3"
+      ]
+    },
+    {
+      "subjects":[
+        "http://s4"
+      ],
+      "predicate": "http://www.w3.org/2002/07/owl#sameAs",
+      "objects":[
+        "http://o4"
       ]
     }
   ]
