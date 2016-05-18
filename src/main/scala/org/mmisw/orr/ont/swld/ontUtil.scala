@@ -445,4 +445,17 @@ object ontUtil extends AnyRef with Logging {
 
     (array orElse primitive)(jValue)
   }
+
+  def getOntologySubjects(ontModel: OntModel, excludeUri: String): Map[String, Map[String, AnyRef]] = {
+    val map = scala.collection.mutable.HashMap[String, Map[String, AnyRef]]()
+    val it = ontModel.listSubjects()
+    if (it != null) while (it.hasNext) {
+      val resource = it.nextResource()
+      val resourceUri = resource.getURI
+      if (!resource.isAnon && excludeUri != resourceUri) {
+        map += (resourceUri -> extractAttributes(resource))
+      }
+    }
+    map.toMap
+  }
 }

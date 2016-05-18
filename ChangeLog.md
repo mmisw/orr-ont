@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-05-18: 0.3.1:
+  - add POST /ont/sbjs to retrieve subjects in a given ontology
+  
 * 2016-05-16: 0.3.1:
   - initial version of m2r format for ORR mapping ontologies
   

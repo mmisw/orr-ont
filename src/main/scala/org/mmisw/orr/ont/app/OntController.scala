@@ -51,6 +51,11 @@ class OntController(implicit setup: Setup,
     }
   }
 
+  get("/sbjs") {
+    val uri = require(params, "uri")
+    getSubjects(uri)
+  }
+
   /*
    * Uploads an ontology file.
    */
@@ -309,6 +314,13 @@ class OntController(implicit setup: Setup,
       contentType = formats(actualFormat)
       file
     }
+  }
+
+  private def getSubjects(uri: String) = {
+    logger.debug(s"getSubjects: uri=$uri")
+    val (ont, ontVersion, version) = resolveOntology(uri)
+    val ores = ontService.getOntologySubjects(ont, ontVersion, version, includeMetadata = true)
+    grater[OntologySubjectsResult].toCompactJSON(ores)
   }
 
   /**

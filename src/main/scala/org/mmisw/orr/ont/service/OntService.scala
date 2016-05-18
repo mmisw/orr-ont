@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.swld.{PossibleOntologyInfo, ontFileLoader, ontUtil}
-import org.mmisw.orr.ont.{OntologyRegistrationResult, OntologySummaryResult, Setup}
+import org.mmisw.orr.ont._
 
 import scala.util.{Failure, Success, Try}
 
@@ -115,6 +115,26 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
       resourceType = resourceTypeOpt,
       versions     = versionsOpt,
       format       = Option(ontVersion.format)
+    )
+  }
+
+  def getOntologySubjects(ont: Ontology,
+                          ontVersion: OntologyVersion,
+                          version: String,
+                          includeMetadata: Boolean = false
+  ): OntologySubjectsResult = {
+
+    val (file, actualFormat) = getOntologyFile(ont.uri, version, ontVersion.format)
+    val ontModel = ontUtil.loadOntModel(ont.uri, file, actualFormat)
+    val subjects = ontUtil.getOntologySubjects(ontModel, excludeUri = ont.uri)
+    val metadata = if (includeMetadata) Some(ontUtil.toOntMdMap(ontVersion.metadata)) else None
+
+    OntologySubjectsResult(
+      uri          = ont.uri,
+      version      = version,
+      name         = ontVersion.name,
+      subjects     = subjects,
+      metadata     = metadata
     )
   }
 
