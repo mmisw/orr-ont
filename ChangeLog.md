@@ -1,5 +1,9 @@
 ## change log ##
 
+* 2016-05-19: 0.3.1:
+  - ontUtil.extractAttributes: do not add possible null to the list
+    (issue exposed while extracting subjects for http://semanticscience.org/ontology/sio.owl) 
+    
 * 2016-05-18: 0.3.1:
   - add POST /ont/sbjs to retrieve subjects in a given ontology
   

@@ -128,13 +128,13 @@ object ontUtil extends AnyRef with Logging {
         val propUri = prop.getURI
         val node: RDFNode = stmt.getObject
         val nodeString = nodeAsString(node)
-
-        val newValues = nodeString :: (map.get(propUri) match {
-          case None         => List()
-          case Some(values) => values
-        })
-
-        map = map.updated(propUri, newValues)
+        if (nodeString != null) {
+          val newValues = nodeString :: (map.get(propUri) match {
+            case None         => List()
+            case Some(values) => values
+          })
+          map = map.updated(propUri, newValues)
+        }
       }
     }
     map
