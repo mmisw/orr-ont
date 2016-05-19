@@ -47,7 +47,7 @@ class v2rSpec extends Specification {
 
       val model = v2r.getModel(vr1, Some(uri1))
 
-      ontUtil.writeModel(uri1+"/", model, "n3",     new java.io.File("/tmp/vr1.n3"))
+      //ontUtil.writeModel(uri1+"/", model, "n3",     new java.io.File("/tmp/vr1.n3"))
       //ontUtil.writeModel(uri1+"/", model, "jsonld", new java.io.File("/tmp/vr1.jsonld"))
       //ontUtil.writeModel(uri1+"/", model, "rj",     new java.io.File("/tmp/vr1.rj"))
 

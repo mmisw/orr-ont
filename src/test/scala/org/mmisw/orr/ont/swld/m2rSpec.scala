@@ -47,7 +47,7 @@ class m2rSpec extends Specification {
 
       val model = m2r.getModel(mr1, Some(uri1))
 
-      ontUtil.writeModel(uri1+"/", model, "n3",     new java.io.File("/tmp/mr1.n3"))
+      //ontUtil.writeModel(uri1+"/", model, "n3",     new java.io.File("/tmp/mr1.n3"))
       //ontUtil.writeModel(uri1+"/", model, "jsonld", new java.io.File("/tmp/mr1.jsonld"))
       //ontUtil.writeModel(uri1+"/", model, "rj",     new java.io.File("/tmp/mr1.rj"))
 
