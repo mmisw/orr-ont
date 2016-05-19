@@ -12,6 +12,7 @@ import org.json4s._
 import org.mmisw.orr.ont.vocabulary.{Omv, OmvMmi}
 
 import scala.collection.JavaConversions._
+import scala.util.{Failure, Success, Try}
 
 
 object ontUtil extends AnyRef with Logging {
@@ -458,4 +459,22 @@ object ontUtil extends AnyRef with Logging {
     }
     map.toMap
   }
+
+  // TODO make this operation async (a general TODO actually)
+  def loadExternalModel(uri: String): Try[OntModel] = {
+    logger.debug(s"loadExternalModel: uri=$uri")
+
+    val ontModel = createDefaultOntModel
+    ontModel.setDynamicImports(false)
+    ontModel.getDocumentManager.setProcessImports(false)
+    try {
+      ontModel.read(uri)
+      logger.debug(s"loadExternalModel: uri=$uri: ontModel read complete.")
+      Success(ontModel)
+    }
+    catch {
+      case t: Throwable => Failure(t)
+    }
+  }
+
 }

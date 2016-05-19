@@ -56,6 +56,11 @@ class OntController(implicit setup: Setup,
     getSubjects(uri)
   }
 
+  get("/sbjs/external") {
+    val uri = require(params, "uri")
+    getSubjectsExternal(uri)
+  }
+
   /*
    * Uploads an ontology file.
    */
@@ -321,6 +326,17 @@ class OntController(implicit setup: Setup,
     val (ont, ontVersion, version) = resolveOntology(uri)
     val ores = ontService.getOntologySubjects(ont, ontVersion, version, includeMetadata = true)
     grater[OntologySubjectsResult].toCompactJSON(ores)
+  }
+
+  private def getSubjectsExternal(uri: String) = {
+    logger.debug(s"getSubjectsExternal: uri=$uri")
+    ontService.getExternalOntologySubjects(uri) match {
+      case Success(ores) =>
+        grater[ExternalOntologySubjectsResult].toCompactJSON(ores)
+
+      case Failure(t) =>
+        error(400, CannotLoadExternalOntology(uri, t).details)
+    }
   }
 
   /**

@@ -138,6 +138,15 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     )
   }
 
+  def getExternalOntologySubjects(uri: String): Try[ExternalOntologySubjectsResult] = {
+    ontUtil.loadExternalModel(uri) map { ontModel =>
+      ExternalOntologySubjectsResult(
+        uri       = uri,
+        subjects  = ontUtil.getOntologySubjects(ontModel, excludeUri = uri)
+      )
+    }
+  }
+
   /**
     * Gets the ontologies satisfying the given query.
     *

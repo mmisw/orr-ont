@@ -64,3 +64,9 @@ case class OntologySubjectsResult(
             subjects:       Map[String, Map[String, AnyRef]],
             metadata:       Option[Map[String, AnyRef]] = None
             )
+
+case class ExternalOntologySubjectsResult(
+            uri:            String,
+            subjects:       Map[String, Map[String, AnyRef]],
+            metadata:       Option[Map[String, AnyRef]] = None
+            )

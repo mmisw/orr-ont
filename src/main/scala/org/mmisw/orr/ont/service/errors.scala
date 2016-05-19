@@ -46,7 +46,7 @@ case class UserAlreadyRegistered(userName: String)
 case class OrgAlreadyRegistered(orgName: String)
   extends Invalid("orgName" -> orgName, "error" -> "Organization already registered")
 
-abstract class Problem(d: (String,String)*) extends OntError(d)
+class Problem(d: (String,String)*) extends OntError(d)
 
 case class CannotCreateFormat(uri: String, version: String, format: String, msg: String)
   extends Problem("uri" -> uri, "version" -> version, "format" -> format,
@@ -88,4 +88,10 @@ case class CannotUpdateOrg(orgName: String, error: String)
 case class CannotDeleteOrg(orgName: String, error: String)
   extends Problem("orgName" -> orgName, "error" -> error)
 
+object CannotLoadExternalOntology {
+    def apply(uri: String, t: Throwable): Problem = {
+        new Problem("uri" -> uri, "error" -> "cannot load external ontology",
+            "detail" -> t.getMessage, "exceptionClassName" -> t.getClass.getName)
+    }
+}
 case class Bug(msg: String) extends Problem("error" -> msg)
