@@ -10,6 +10,7 @@ import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.json4s.native.Serialization
 import org.json4s.native.Serialization.{write, writePretty}
+import org.mmisw.orr.ont.vocabulary.Omv
 
 
 case class IdL(name:  Option[String] = None,
@@ -110,6 +111,7 @@ object v2r extends AnyRef with Logging {
     val ontModel = ontUtil.createDefaultOntModel
     val uriOpt = vr.addStatements(ontModel, altUriOpt)
     uriOpt foreach(uri => ontModel.setNsPrefix("", uri + "/"))
+    ontModel.setNsPrefix("omv",  Omv.NS)
     ontModel
   }
 

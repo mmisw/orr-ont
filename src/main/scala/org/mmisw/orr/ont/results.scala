@@ -56,3 +56,17 @@ case class OntologySummaryResult(
             versions:       Option[List[String]] = None,
             format:         Option[String] = None
             )
+
+case class OntologySubjectsResult(
+            uri:            String,
+            version:        String,
+            name:           String,
+            subjects:       Map[String, Map[String, AnyRef]],
+            metadata:       Option[Map[String, AnyRef]] = None
+            )
+
+case class ExternalOntologySubjectsResult(
+            uri:            String,
+            subjects:       Map[String, Map[String, AnyRef]],
+            metadata:       Option[Map[String, AnyRef]] = None
+            )

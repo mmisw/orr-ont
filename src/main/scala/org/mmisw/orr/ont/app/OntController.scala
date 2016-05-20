@@ -12,7 +12,7 @@ import org.json4s.native.JsonMethods._
 import org.mmisw.orr.ont._
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.service._
-import org.mmisw.orr.ont.swld.{V2RModel, ontUtil}
+import org.mmisw.orr.ont.swld.{M2RModel, V2RModel, ontUtil}
 import org.scalatra.Created
 import org.scalatra.servlet.{FileItem, FileUploadSupport, SizeConstraintExceededException}
 
@@ -49,6 +49,16 @@ class OntController(implicit setup: Setup,
           grater[OntologySummaryResult].asDBObject(osr)//.toCompactJSON
         }
     }
+  }
+
+  get("/sbjs") {
+    val uri = require(params, "uri")
+    getSubjects(uri)
+  }
+
+  get("/sbjs/external") {
+    val uri = require(params, "uri")
+    getSubjectsExternal(uri)
   }
 
   /*
@@ -210,6 +220,12 @@ class OntController(implicit setup: Setup,
         java.nio.file.Files.write(destFile.toPath,
           newV2r.toPrettyJson.getBytes(java.nio.charset.StandardCharsets.UTF_8))
       }
+      else if (actualFormat == "m2r") {
+        val oldM2r = parse(file).extract[M2RModel]
+        val newM2r = oldM2r.copy(metadata = Some(newMetadata))
+        java.nio.file.Files.write(destFile.toPath,
+          newM2r.toPrettyJson.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+      }
       else {
         val ontModel = ontUtil.loadOntModel(uri, file, actualFormat)
         ontUtil.replaceMetadata(uri, ontModel, newMetadata)
@@ -302,6 +318,24 @@ class OntController(implicit setup: Setup,
       val (file, actualFormat) = getOntologyFile(uri, version, reqFormat)
       contentType = formats(actualFormat)
       file
+    }
+  }
+
+  private def getSubjects(uri: String) = {
+    logger.debug(s"getSubjects: uri=$uri")
+    val (ont, ontVersion, version) = resolveOntology(uri)
+    val ores = ontService.getOntologySubjects(ont, ontVersion, version, includeMetadata = true)
+    grater[OntologySubjectsResult].toCompactJSON(ores)
+  }
+
+  private def getSubjectsExternal(uri: String) = {
+    logger.debug(s"getSubjectsExternal: uri=$uri")
+    ontService.getExternalOntologySubjects(uri) match {
+      case Success(ores) =>
+        grater[ExternalOntologySubjectsResult].toCompactJSON(ores)
+
+      case Failure(t) =>
+        error(400, CannotLoadExternalOntology(uri, t).details)
     }
   }
 

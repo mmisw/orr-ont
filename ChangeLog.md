@@ -1,5 +1,17 @@
 ## change log ##
 
+* 2016-05-19: 0.3.1:
+  - add `GET /ont/sbjs/external` (for now mainly to support loading of external ontology in m2r editing)
+    TODO some refact to support similar functionality for registration of external ontology
+  - ontUtil.extractAttributes: do not add possible null to the list
+    (issue exposed while extracting subjects for http://semanticscience.org/ontology/sio.owl) 
+    
+* 2016-05-18: 0.3.1:
+  - add `GET /ont/sbjs` to retrieve subjects in a given ontology
+  
+* 2016-05-16: 0.3.1:
+  - initial version of m2r format for ORR mapping ontologies
+  
 * 2016-05-12: 0.3.1:
   - Ontology model now with required ownerName entry instead of optional orgName.
     The syntax for this string: `ownerName ::= <orgName> | ~<userName>`.
