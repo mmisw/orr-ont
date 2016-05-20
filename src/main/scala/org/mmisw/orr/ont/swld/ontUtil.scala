@@ -6,6 +6,7 @@ import java.io.{File, FileInputStream, FileOutputStream}
 
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import com.github.jsonldjava.jena.JenaJSONLD
+import com.hp.hpl.jena.vocabulary.{DCTerms, DC_10, DC_11}
 import com.mongodb.{BasicDBList, BasicDBObject}
 import org.json4s.JsonAST.{JArray, JString}
 import org.json4s._
@@ -195,7 +196,12 @@ object ontUtil extends AnyRef with Logging {
   }
 
   def extractAuthor(md: Map[String,List[String]]): Option[String] = {
-    (md.get(OmvMmi.hasContentCreator.getURI) orElse md.get(Omv.hasCreator.getURI)) map (_.mkString(", "))
+    ( md.get(OmvMmi.hasContentCreator.getURI) orElse
+      md.get(Omv.hasCreator.getURI) orElse
+      md.get(DCTerms.creator.getURI) orElse
+      md.get(DC_11.creator.getURI) orElse
+      md.get(DC_10.creator.getURI)
+      ) map (_.mkString(", "))
   }
 
   private def listPropertyValues(ont: Ontology, prop: Property): List[String] =

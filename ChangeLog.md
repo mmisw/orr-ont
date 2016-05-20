@@ -1,5 +1,15 @@
 ## change log ##
 
+* 2016-05-20: 0.3.1:
+  - At ontology registration, if 'author' not explicitly given (which is the case only 
+    via contact_name from AquaImporter), extract it from the first defined metadata property
+    in this order:
+    	  OmvMmi.hasContentCreator, 
+          Omv.hasCreator, 
+          DCTerms.creator, 
+          DC_11.creator, 
+          DC_10.creator 
+    
 * 2016-05-19: 0.3.1:
   - add `GET /ont/sbjs/external` (for now mainly to support loading of external ontology in m2r editing)
     TODO some refact to support similar functionality for registration of external ontology

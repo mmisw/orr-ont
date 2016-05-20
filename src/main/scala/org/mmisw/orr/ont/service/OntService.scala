@@ -247,7 +247,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     val authorOpt: Option[String] = contact_name orElse ontUtil.extractAuthor(md)
 
-    logger.debug(s"createOntology: md=$md")
+    logger.debug(s"createOntology: md=$md  authorOpt=$authorOpt")
 
     // TODO remove these special entries in OntologyVersion
     val map = ontUtil.extractSomeProps(md)
@@ -295,7 +295,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     val authorOpt: Option[String] = contact_name orElse ontUtil.extractAuthor(md)
 
-    logger.debug(s"createOntologyVersion: md=$md")
+    logger.debug(s"createOntologyVersion: md=$md  authorOpt=$authorOpt")
 
     // TODO remove these special entries in OntologyVersion
     val map = ontUtil.extractSomeProps(md)
