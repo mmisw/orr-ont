@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-05-31: 0.3.1:
+  - SelfHostedOntController: allow to dispatch sparql UI 
+  
 * 2016-05-20: 0.3.1:
   - At ontology registration, if 'author' not explicitly given (which is the case only 
     via contact_name from AquaImporter), extract it from the first defined metadata property

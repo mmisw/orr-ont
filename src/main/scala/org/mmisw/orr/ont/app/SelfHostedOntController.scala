@@ -49,28 +49,36 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
       case _ => false
     }
 
-    logger.debug(s"portalDispatch: hasIndexHtml=$hasIndexHtml")
+    logger.debug(s"portalDispatch: hasIndexHtml=$hasIndexHtml pathInfo=$pathInfo")
+
+    def serveIndexHtml() = {
+      val adjustedPath = s"${pathInfo.replaceAll("/+$", "")}/index.html"
+      logger.debug(s"serving '/index.html' for request: $pathInfo adjustedPath=$adjustedPath")
+      val indexRequest = new HttpServletRequestWrapper(request) {
+        override def getPathInfo = adjustedPath
+      }
+      contentType = formats("html") // make sure html is responded
+      servletContext.getNamedDispatcher("default").forward(indexRequest, response)
+    }
 
     if (hasIndexHtml) {
-      val isUiResource = List("/vendor", "/js", "/img", "/css") exists pathInfo.startsWith
-
-      if (isUiResource) {
-        contentType = null  // so, the following sets the content type according to the resource
-        serveStaticResource() getOrElse error(404, s"${request.getRequestURI}: resource not found")
+      if (reqFormat == "html" && (pathInfo == "/" || pathInfo == "/sparql" || pathInfo == "/sparql/")) {
+        serveIndexHtml()
         true
       }
-
-      else if (reqFormat == "html") {
-        // for HTML always dispatch /index.html
-        logger.debug(s"serving '/index.html' for request: $pathInfo")
-        val indexRequest = new HttpServletRequestWrapper(request) {
-          override def getPathInfo = "/index.html"
+      else {
+        val isUiResource = List("/vendor", "/js", "/img", "/css") exists pathInfo.startsWith
+        if (isUiResource) {
+          contentType = null  // so, the following sets the content type according to the resource
+          serveStaticResource() getOrElse error(404, s"${request.getRequestURI}: resource not found")
+          true
         }
-        contentType = formats("html") // make sure html is responded
-        servletContext.getNamedDispatcher("default").forward(indexRequest, response)
-        true
+        else if (reqFormat == "html") {
+          serveIndexHtml()
+          true
+        }
+        else false
       }
-      else false
     }
     else false
   }
