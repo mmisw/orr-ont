@@ -1,7 +1,7 @@
 package org.mmisw.orr.ont.app
 
 import java.io.File
-import javax.servlet.http.HttpServletRequestWrapper
+import javax.servlet.http.{HttpServletRequest, HttpServletRequestWrapper}
 
 import com.novus.salat._
 import com.novus.salat.global._
@@ -51,34 +51,38 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
 
     logger.debug(s"portalDispatch: hasIndexHtml=$hasIndexHtml pathInfo=$pathInfo")
 
-    def serveIndexHtml() = {
-      val adjustedPath = s"${pathInfo.replaceAll("/+$", "")}/index.html"
-      logger.debug(s"serving '/index.html' for request: $pathInfo adjustedPath=$adjustedPath")
-      val indexRequest = new HttpServletRequestWrapper(request) {
-        override def getPathInfo = adjustedPath
+    def adjustedRequest(request: HttpServletRequest): HttpServletRequest = {
+      if (pathInfo == "/" || pathInfo == "/sparql" || pathInfo == "/sparql/") {
+        val adjustedPath = s"${pathInfo.replaceAll("/+$", "")}/index.html"
+        logger.debug(s"adjustedRequest: for request=$pathInfo adjustedPath=$adjustedPath")
+        contentType = formats("html") // make sure html is responded
+        new HttpServletRequestWrapper(request) {
+          override def getPathInfo = adjustedPath
+        }
       }
-      contentType = formats("html") // make sure html is responded
-      servletContext.getNamedDispatcher("default").forward(indexRequest, response)
+      else {
+        contentType = null  // so, "default" servlet sets the content type according to the resource
+        request
+      }
     }
 
     if (hasIndexHtml) {
-      if (reqFormat == "html" && (pathInfo == "/" || pathInfo == "/sparql" || pathInfo == "/sparql/")) {
-        serveIndexHtml()
+      val isUiResource = List("/vendor", "/js", "/img", "/css") exists pathInfo.startsWith
+
+      if (isUiResource || pathInfo == "/sparql" || pathInfo == "/sparql/") {
+        servletContext.getNamedDispatcher("default").forward(adjustedRequest(request), response)
         true
       }
-      else {
-        val isUiResource = List("/vendor", "/js", "/img", "/css") exists pathInfo.startsWith
-        if (isUiResource) {
-          contentType = null  // so, the following sets the content type according to the resource
-          serveStaticResource() getOrElse error(404, s"${request.getRequestURI}: resource not found")
-          true
+      else if (reqFormat == "html") { // for HTML always dispatch /index.html
+        logger.debug(s"serving '/index.html' for request: $pathInfo")
+        val indexRequest = new HttpServletRequestWrapper(request) {
+          override def getPathInfo = "/index.html"
         }
-        else if (reqFormat == "html") {
-          serveIndexHtml()
-          true
-        }
-        else false
+        contentType = formats("html") // make sure html is responded
+        servletContext.getNamedDispatcher("default").forward(indexRequest, response)
+        true
       }
+      else false
     }
     else false
   }
