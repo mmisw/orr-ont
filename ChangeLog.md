@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-06-01: 0.3.1:
+  - for "!md" response, include 'versions' even when a particular version is requested  
+  
 * 2016-05-31: 0.3.1:
   - SelfHostedOntController: allow to dispatch sparql UI 
   

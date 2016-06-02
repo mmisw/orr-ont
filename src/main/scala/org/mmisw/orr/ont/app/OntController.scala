@@ -300,14 +300,11 @@ class OntController(implicit setup: Setup,
     // format is the one given if any, or the one in the db:
     val reqFormat = params.get("format").getOrElse(ontVersion.format)
 
-    // todo: determine mechanism to request for metadata:  format=!md is preliminary
+    // format=!md is our mechanism to request for metadata
 
     if (reqFormat == "!md") {
-      // include 'versions' if no particular version requested.
-      val versionsOpt = versionOpt match {
-        case None    => Some(ont.sortedVersionKeys)
-        case Some(_) => None
-      }
+      // include 'versions' even when a particular version is requested
+      val versionsOpt = Some(ont.sortedVersionKeys)
       val ores = ontService.getOntologySummaryResult(ont, ontVersion, version,
         privileged = checkIsAdminOrExtra,
         includeMetadata = true,
