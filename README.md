@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/mmisw/orr-ont.png?label=ready&title=Ready)](https://waffle.io/mmisw/orr-ont)
 [![Build Status](https://travis-ci.org/mmisw/orr-ont.svg?branch=master)](https://travis-ci.org/mmisw/orr-ont)
 [![Coverage Status](https://coveralls.io/repos/github/mmisw/orr-ont/badge.svg?branch=master)](https://coveralls.io/github/mmisw/orr-ont?branch=master)
 
