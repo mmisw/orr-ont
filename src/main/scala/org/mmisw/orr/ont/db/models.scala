@@ -12,11 +12,16 @@ case class Ontology(
   lazy val sortedVersionKeys = versions.keys.toList.sorted(Ordering[String].reverse)
 }
 
+object OntVisibility extends Enumeration {
+  val owner, user, public = Value
+}
+
 case class OntologyVersion(
             name:            String,
             userName:        String, // submitter
             format:          String,
             date:            DateTime,
+            visibility:      Option[OntVisibility.Value] = Some(OntVisibility.public), // TODO No default, nor optional
             status:          Option[String] = None,
             author:          Option[String] = None,    // content creator
             metadata:        List[Map[String, AnyRef]] = List.empty,

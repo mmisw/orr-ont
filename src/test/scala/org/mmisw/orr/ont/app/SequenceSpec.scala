@@ -410,7 +410,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   val ont1File = new File("src/test/resources/ont1.rdf")
   val ont1Uri  = "http://example.org/ont1"
   val format = "rdf"
-  val map0 = Map("format" -> format)
+  val map0 = Map("format" -> format, "visibility" -> "public")
   var uploadedFileInfoOpt: Option[UploadedFileInfo] = None
 
   "Upload RDF file (POST /ont/upload)" should {
@@ -438,7 +438,9 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   "Upload OWL/XML file (POST /ont/upload)" should {
     val owxFile = new File("src/test/resources/ice-of-land-origin.owl")
     "succeed with user credentials and return expected info" in {
-      post("/ont/upload", Map("format" -> "owx"), Map("file" -> owxFile), headers = userHeaders) {
+      post("/ont/upload", Map("format" -> "owx", "visibility" -> "public"),
+        Map("file" -> owxFile), headers = userHeaders
+      ) {
         status must_== 200
         val b = body
         println(s"upload response body=$b")
@@ -462,7 +464,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         "orgName" -> orgName,
         "userName" -> userName,
         "uploadedFilename" -> uploadedFileInfo.filename,
-        "uploadedFormat"   -> uploadedFileInfo.format
+        "uploadedFormat"   -> uploadedFileInfo.format,
+        "visibility" -> "public"
       )
       post("/ont", mapForUploaded, headers = userHeaders) {
         val b = body
@@ -480,7 +483,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     "name" -> "some ont name",
     "orgName" -> orgName,
     "userName" -> userName,
-    "format" -> format
+    "format" -> format,
+    "visibility" -> "public"
   )
   var registeredVersion: Option[String] = None
 
@@ -519,7 +523,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         "name" -> "some ont name",
         "orgName" -> orgName,
         "userName" -> userName,
-        "format" -> format
+        "format" -> format,
+        "visibility" -> "public"
       )
       post("/ont", map2, Map("file" -> ont1File), headers = adminHeaders) {
         status must_== 201
@@ -543,7 +548,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         "orgName"  -> orgName,
         "userName" -> userName,
         "format"   -> format,
-        "contents" -> contents
+        "contents" -> contents,
+        "visibility" -> "public"
       )
 
       post("/ont", params, headers = userHeaders) {
@@ -560,7 +566,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
       val v2rMap = Map("uri" -> newOntUri(),
         "name" -> "a v2r ontology",
         "userName" -> userName,
-        "format" -> "v2r"
+        "format" -> "v2r",
+        "visibility" -> "public"
       )
       val v2rFile = new File("src/test/resources/vr1.v2r")
       post("/ont", v2rMap, Map("file" -> v2rFile), headers = adminHeaders) {
@@ -577,7 +584,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
       val m2rMap = Map("uri" -> newOntUri(),
         "name" -> "a m2r ontology",
         "userName" -> userName,
-        "format" -> "m2r"
+        "format" -> "m2r",
+        "visibility" -> "public"
       )
       val m2rFile = new File("src/test/resources/mr1.m2r")
       post("/ont", m2rMap, Map("file" -> m2rFile), headers = adminHeaders) {
@@ -643,10 +651,11 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   "Get onts with some filter parameters (GET /ont?ownerName=nn)" should {
     "return list containing submission above" in {
       val map = Map("ownerName" -> orgName)
-      logger.info(s"get: $map")
+      logger.info(s"xxxx get: $map")
       get("/ont", map) {
         status must_== 200
         val res = parse(body).extract[List[OntologySummaryResult]]
+        logger.debug(s"xxxx res=$res")
         res.exists(_.ownerName == Some(orgName)) must beTrue
       }
     }

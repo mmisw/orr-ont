@@ -1,6 +1,7 @@
 package org.mmisw.orr.ont
 
 import org.joda.time.DateTime
+import org.mmisw.orr.ont.db.OntVisibility
 
 
 case class UserResult(
@@ -54,7 +55,8 @@ case class OntologySummaryResult(
             ontologyType:   Option[String] = None,
             resourceType:   Option[String] = None,
             versions:       Option[List[String]] = None,
-            format:         Option[String] = None
+            format:         Option[String] = None,
+            visibility:     Option[OntVisibility.Value] = None
             )
 
 case class OntologySubjectsResult(
