@@ -6,7 +6,7 @@ import java.net.{URI, URISyntaxException}
 import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
-import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
+import org.mmisw.orr.ont.db.{OntVisibility, Ontology, OntologyVersion}
 import org.mmisw.orr.ont.swld.{PossibleOntologyInfo, ontFileLoader, ontUtil}
 import org.mmisw.orr.ont._
 
@@ -114,7 +114,8 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
       ontologyType = ontVersion.ontologyType,
       resourceType = resourceTypeOpt,
       versions     = versionsOpt,
-      format       = Option(ontVersion.format)
+      format       = Option(ontVersion.format),
+      visibility   = ontVersion.visibility
     )
   }
 
@@ -231,6 +232,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                      originalUriOpt: Option[String],
                      name:           String,
                      version:        String,
+                     versionVisibility: OntVisibility.Value,
                      version_status: Option[String],
                      date:           String,
                      userName:       String,
@@ -255,6 +257,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     val resourceTypeOpt = map.get("resourceType")
 
     val ontVersion = OntologyVersion(name, userName, ontFileWriter.format, new DateTime(date),
+                                     visibility = Some(versionVisibility),
                                      status = version_status,
                                      author = authorOpt,
                                      metadata = ontUtil.toOntMdList(md),
@@ -280,6 +283,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                             nameOpt:         Option[String],
                             userName:        String,
                             version:         String,
+                            versionVisibility: OntVisibility.Value,
                             version_status:  Option[String],
                             date:            String,
                             ontFileWriter:   OntFileWriter,
@@ -303,6 +307,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     val resourceTypeOpt = map.get("resourceType")
 
     var ontVersion = OntologyVersion("", userName, ontFileWriter.format, new DateTime(date),
+                                     visibility = Some(versionVisibility),
                                      status = version_status,
                                      author = authorOpt,
                                      metadata = ontUtil.toOntMdList(md),
@@ -330,7 +335,8 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   def updateOntologyVersion(uri:            String,
                             originalUriOpt: Option[String],
                             version:        String,
-                            name:           String,
+                            versionVisibilityOpt: Option[OntVisibility.Value],
+                            nameOpt:        Option[String],
                             userName:       String,
                             doVerifyOwner:  Boolean = true) = {
 
@@ -340,7 +346,13 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     var ontVersion = ont.versions.getOrElse(version, throw NoSuchOntVersion(uri, version))
 
-    ontVersion = ontVersion.copy(name = name)
+    versionVisibilityOpt foreach { _ =>
+      ontVersion = ontVersion.copy(visibility = versionVisibilityOpt)
+    }
+
+    nameOpt foreach { name =>
+      ontVersion = ontVersion.copy(name = name)
+    }
 
     val newVersions = ont.versions.updated(version, ontVersion)
     val update = ont.copy(versions = newVersions)

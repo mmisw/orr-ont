@@ -10,7 +10,7 @@ import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.mmisw.orr.ont._
-import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
+import org.mmisw.orr.ont.db.{OntVisibility, Ontology, OntologyVersion}
 import org.mmisw.orr.ont.service._
 import org.mmisw.orr.ont.swld.{M2RModel, V2RModel, ontUtil}
 import org.scalatra.Created
@@ -42,10 +42,20 @@ class OntController(implicit setup: Setup,
   get("/") {
     params.get("uri") match {
       case Some(uri) => resolveUri(uri)
+
       case None =>
         val query = getQueryFromParams(params.keySet) - "jwt"  // - sigParamName)
-        val onts = ontService.getOntologies(query, checkIsAdminOrExtra)
-        onts map { osr =>
+        val privileged = checkIsAdminOrExtra
+        val ontologies = ontService.getOntologies(query, privileged).toList
+        val resultOntologies = if (privileged) ontologies
+        else {
+          val userOrgNames: List[String] = authenticatedUser match {
+            case Some(u) => orgService.getUserOrganizationNames(u.userName)
+            case None => Nil
+          }
+          ontologies filter (visibilityFilter(userOrgNames, _))
+        }
+        resultOntologies map { osr =>
           grater[OntologySummaryResult].asDBObject(osr)//.toCompactJSON
         }
     }
@@ -92,6 +102,10 @@ class OntController(implicit setup: Setup,
       case None          => "~" + user.userName
     }
 
+    // visibility will be "owner" if not explicitly given
+    val versionVisibility = OntVisibility.withName(
+      getParam("visibility").getOrElse("owner").toLowerCase)
+
     // TODO capture version_status from parameter
     val version_status: Option[String] = None
 
@@ -100,7 +114,8 @@ class OntController(implicit setup: Setup,
     val ontFileWriter = getOntFileWriter(user)
 
     Created(createOntology(uri, originalUriOpt, name, version,
-      version_status, date, ontFileWriter, ownerName))
+      versionVisibility, version_status,
+      date, ontFileWriter, ownerName))
   }
 
   /*
@@ -110,6 +125,7 @@ class OntController(implicit setup: Setup,
     val uri            = requireParam("uri")
     val originalUriOpt = getParam("originalUri")  // for fully-hosted mode
     val versionOpt     = getParam("version")
+    val visibilityOpt  = getParam("visibility")
     val user           = verifyUser(getParam("userName"))
 
     val (ont, _, _) = resolveOntology(uri, versionOpt)
@@ -127,10 +143,36 @@ class OntController(implicit setup: Setup,
         val ontFileWriter = ontFileWriterOpt.getOrElse(
           error(400, "creation of new version requires specification of contents " +
             "(file upload, embedded contents, or new metadata"))
-        createOntologyVersion(uri, originalUriOpt, user, ontFileWriter, doVerifyOwner)
+
+        createOntologyVersion(uri, originalUriOpt, user,
+          versionVisibility = OntVisibility.withName(visibilityOpt.getOrElse("owner").toLowerCase),
+          nameOpt = getParam("name"),
+          ontFileWriter, doVerifyOwner)
 
       case Some(version) =>
-        updateOntologyVersion(uri, originalUriOpt, version, user, doVerifyOwner)
+        updateOntologyVersion(uri, originalUriOpt, version,
+          versionVisibilityOpt = visibilityOpt map OntVisibility.withName,
+          nameOpt = getParam("name"),
+          user, doVerifyOwner)
+    }
+  }
+
+  private def visibilityFilter(userOrgNames: List[String], osr: OntologySummaryResult): Boolean = {
+    val vis = osr.visibility.getOrElse(OntVisibility.owner)
+    vis match {
+      case OntVisibility.public => true
+      case OntVisibility.user   => authenticatedUser.isDefined
+      case OntVisibility.owner  =>
+        if (authenticatedUser.isEmpty) false
+        else osr.ownerName match {
+          case Some(ownerName) =>
+            OntOwner(ownerName) match {
+              case UserOntOwner(ownerUserName) => ownerUserName == authenticatedUser.get.userName
+              case OrgOntOwner(orgName)        => userOrgNames.contains(orgName)
+            }
+
+          case None => false
+        }
     }
   }
 
@@ -238,6 +280,7 @@ class OntController(implicit setup: Setup,
                              originalUriOpt:  Option[String],
                              name:            String,
                              version:         String,
+                             versionVisibility: OntVisibility.Value,
                              version_status:  Option[String],
                              date:            String,
                              ontFileWriter:   OntFileWriter,
@@ -251,14 +294,21 @@ class OntController(implicit setup: Setup,
          | originalUri:    $originalUriOpt
          | name:           $name
          | version:        $version
+         | versionVisibility: $versionVisibility
          | version_status: $version_status
          | date:           $date
          | ownerName:      $ownerName
          | ontFileWriter.format: ${ontFileWriter.format}
          |""".stripMargin)
 
-    Try(ontService.createOntology(uri, originalUriOpt, name, version, version_status,
-          date, user.userName, ownerName, ontFileWriter)) match {
+    Try(ontService.createOntology(uri, originalUriOpt, name, version,
+          versionVisibility = versionVisibility,
+          version_status = version_status,
+          date = date,
+          userName = user.userName,
+          ownerName = ownerName,
+          ontFileWriter = ontFileWriter
+    )) match {
       case Success(ontologyResult) =>
         loadOntologyInTripleStore(uri, reload = false)
         ontologyResult
@@ -411,17 +461,19 @@ class OntController(implicit setup: Setup,
   private def createOntologyVersion(uri:            String,
                                     originalUriOpt: Option[String],
                                     user:           db.User,
+                                    versionVisibility: OntVisibility.Value,
+                                    nameOpt:        Option[String],
                                     ontFileWriter:  OntFileWriter,
                                     doVerifyOwner:  Boolean = true
                                    ) = {
-    val nameOpt = getParam("name")
     val (version, date) = getVersion
 
     // TODO capture version_status from parameter
     val version_status: Option[String] = None
 
-    Try(ontService.createOntologyVersion(uri, originalUriOpt, nameOpt, user.userName, version,
-            version_status, date, ontFileWriter, doVerifyOwner)) match {
+    Try(ontService.createOntologyVersion(uri, originalUriOpt, nameOpt, user.userName,
+        version, versionVisibility, version_status,
+        date, ontFileWriter, doVerifyOwner)) match {
       case Success(ontologyResult) =>
         loadOntologyInTripleStore(uri, reload = true)
         ontologyResult
@@ -434,20 +486,24 @@ class OntController(implicit setup: Setup,
   }
 
   /**
-   * updates a particular version.
-   * Note, only the name in the particular version can be updated at the moment.
+   * Updates a particular version.
+   * TODO handle other updatable pieces
    */
-  // TODO handle other pieces that can/should be updated
   private def updateOntologyVersion(uri:            String,
                                     originalUriOpt: Option[String],
                                     version:        String,
+                                    versionVisibilityOpt: Option[OntVisibility.Value],
+                                    nameOpt:        Option[String],
                                     user:           db.User,
                                     doVerifyOwner:  Boolean = true
                                    ) = {
-    val name = requireParam("name")
-
-    Try(ontService.updateOntologyVersion(uri, originalUriOpt, version, name, user.userName,
-            doVerifyOwner)) match {
+    Try(ontService.updateOntologyVersion(uri, originalUriOpt,
+        version,
+        versionVisibilityOpt,
+        nameOpt,
+        user.userName,
+        doVerifyOwner)
+    ) match {
       case Success(ontologyResult) =>
         loadOntologyInTripleStore(uri, reload = true)
         ontologyResult

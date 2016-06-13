@@ -1,19 +1,20 @@
 package org.mmisw.orr.ont.x
 
-import java.io.{PrintWriter, File}
+import java.io.{File, PrintWriter}
 import java.util.ServiceConfigurationError
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.Setup
-import org.mmisw.orr.ont.service.{OrgService, OntFileWriter, OntService, UserService}
+import org.mmisw.orr.ont.db.OntVisibility
+import org.mmisw.orr.ont.service.{OntFileWriter, OntService, OrgService, UserService}
 import org.mmisw.orr.ont.swld.ontUtil
 import org.mmisw.orr.ont.util.Emailer
 
 import scala.collection.immutable.TreeMap
 import scala.io.Source
-import scala.xml.{NodeSeq, Node, XML}
+import scala.xml.{Node, NodeSeq, XML}
 
 
 /**
@@ -187,14 +188,19 @@ object AquaImporter extends App with Logging {
     // status to propagate to newer versions not having an explicit version_status themselves
     var version_status: Option[String] = None
 
+    // TODO perhaps set visibility from status, but for now just setting it to 'public'
+
     // register entry (first submission)
     sortedVersions.headOption foreach { version =>
       val o = byVersion(version)
       for(ontFileWriter <- getOntFileWriter(uri, version, orgName, o)) {
         val dateCreated = DateTime.parse(o.date_created)
         firstSubmission = Some(dateCreated)
+        val versionVisibility: OntVisibility.Value = OntVisibility.public
         ontService.createOntology(
-          o.uri, None, o.display_label, o.version_number, o.version_status,
+          o.uri, None, o.display_label, o.version_number,
+          versionVisibility,
+          o.version_status,
           o.date_created, users.get(o.user_id).get.username, orgName,
           ontFileWriter,
           contact_name = o.contact_name)
@@ -209,9 +215,10 @@ object AquaImporter extends App with Logging {
         if (o.version_status.isDefined) {
           version_status = o.version_status  // update to use here and propagate
         }
+        val versionVisibility: OntVisibility.Value = OntVisibility.public
         ontService.createOntologyVersion(
           o.uri, None, Some(o.display_label), users.get(o.user_id).get.username,
-          o.version_number, version_status,
+          o.version_number, versionVisibility, version_status,
           o.date_created, ontFileWriter,
           contact_name = o.contact_name)
       }

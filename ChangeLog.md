@@ -1,5 +1,12 @@
 ## change log ##
 
+* 2016-06-11: 0.3.2:
+  - \#10: "capture visibility attribute for ontologies"
+    - for convenience at the moment, optional in OntologyVersion model (but to be required, and with no default value)
+  	- aquaImporter: for convenience, set to "public" as the most typical case while assuming
+      any particular adjustments are to be done externally, but could be done during import
+      (based on status) if deemed necessary.
+  
 * 2016-06-01: 0.3.1:
   - for "!md" response, include 'versions' even when a particular version is requested  
   

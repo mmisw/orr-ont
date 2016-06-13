@@ -31,6 +31,13 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
     result
   }
 
+  def getUserOrganizationNames(userName: String): List[String] = {
+    getUserOrganizations(userName) match {
+      case Some(userOrgs) => userOrgs map (_.orgName)
+      case None           => Nil
+    }
+  }
+
   def createOrg(orgName: String, name: String,
                 members: Set[String] = Set.empty,
                 ontUri: Option[String] = None) = {
