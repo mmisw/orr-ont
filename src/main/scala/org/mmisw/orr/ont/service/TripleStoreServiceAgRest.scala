@@ -55,7 +55,7 @@ with TripleStoreService with Logging {
     * If reload is true, the contents are replaced.
     */
   def loadUriFromLocal(uri: String, reload: Boolean = false): Either[Throwable, String] = {
-    val (_, _, version) = ontService.resolveOntology(uri)
+    val (_, _, version) = ontService.resolveOntologyVersion(uri)
     val (file, actualFormat) = ontService.getOntologyFile(uri, version, "rdf")
     val contentType = ontUtil.mimeMappings(actualFormat)
 
@@ -209,7 +209,7 @@ with TripleStoreService with Logging {
     val prom = Promise[Either[Throwable, String]]()
 
     logger.warn(s"loadUri: $uri")
-    val (_, ontVersion, version) = ontService.resolveOntology(uri)
+    val (_, ontVersion, version) = ontService.resolveOntologyVersion(uri)
     val (file, actualFormat) = ontService.getOntologyFile(uri, version, ontVersion.format)
 
     val (k, v) = if (setup.config.hasPath("import.aquaUploadsDir"))

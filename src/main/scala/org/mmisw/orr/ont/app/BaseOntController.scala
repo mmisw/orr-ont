@@ -14,8 +14,8 @@ import scala.util.{Failure, Success, Try}
 abstract class BaseOntController(implicit setup: Setup, ontService: OntService) extends BaseController
 with Logging {
 
-  protected def resolveOntology(uri: String, versionOpt: Option[String] = None): (Ontology, OntologyVersion, String) = {
-    Try(ontService.resolveOntology(uri, versionOpt)) match {
+  protected def resolveOntologyVersion(uri: String, versionOpt: Option[String] = None): (Ontology, OntologyVersion, String) = {
+    Try(ontService.resolveOntologyVersion(uri, versionOpt)) match {
       case Success(res) => res
       case Failure(exc: NoSuch) => error(404, exc.details)
       case Failure(exc)         => error500(exc)

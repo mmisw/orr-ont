@@ -144,7 +144,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
   }
 
   private def resolveUri(uri: String, reqFormat: String) = {
-    val (ont, ontVersion, version) = resolveOntology(uri, params.get("version"))
+    val (ont, ontVersion, version) = resolveOntologyVersion(uri, params.get("version"))
 
     // format is the one given if any, or the one in the db:
     //val reqFormat = params.get("format").getOrElse(ontVersion.format)
@@ -173,8 +173,8 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
     }
   }
 
-  private def resolveOntology(uri: String, versionOpt: Option[String]): (Ontology, OntologyVersion, String) = {
-    Try(ontService.resolveOntology(uri, versionOpt)) match {
+  private def resolveOntologyVersion(uri: String, versionOpt: Option[String]): (Ontology, OntologyVersion, String) = {
+    Try(ontService.resolveOntologyVersion(uri, versionOpt)) match {
       case Success(res)         => res
       case Failure(exc: NoSuch) => error(404, exc.details)
       case Failure(exc)         => error500(exc)

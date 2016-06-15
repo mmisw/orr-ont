@@ -128,7 +128,7 @@ class OntController(implicit setup: Setup,
     val visibilityOpt  = getParam("visibility")
     val user           = verifyUser(getParam("userName"))
 
-    val (ont, _, _) = resolveOntology(uri, versionOpt)
+    val (ont, _, _) = resolveOntologyVersion(uri, versionOpt)
 
     verifyOwnerName(ont.ownerName)
 
@@ -201,7 +201,7 @@ class OntController(implicit setup: Setup,
     val versionOpt = params.get("version")
     val user = verifyUser(params.get("userName"))
 
-    val (ont, _, _) = resolveOntology(uri, versionOpt)
+    val (ont, _, _) = resolveOntologyVersion(uri, versionOpt)
 
     verifyOwnerName(ont.ownerName)
 
@@ -345,7 +345,7 @@ class OntController(implicit setup: Setup,
 
   private def resolveUri(uri: String) = {
     val versionOpt: Option[String] = params.get("version")
-    val (ont, ontVersion, version) = resolveOntology(uri, versionOpt)
+    val (ont, ontVersion, version) = resolveOntologyVersion(uri, versionOpt)
 
     // format is the one given if any, or the one in the db:
     val reqFormat = params.get("format").getOrElse(ontVersion.format)
@@ -370,7 +370,7 @@ class OntController(implicit setup: Setup,
 
   private def getSubjects(uri: String) = {
     logger.debug(s"getSubjects: uri=$uri")
-    val (ont, ontVersion, version) = resolveOntology(uri)
+    val (ont, ontVersion, version) = resolveOntologyVersion(uri)
     val ores = ontService.getOntologySubjects(ont, ontVersion, version, includeMetadata = true)
     grater[OntologySubjectsResult].toCompactJSON(ores)
   }
@@ -441,7 +441,7 @@ class OntController(implicit setup: Setup,
                                            metadata: String
                                           ): OntFileWriter = {
 
-    val (ont, ontVersion, version) = resolveOntology(uri, versionOpt)
+    val (ont, ontVersion, version) = resolveOntologyVersion(uri, versionOpt)
     logger.debug(s"getOntFileWriterWithMetadata: metadata=`$metadata`")
     val newMetadata = parse(metadata).extract[Map[String, JValue]]
     UpdateWithMetadataWriter(ontVersion.format, ont, ontVersion, version, newMetadata)
