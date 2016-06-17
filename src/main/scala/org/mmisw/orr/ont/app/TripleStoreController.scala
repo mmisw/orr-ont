@@ -7,7 +7,7 @@ import org.mmisw.orr.ont.service.{OntService, TripleStoreService}
 
 /**
   */
-class TripleStoreController(implicit setup: Setup, ontService: OntService, tsService: TripleStoreService) extends BaseOntController
+class TripleStoreController(implicit setup: Setup, ontService: OntService, tsService: TripleStoreService) extends BaseController
 with Logging {
 
   tsService.setFormats(Map(formats.toSeq: _*))
