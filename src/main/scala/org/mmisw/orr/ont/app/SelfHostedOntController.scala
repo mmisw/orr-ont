@@ -3,24 +3,21 @@ package org.mmisw.orr.ont.app
 import java.io.File
 import javax.servlet.http.{HttpServletRequest, HttpServletRequestWrapper}
 
-import com.novus.salat._
-import com.novus.salat.global._
 import com.typesafe.scalalogging.{StrictLogging => Logging}
-import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
-import org.mmisw.orr.ont.service.{NoSuch, NoSuchOntFormat, OntService}
-import org.mmisw.orr.ont.swld.ontUtil
-import org.mmisw.orr.ont.{OntologySummaryResult, Setup}
-
-import scala.util.{Failure, Success, Try}
+import org.mmisw.orr.ont.service.{OntService, TripleStoreService}
+import org.mmisw.orr.ont.Setup
 
 /**
   * Controller to dispatch "self-hosted ontology" requests, mainly for resolution (GET)
   * and not for updates/deletions.
   *
   * Includes mechanism to dispatch the UI (ORR Portal) such that the
-  * application context is preserved in the browser's location address).
+  * application context is preserved in the browser's location address.
   */
-class SelfHostedOntController(implicit setup: Setup, ontService: OntService) extends BaseOntController
+class SelfHostedOntController(implicit setup: Setup,
+                              ontService: OntService,
+                              tsService: TripleStoreService
+                             ) extends BaseOntController
     with Logging {
 
   get("/(.*)".r) {
@@ -96,7 +93,7 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
       case None =>
         val uri = request.getRequestURL.toString
         logger.debug(s"self-resolving '$uri' ...")
-        resolveUri(uri, reqFormat)
+        resolveOntOrTermUri(uri)
     }
   }
 
@@ -140,36 +137,6 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
   private def selfResolve(reqFormat: String) = {
     val uri = request.getRequestURL.toString
     logger.debug(s"self-resolving '$uri' ...")
-    resolveUri(uri, reqFormat)
-  }
-
-  private def resolveUri(uri: String, reqFormat: String) = {
-    val (ont, ontVersion, version) = resolveOntologyVersion(uri, params.get("version"))
-
-    // format is the one given if any, or the one in the db:
-    //val reqFormat = params.get("format").getOrElse(ontVersion.format)
-    // TODO(low priority): perhaps use the saved ontVersion.format when there's no explicit requested
-    // format e.g, when there's no "format" param and the accept header only has "*/*" ?
-
-    // TODO determine mechanism to request for metadata:  format=!md is preliminary
-    // TODO review common dispatch from ontService to avoid code duplication
-
-    if (reqFormat == "!md") {
-      val ores = OntologySummaryResult(
-        uri      = ont.uri,
-        version  = version,
-        name     = ontVersion.name,
-        ownerName = Some(ont.ownerName),
-        metadata = Some(ontUtil.toOntMdMap(ontVersion.metadata)),
-        versions = Some(ont.sortedVersionKeys),
-        format   = Option(ontVersion.format)
-      )
-      grater[OntologySummaryResult].toCompactJSON(ores)
-    }
-    else {
-      val (file, actualFormat) = getOntologyFile(uri, version, reqFormat)
-      contentType = formats(actualFormat)
-      file
-    }
+    resolveOntOrTermUri(uri)
   }
 }

@@ -148,8 +148,8 @@ with TripleStoreService with Logging {
     * (possible acceptHeader values determined from AG documentation and also by triggering response errors.)
     */
   def resolveTermUri(uri: String,
-                     formatOpt: Option[String] = None,
-                     acceptHeader: List[String] = Nil
+                     formatOpt: Option[String],
+                     acceptHeader: List[String]
                     ): Either[Error, TermResponse] = {
 
     termResolver.resolveTermUri(uri, formatOpt, acceptHeader)
@@ -352,8 +352,8 @@ with TripleStoreService with Logging {
     import java.util.regex.Pattern
 
     def resolveTermUri(uri: String,
-                       formatOpt: Option[String] = None,
-                       acceptHeader: List[String] = Nil
+                       formatOpt: Option[String],
+                       acceptHeader: List[String]
                       ): Either[Error, TermResponse] = {
 
       formatOpt match {

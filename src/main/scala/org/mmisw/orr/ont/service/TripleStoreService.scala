@@ -49,9 +49,8 @@ trait TripleStoreService {
     * @param uri           Requested URI
     * @param formatOpt     Desired format, which takes precedence if given
     * @param acceptHeader  Accept header when format is not given
-    * @return (result, contentType)
     */
-  def resolveTermUri(uri: String, formatOpt: Option[String] = None, acceptHeader: List[String] = Nil
+  def resolveTermUri(uri: String, formatOpt: Option[String], acceptHeader: List[String]
                     ): Either[Error, TermResponse]
 
 }

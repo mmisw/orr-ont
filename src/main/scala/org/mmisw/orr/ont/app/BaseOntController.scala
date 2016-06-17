@@ -97,6 +97,12 @@ with Logging {
           case CannotQueryTerm(_, msg)     => error(400, s"error querying uri=$uri: $msg")
           case _                           => error500(exc)
         }
+
+      case null => error500(s"Unexpected: got null but Either expected -- Scala compiler bug?")
+        // Noted with "self-hosted" test in SequenceSpec
+        // The tsService.resolveTermUri above doesn't seem to be called, or at least not
+        // properly called because it returns null right away; I even put an immediate
+        // 'throw exception' there and it is not triggered at all!
     }
   }
 

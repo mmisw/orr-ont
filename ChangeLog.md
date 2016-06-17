@@ -19,7 +19,7 @@
         succeed (unless there's an unexpected exception) because the sparql query can have an "empty" response   
       - "ouri": only tries ontology, with 404 response if not found 
       - "turi": performs term query, no 404 can occur as already explained
-    - TODO SelfHostedController
+    - SelfHostedController also adjusted ... but I'm noticing what seems to be a Scala compiler bug :(
     
 * 2016-06-11: 0.3.2:
   - \#10: "capture visibility attribute for ontologies"
