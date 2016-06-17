@@ -22,6 +22,14 @@ with Logging {
     }
   }
 
+  protected def resolveOntologyVersion(ont: Ontology, versionOpt: Option[String]): (OntologyVersion, String) = {
+    Try(ontService.resolveOntologyVersion(ont, versionOpt)) match {
+      case Success(res)         => res
+      case Failure(exc: NoSuch) => error(404, exc.details)
+      case Failure(exc)         => error500(exc)
+    }
+  }
+
   protected def getOntologyFile(uri: String, version: String, reqFormat: String): (File, String) = {
     Try(ontService.getOntologyFile(uri, version, reqFormat)) match {
       case Success(res) => res

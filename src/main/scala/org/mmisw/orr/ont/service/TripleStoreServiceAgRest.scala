@@ -113,7 +113,73 @@ with TripleStoreService with Logging {
   def unloadAll(): Either[Throwable, String] =
     unload(None)
 
+  /**
+    * Resolves a URI via SPARQL query to retrieve associated properties.
+    *
+    * If a format is given, an ad hoc simple-format to mime-type mapping is performed.
+    *
+    * In general, the acceptHeader value can be one from the following depending on whether
+    * or not the URI is going to be resolved with "select" query.
+    *
+    * For "select" query:
+    *   application/json,
+    *   application/processed-csv,
+    *   application/sparql-results+json,
+    *   application/sparql-results+ttl,
+    *   application/sparql-results+xml,
+    *   application/x-direct-upis,
+    *   application/x-lisp-structured-expression,
+    *   text/csv,
+    *   text/integer,
+    *   text/simple-csv,
+    *   text/tab-separated-values,
+    *   text/table.
+    *
+    * For non-select:
+    *    application/rdf+xml (RDF/XML)
+    *    text/plain (N-triples)
+    *    text/x-nquads (N-quads)
+    *    application/trix (TriX)
+    *    text/rdf+n3 (N3)
+    *    text/integer (return only a result count)
+    *    application/json,
+    *    application/x-quints+json
+    *
+    * (possible acceptHeader values determined from AG documentation and also by triggering response errors.)
+    */
+  def resolveTermUri(uri: String,
+                     formatOpt: Option[String] = None,
+                     acceptHeader: List[String] = Nil
+                    ): Either[Error, TermResponse] = {
+
+    termResolver.resolveTermUri(uri, formatOpt, acceptHeader)
+  }
+
   ///////////////////////////////////////////////////////////////////////////
+
+  // ad hoc helper to diagnose issues with requests to the AG
+  private def debugReqResponse(req: Req, msg: String = ""): Unit = {
+    val str = new StringBuilder(s"debugReqResponse: $msg\n")
+    str ++= s"response:\n"
+    val asMyDebug = as.Response { response =>
+      str ++= s" status=${response.getStatusCode}\n"
+      str ++= s" body=${response.getResponseBody}\n"
+      import scala.collection.JavaConverters._
+      scala.collection.JavaConverters.mapAsScalaMapConverter(
+        response.getHeaders
+      ).asScala.toMap.mapValues(_.asScala.toList)
+    }
+
+    val response: Either[Throwable, Map[String, List[String]]] = Http(req.POST > asMyDebug).either()
+    response match {
+      case Right(headers) =>
+        headers.foreach { case (k, v) => str ++= s"\t$k : $v\n" }
+        logger.debug(str.toString())
+
+      case Left(exception) =>
+        logger.error(s"\terror=${exception.getMessage}", exception)
+    }
+  }
 
   private def createRepositoryIfMissing(): Either[Throwable, String] = {
     // use getSize as a way to check whether the repository already exists
@@ -279,4 +345,147 @@ with TripleStoreService with Logging {
   private val orrEndpoint = s"$agEndpoint/repositories/$repoName"
 
   private val svc = host(orrEndpoint)
+
+  private val sparqlEndpoint = url(agConfig.getString("sparqlEndpoint"))
+
+  private object termResolver {
+    import java.util.regex.Pattern
+
+    def resolveTermUri(uri: String,
+                       formatOpt: Option[String] = None,
+                       acceptHeader: List[String] = Nil
+                      ): Either[Error, TermResponse] = {
+
+      formatOpt match {
+        case Some(format) =>
+          format2accept(format) match {
+            case Some((accept, isSelect)) =>
+              doRequest(uri, accept, isSelect)
+            case None =>
+              Left(NoSuchTermFormat(uri, format))
+          }
+
+        case None =>
+          val (accept, isSelect) = accept2AcceptAndSelect(acceptHeader)
+          doRequest(uri, accept, isSelect)
+      }
+    }
+
+    def doRequest(uri: String, accept: String, isSelect: Boolean): Either[Error, TermResponse] = {
+      val template = {
+        if (goodIriCharactersPattern.matcher(uri).matches) {
+          if (isSelect) PROPS_SELECT_QUERY_TEMPLATE else PROPS_CONSTRUCT_QUERY_TEMPLATE
+        }
+        else {
+          if (isSelect) PROPS_SELECT_QUERY_TEMPLATE_ALTERNATE else PROPS_CONSTRUCT_QUERY_TEMPLATE_ALTERNATE
+        }
+      }
+      val query = template.replace("{E}", uri)
+
+      logger.debug(s"resolveTermUri: uri=$uri, accept=$accept, isSelect=$isSelect, query=[$query]")
+
+      val req = sparqlEndpoint
+        .setHeader("Content-Type", "application/x-www-form-urlencoded")
+        .setHeader("Accept", accept)
+        .addParameter("query", query)
+
+      //debugReqResponse(req, s"resolveTermUri: $uri")
+
+      val future = dispatch.Http(req.POST > as.String)
+
+      val prom = Promise[Either[Error, TermResponse]]()
+      future onComplete {
+        case Success(content)   => prom.success(Right(TermResponse(content, accept)))
+        case Failure(exception) => prom.success(Left(CannotQueryTerm(uri, exception.getMessage)))
+      }
+      prom.future()
+    }
+
+    private type AcceptAndSelect = (String, Boolean)
+
+    private def format2accept(format: String): Option[AcceptAndSelect] = {
+      format match {
+        case "rdf" | "owl" | "xml" => Some("application/rdf+xml",       false)
+        case "nquads"              => Some("text/x-nquads",             false)
+        case "trix"                => Some("application/trix",          false)
+        case "n3"                  => Some("text/rdf+n3",               false)
+        case "quints"              => Some("application/x-quints+json", false)
+        case "integer"             => Some("text/integer",              false)
+
+        case "json"                => Some("application/json",               true)
+        case "csv"                 => Some("application/processed-csv",      true)
+        case "ttl"                 => Some("application/sparql-results+ttl", true)
+        case "tab" | "tsv"         => Some("text/tab-separated-values",      true)
+        case "table"               => Some("text/table",                     true)
+        //case "results+json"        => Some("application/sparql-results+json", true)
+        //case "results+xml"         => Some("application/sparql-results+xml", true)
+        //case "upis"                => Some("application/x-direct-upis", true)
+        //case "lisp"                => Some("application/x-lisp-structured-expression", true)
+        //case "csv1"                => Some("text/csv", true)
+        //case "csv2"                => Some("text/simple-csv", true)
+
+        case _                     => None
+      }
+    }
+
+    private def accept2AcceptAndSelect(acceptHeader: List[String]): AcceptAndSelect = {
+      if (acceptHeader.isEmpty || acceptHeader == List("*/*")) {
+        (formats("json"), true)
+      }
+      else {
+        val acceptsForNoSelect = List(
+          "application/rdf+xml",
+          "text/x-nquads",
+          "application/trix",
+          "text/rdf+n3",
+          "application/x-quints+json",
+          "text/integer"
+        )
+        val noSelect = acceptHeader.exists(a => acceptsForNoSelect.contains(a))
+        (acceptHeader.mkString(","), !noSelect)
+      }
+    }
+
+    /**
+      * Simple regex to verify that a URI is an IRI for purposes of its direct use in SPARQL query.
+      * See http://www.w3.org/TR/rdf-sparql-query/#QSynIRI
+      * Note: this pattern is only about the characters that are allowed, not about the structure of the IRI.
+      * Also, for simplicity, it excludes any space as determined by java via the "\\s" regex; this
+      * may not exactly match the specification but should be good enough for our purposes.
+      */
+    private val goodIriCharactersPattern = Pattern.compile("[^\\s<>\"{}|\\\\^`]*")
+
+    private val PROPS_SELECT_QUERY_TEMPLATE =
+      """select distinct ?property ?value
+        |where { <{E}> ?property ?value . }
+        |order by ?property
+      """.stripMargin.trim
+
+    /**
+      * Alternate SELECT Query template to obtain all properties associated with an entity
+      * whose URI cannot be used directly per SPARQL restrictions
+      */
+    private val PROPS_SELECT_QUERY_TEMPLATE_ALTERNATE =
+      """select ?property ?value
+        |where { ?s ?property ?value FILTER (str(?s) = "{E}") }
+        |order by ?property
+        |""".stripMargin.trim
+
+    /**
+      * CONSTRUCT Query template to obtain all properties associated with an entity
+      */
+    private val PROPS_CONSTRUCT_QUERY_TEMPLATE =
+      """construct { <{E}> ?prop ?value }
+        |where { <{E}> ?prop ?value . }
+      """.stripMargin.trim
+
+    /**
+      * Alternate CONSTRUCT Query template to obtain all properties associated with an entity
+      * whose URI cannot be used directly per SPARQL restrictions
+      */
+    private val PROPS_CONSTRUCT_QUERY_TEMPLATE_ALTERNATE =
+      """construct { ?s ?property ?value }
+        |where { ?s ?property ?value FILTER (str(?s) = "{E}") }
+      """.stripMargin.trim
+  }
 }

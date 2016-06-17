@@ -400,7 +400,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
 
   "Get non-existent ont (GET /ont)" should {
     "fail with not found status" in {
-      val map = Map("uri" -> newOntUri())
+      val map = Map("ouri" -> newOntUri())
       get("/ont", map) {
         status must_== 404
       }

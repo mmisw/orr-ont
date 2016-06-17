@@ -14,6 +14,12 @@ case class NoSuchOntVersion(uri: String, version: String)
 case class NoSuchOntFormat(uri: String, version: String, format: String)
   extends NoSuch("uri" -> uri, "version" -> version, "format" -> format, "error" -> "No such ontology format")
 
+case class NoSuchTermFormat(uri: String, format: String)
+  extends NoSuch("uri" -> uri, "format" -> format, "error" -> "No such term format")
+
+case class CannotQueryTerm(uri: String, error: String)
+  extends Problem("uri" -> uri, "error" -> error)
+
 case class NoSuchUser(userName: String)
   extends NoSuch("userName" -> userName, "error" -> "No such user")
 

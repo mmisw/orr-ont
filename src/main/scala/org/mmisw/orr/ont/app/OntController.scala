@@ -37,27 +37,21 @@ class OntController(implicit setup: Setup,
   }
 
   /*
-   * General ontology request
+   * General ontology or term request
    */
   get("/") {
     params.get("uri") match {
-      case Some(uri) => resolveUri(uri)
+      case Some(uri) => resolveOntOrTermUri(uri)
 
-      case None =>
-        val query = getQueryFromParams(params.keySet) - "jwt"  // - sigParamName)
-        val privileged = checkIsAdminOrExtra
-        val ontologies = ontService.getOntologies(query, privileged).toList
-        val resultOntologies = if (privileged) ontologies
-        else {
-          val userOrgNames: List[String] = authenticatedUser match {
-            case Some(u) => orgService.getUserOrganizationNames(u.userName)
-            case None => Nil
-          }
-          ontologies filter (visibilityFilter(userOrgNames, _))
+      case None => params.get("ouri") match {
+        case Some(uri) => resolveOntUri(uri)
+
+        case None => params.get("turi") match {
+          case Some(uri) => resolveTermUri(uri)
+
+          case None => resolveOnts()
         }
-        resultOntologies map { osr =>
-          grater[OntologySummaryResult].asDBObject(osr)//.toCompactJSON
-        }
+      }
     }
   }
 
@@ -343,9 +337,40 @@ class OntController(implicit setup: Setup,
 
   private val versionFormatter = new java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss")
 
-  private def resolveUri(uri: String) = {
+  private def resolveOnts() = {
+    val query = getQueryFromParams(params.keySet) - "jwt"  // - sigParamName)
+    val privileged = checkIsAdminOrExtra
+    val ontologies = ontService.getOntologies(query, privileged).toList
+    val resultOntologies = if (privileged) ontologies
+    else {
+      val userOrgNames: List[String] = authenticatedUser match {
+        case Some(u) => orgService.getUserOrganizationNames(u.userName)
+        case None => Nil
+      }
+      ontologies filter (visibilityFilter(userOrgNames, _))
+    }
+    resultOntologies map { osr =>
+      grater[OntologySummaryResult].asDBObject(osr)//.toCompactJSON
+    }
+  }
+
+  private def resolveOntOrTermUri(uri: String) = {
+    ontService.resolveOntology(uri) match {
+      case Some(ont) => completeOntologyUriResolution(ont)
+      case None      => resolveTermUri(uri)
+    }
+  }
+
+  private def resolveOntUri(uri: String) = {
+    ontService.resolveOntology(uri) match {
+      case Some(ont) => completeOntologyUriResolution(ont)
+      case None      => error(404, s"'$uri': No such ontology")
+    }
+  }
+
+  private def completeOntologyUriResolution(ont: Ontology) = {
     val versionOpt: Option[String] = params.get("version")
-    val (ont, ontVersion, version) = resolveOntologyVersion(uri, versionOpt)
+    val (ontVersion, version) = resolveOntologyVersion(ont, versionOpt)
 
     // format is the one given if any, or the one in the db:
     val reqFormat = params.get("format").getOrElse(ontVersion.format)
@@ -362,9 +387,25 @@ class OntController(implicit setup: Setup,
       grater[OntologySummaryResult].toCompactJSON(ores)
     }
     else {
-      val (file, actualFormat) = getOntologyFile(uri, version, reqFormat)
+      val (file, actualFormat) = getOntologyFile(ont.uri, version, reqFormat)
       contentType = formats(actualFormat)
       file
+    }
+  }
+
+  private def resolveTermUri(uri: String): String = {
+    val formatOpt = params.get("format")
+    tsService.resolveTermUri(uri, formatOpt, acceptHeader) match {
+      case Right(TermResponse(result, resultContentType)) =>
+        contentType = resultContentType
+        result
+
+      case Left(exc) =>
+        exc match {
+          case NoSuchTermFormat(_, format) => error(406, s"invalid format=$format")
+          case CannotQueryTerm(_, msg)     => error(400, s"error querying uri=$uri: $msg")
+          case _                           => error500(exc)
+        }
     }
   }
 

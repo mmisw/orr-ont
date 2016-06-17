@@ -49,6 +49,10 @@ object OntOwner {
  */
 class OntService(implicit setup: Setup) extends BaseService(setup) with Logging {
 
+  def resolveOntology(uri: String): Option[Ontology] = {
+    ontDAO.findOneById(uri)
+  }
+
   /**
    * Returns ontology elements for a given URI and optional version.
    *
@@ -68,6 +72,18 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
       case None =>
         val (ontVersion, version) = getLatestVersion(ont).getOrElse(throw Bug(s"'$uri', no versions registered"))
           (ont, ontVersion, version)
+    }
+  }
+
+  def resolveOntologyVersion(ont: Ontology, versionOpt: Option[String]): (OntologyVersion, String) = {
+    versionOpt match {
+      case Some(version) =>
+        val ontVersion = ont.versions.getOrElse(version, throw NoSuchOntVersion(ont.uri, version))
+        (ontVersion, version)
+
+      case None =>
+        val (ontVersion, version) = getLatestVersion(ont).getOrElse(throw Bug(s"'${ont.uri}', no versions registered"))
+        (ontVersion, version)
     }
   }
 
