@@ -21,7 +21,7 @@ case class OntologyVersion(
             userName:        String, // submitter
             format:          String,
             date:            DateTime,
-            visibility:      Option[OntVisibility.Value] = Some(OntVisibility.public), // TODO No default, nor optional
+            visibility:      Option[OntVisibility.Value] = Some(OntVisibility.owner), // TODO No default, nor optional
             status:          Option[String] = None,
             author:          Option[String] = None,    // content creator
             metadata:        List[Map[String, AnyRef]] = List.empty,
