@@ -19,9 +19,6 @@ import org.scalatra.servlet.{FileItem, FileUploadSupport, SizeConstraintExceeded
 import scala.util.{Failure, Success, Try}
 
 
-/**
- * Controller for the "ont" API.
- */
 @MultipartConfig(maxFileSize = 10*1024*1024)
 class OntController(implicit setup: Setup,
                     ontService: OntService,
@@ -351,61 +348,6 @@ class OntController(implicit setup: Setup,
     }
     resultOntologies map { osr =>
       grater[OntologySummaryResult].asDBObject(osr)//.toCompactJSON
-    }
-  }
-
-  private def resolveOntOrTermUri(uri: String) = {
-    ontService.resolveOntology(uri) match {
-      case Some(ont) => completeOntologyUriResolution(ont)
-      case None      => resolveTermUri(uri)
-    }
-  }
-
-  private def resolveOntUri(uri: String) = {
-    ontService.resolveOntology(uri) match {
-      case Some(ont) => completeOntologyUriResolution(ont)
-      case None      => error(404, s"'$uri': No such ontology")
-    }
-  }
-
-  private def completeOntologyUriResolution(ont: Ontology) = {
-    val versionOpt: Option[String] = params.get("version")
-    val (ontVersion, version) = resolveOntologyVersion(ont, versionOpt)
-
-    // format is the one given if any, or the one in the db:
-    val reqFormat = params.get("format").getOrElse(ontVersion.format)
-
-    // format=!md is our mechanism to request for metadata
-
-    if (reqFormat == "!md") {
-      // include 'versions' even when a particular version is requested
-      val versionsOpt = Some(ont.sortedVersionKeys)
-      val ores = ontService.getOntologySummaryResult(ont, ontVersion, version,
-        privileged = checkIsAdminOrExtra,
-        includeMetadata = true,
-        versionsOpt)
-      grater[OntologySummaryResult].toCompactJSON(ores)
-    }
-    else {
-      val (file, actualFormat) = getOntologyFile(ont.uri, version, reqFormat)
-      contentType = formats(actualFormat)
-      file
-    }
-  }
-
-  private def resolveTermUri(uri: String): String = {
-    val formatOpt = params.get("format")
-    tsService.resolveTermUri(uri, formatOpt, acceptHeader) match {
-      case Right(TermResponse(result, resultContentType)) =>
-        contentType = resultContentType
-        result
-
-      case Left(exc) =>
-        exc match {
-          case NoSuchTermFormat(_, format) => error(406, s"invalid format=$format")
-          case CannotQueryTerm(_, msg)     => error(400, s"error querying uri=$uri: $msg")
-          case _                           => error500(exc)
-        }
     }
   }
 
