@@ -20,7 +20,7 @@ import scala.util.{Failure, Success, Try}
   * Includes mechanism to dispatch the UI (ORR Portal) such that the
   * application context is preserved in the browser's location address).
   */
-class SelfHostedOntController(implicit setup: Setup, ontService: OntService) extends BaseController
+class SelfHostedOntController(implicit setup: Setup, ontService: OntService) extends BaseOntController
     with Logging {
 
   get("/(.*)".r) {
@@ -172,21 +172,4 @@ class SelfHostedOntController(implicit setup: Setup, ontService: OntService) ext
       file
     }
   }
-
-  private def resolveOntologyVersion(uri: String, versionOpt: Option[String]): (Ontology, OntologyVersion, String) = {
-    Try(ontService.resolveOntologyVersion(uri, versionOpt)) match {
-      case Success(res)         => res
-      case Failure(exc: NoSuch) => error(404, exc.details)
-      case Failure(exc)         => error500(exc)
-    }
-  }
-
-  private def getOntologyFile(uri: String, version: String, reqFormat: String): (File, String) = {
-    Try(ontService.getOntologyFile(uri, version, reqFormat)) match {
-      case Success(res)                   => res
-      case Failure(exc: NoSuchOntFormat)  => error(406, exc.details)
-      case Failure(exc)                   => error500(exc)
-    }
-  }
-
 }
