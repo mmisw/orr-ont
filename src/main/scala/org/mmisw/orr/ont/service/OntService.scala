@@ -399,11 +399,15 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     val update = ont.copy(versions = ont.versions - version)
     //logger.info(s"update: $update")
 
-    Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
-      case Success(result) =>
-        OntologyRegistrationResult(uri, version = Some(version), removed = Some(DateTime.now())) //TODO
+    if (update.versions.isEmpty)
+      doDeleteOntology(ont)
+    else {
+      Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
+        case Success(result) =>
+          OntologyRegistrationResult(uri, version = Some(version), removed = Some(DateTime.now())) //TODO
 
-      case Failure(exc)  => throw CannotDeleteOntologyVersion(uri, version, exc.getMessage)
+        case Failure(exc)  => throw CannotDeleteOntologyVersion(uri, version, exc.getMessage)
+      }
     }
   }
 
@@ -418,12 +422,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     if (doVerifyOwner) verifyOwner(userName, ont)
 
-    Try(ontDAO.remove(ont, WriteConcern.Safe)) match {
-      case Success(result) =>
-        OntologyRegistrationResult(uri, removed = Some(DateTime.now())) //TODO
-
-      case Failure(exc)  => throw CannotDeleteOntology(uri, exc.getMessage)
-    }
+    doDeleteOntology(ont)
   }
 
   /**
@@ -432,6 +431,15 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   def deleteAll() = ontDAO.remove(MongoDBObject())
 
   ///////////////////////////////////////////////////////////////////////////
+
+  private def doDeleteOntology(ont: Ontology) = {
+    Try(ontDAO.remove(ont, WriteConcern.Safe)) match {
+      case Success(result) =>
+        OntologyRegistrationResult(ont.uri, removed = Some(DateTime.now())) //TODO
+
+      case Failure(exc)  => throw CannotDeleteOntology(ont.uri, exc.getMessage)
+    }
+  }
 
   /**
    * Verifies the user can make changes or removals wrt to the given ont.

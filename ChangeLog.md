@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-06-18: 0.3.2:
+  - delete ontology entry when un-registering its sole version
+  
 * 2016-06-16: 0.3.2:
   - \#14 "dispatch term request"
     - based on SPARQL query for the properties of the term.
