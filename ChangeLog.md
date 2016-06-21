@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-06-21: 
+  - v. 3.0.0-alpha
+  
 * 2016-06-18: 0.3.2:
   - delete ontology entry when un-registering its sole version
   
