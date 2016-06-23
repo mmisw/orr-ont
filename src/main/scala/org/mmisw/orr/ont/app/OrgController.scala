@@ -100,7 +100,7 @@ class OrgController(implicit setup: Setup) extends BaseController
   }
 
   def deleteOrg(orgName: String) = {
-    Try(orgService.getOrg(orgName)) match {
+    Try(orgService.deleteOrg(orgName)) match {
       case Success(res)            => res
       case Failure(exc: NoSuchOrg) => error(404, s"'$orgName' organization is not registered")
       case Failure(exc)            => error500(exc)

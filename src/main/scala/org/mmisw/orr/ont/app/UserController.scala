@@ -349,7 +349,7 @@ class UserController(implicit setup: Setup) extends BaseController
   }
 
   def deleteUser(user: db.User) = {
-    Try(usersDAO.remove(user, WriteConcern.Safe)) match {
+    Try(usersDAO.removeById(user.userName, WriteConcern.Safe)) match {
       case Success(result) => UserResult(user.userName, removed = Some(DateTime.now()))
       case Failure(exc)    => error500(exc)
     }

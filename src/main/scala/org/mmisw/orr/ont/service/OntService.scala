@@ -399,11 +399,14 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     val update = ont.copy(versions = ont.versions - version)
     //logger.info(s"update: $update")
 
-    if (update.versions.isEmpty)
+    if (update.versions.isEmpty) {
       doDeleteOntology(ont)
+    }
     else {
+      logger.debug(s"deleteOntologyVersion: uri=$uri version=$version")
       Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
         case Success(result) =>
+          logger.debug(s"deleteOntologyVersion: success: result=$result")
           OntologyRegistrationResult(uri, version = Some(version), removed = Some(DateTime.now())) //TODO
 
         case Failure(exc)  => throw CannotDeleteOntologyVersion(uri, version, exc.getMessage)
@@ -433,8 +436,10 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   ///////////////////////////////////////////////////////////////////////////
 
   private def doDeleteOntology(ont: Ontology) = {
-    Try(ontDAO.remove(ont, WriteConcern.Safe)) match {
+    logger.debug(s"doDeleteOntology: ont.uri=${ont.uri}")
+    Try(ontDAO.removeById(ont.uri, WriteConcern.Safe)) match {
       case Success(result) =>
+        logger.debug(s"doDeleteOntology: success: result=$result")
         OntologyRegistrationResult(ont.uri, removed = Some(DateTime.now())) //TODO
 
       case Failure(exc)  => throw CannotDeleteOntology(ont.uri, exc.getMessage)

@@ -94,9 +94,8 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
   }
 
   def deleteOrg(orgName: String): OrgResult = {
-    val org = getOrg(orgName)
-
-    Try(orgsDAO.remove(org, WriteConcern.Safe)) match {
+    getOrg(orgName)
+    Try(orgsDAO.removeById(orgName, WriteConcern.Safe)) match {
       case Success(result) =>
         OrgResult(orgName, removed = Some(DateTime.now())) //TODO
 

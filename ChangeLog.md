@@ -1,5 +1,9 @@
 ## change log ##
 
+* 2016-06-22: 3.0.1-alpha
+  - docker container: deploy as ont3.war
+  - bug fix is some DAO delete calls: use removeById(<the-id>)  (instead of remove(<some-query-object>)) 
+
 * 2016-06-21: 
   - v. 3.0.0-alpha
   

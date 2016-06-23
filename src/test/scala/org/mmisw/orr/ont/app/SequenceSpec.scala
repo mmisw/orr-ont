@@ -945,7 +945,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     }
   }
 
-  "Delete a whole ont entry (DELETE /org/)" should {
+  "Delete a whole ont entry (DELETE /ont/)" should {
     "fail with no credentials" in {
       val map = Map("uri" -> ont1Uri,
         "userName" -> userName
