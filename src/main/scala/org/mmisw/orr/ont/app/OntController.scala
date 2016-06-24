@@ -152,7 +152,6 @@ class OntController(implicit setup: Setup,
     val vis = osr.visibility.getOrElse(OntVisibility.owner)
     vis match {
       case OntVisibility.public => true
-      case OntVisibility.user   => authenticatedUser.isDefined
       case OntVisibility.owner  =>
         if (authenticatedUser.isEmpty) false
         else osr.ownerName match {

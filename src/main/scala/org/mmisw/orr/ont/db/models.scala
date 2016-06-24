@@ -13,7 +13,7 @@ case class Ontology(
 }
 
 object OntVisibility extends Enumeration {
-  val owner, user, public = Value
+  val owner, public = Value
 }
 
 case class OntologyVersion(

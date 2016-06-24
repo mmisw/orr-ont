@@ -1,6 +1,8 @@
 ## change log ##
 
 * 2016-06-23: 3.0.2-alpha
+  - resolve #10 "capture visibility attribute for ontologies" 
+    Only "owner" and "public" now handled.
   - capture registeredBy and updatedBy in Organization model
   
 * 2016-06-22: 3.0.1-alpha
