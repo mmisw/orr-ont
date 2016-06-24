@@ -26,7 +26,7 @@ class OrgController(implicit setup: Setup) extends BaseController
   }
 
   post("/") {
-    verifyIsAdminOrExtra()
+    val authUser = verifyIsAdminOrExtra()
     val map = body()
 
     logger.info(s"POST body = $map")
@@ -35,14 +35,15 @@ class OrgController(implicit setup: Setup) extends BaseController
     val ontUri = getString(map, "ontUri")
     val members = getSeq(map, "members").toSet
 
-    Created(createOrg(orgName, name, members, ontUri))
+    val org = Organization(orgName, name, ontUri, members, registeredBy = Some(authUser.userName))
+    Created(createOrg(org))
   }
 
   put("/:orgName") {
     val orgName = require(params, "orgName")
     val org = getOrg(orgName)
 
-    verifyIsUserOrAdminOrExtra(org.members)
+    val authUser = verifyIsUserOrAdminOrExtra(org.members)
 
     val map = body()
 
@@ -58,7 +59,8 @@ class OrgController(implicit setup: Setup) extends BaseController
 
     Try(orgService.updateOrg(orgName, membersOpt = membersOpt,
       name = nameOpt, ontUri = ontUriOpt,
-      updated = Some(DateTime.now())
+      updated = Some(DateTime.now()),
+      updatedBy = Some(authUser.userName)
     )) match {
       case Success(res)  => res
       case Failure(exc)  => error500(exc)
@@ -77,13 +79,11 @@ class OrgController(implicit setup: Setup) extends BaseController
 
   ///////////////////////////////////////////////////////////////////////////
 
-  def createOrg(orgName: String, name: String,
-                members: Set[String],
-                ontUri: Option[String] = None) = {
+  def createOrg(org: Organization) = {
 
-    members foreach verifyUser
+    org.members foreach verifyUser
 
-    Try(orgService.createOrg(orgName, name, members, ontUri)) match {
+    Try(orgService.createOrg(org)) match {
       case Success(res)                       => res
       case Failure(exc: OrgAlreadyRegistered) => error(409, exc.details)
       case Failure(exc: CannotInsertOrg)      => error500(exc)
@@ -116,7 +116,9 @@ class OrgController(implicit setup: Setup) extends BaseController
     if (checkIsUserOrAdminOrExtra(org.members)) {
       res = res.copy(
         registered  = Some(org.registered),
+        registeredBy= org.registeredBy,
         updated     = org.updated,
+        updatedBy   = org.updatedBy,
         members     = Some(org.members)
       )
     }

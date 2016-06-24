@@ -38,19 +38,15 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
     }
   }
 
-  def createOrg(orgName: String, name: String,
-                members: Set[String] = Set.empty,
-                ontUri: Option[String] = None) = {
-
+  def createOrg(org: Organization) = {
+    val orgName = org.orgName
     orgsDAO.findOneById(orgName) match {
       case None =>
         validateOrgName(orgName)
 
-        val org = Organization(orgName, name, ontUri, members)
-
         Try(orgsDAO.insert(org, WriteConcern.Safe)) match {
           case Success(_) =>
-            OrgResult(orgName, registered = Some(org.registered))
+            OrgResult(orgName, registered = Some(org.registered), registeredBy = org.registeredBy)
 
           case Failure(exc) => throw CannotInsertOrg(orgName, exc.getMessage)
               // perhaps duplicate key in concurrent registration
@@ -65,7 +61,8 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
                 name: Option[String] = None,
                 ontUri: Option[String] = None,
                 registered: Option[DateTime] = None,
-                updated: Option[DateTime] = None
+                updated: Option[DateTime] = None,
+                updatedBy: Option[String] = None
                ): OrgResult = {
 
     var update = getOrg(orgName)
@@ -79,7 +76,10 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
     ontUri foreach {d => update = update.copy(ontUri = Some(d))}
 
     registered foreach {d => update = update.copy(registered = d)}
-    updated    foreach {d => update = update.copy(updated = Some(d))}
+    updated    foreach {d =>
+      update = update.copy(updated = Some(d))
+      updatedBy foreach {by => update = update.copy(updatedBy = updatedBy)}
+    }
 
     Try(orgsDAO.update(MongoDBObject("_id" -> orgName), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
@@ -87,7 +87,9 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
           ontUri = update.ontUri,
           name = Option(update.name),
           members = Option(update.members),
-          updated = update.updated)
+          updated = update.updated,
+          updatedBy = updatedBy
+        )
 
       case Failure(exc)  => throw CannotUpdateOrg(orgName, exc.getMessage)
     }

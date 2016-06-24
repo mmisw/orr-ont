@@ -31,10 +31,14 @@ case class OrgResult(
             orgName:     String,
             name:        Option[String] = None,
             ontUri:      Option[String] = None,
+            members:     Option[Set[String]] = None,
             registered:  Option[DateTime] = None,
+            registeredBy:Option[String] = None,
             updated:     Option[DateTime] = None,
+            updatedBy:   Option[String] = None,
             removed:     Option[DateTime] = None,
-            members:     Option[Set[String]] = None)
+            removedBy:   Option[String] = None
+            )
 
 case class OntologyRegistrationResult(
             uri:         String,

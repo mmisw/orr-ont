@@ -81,16 +81,16 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
     case None    => false
   }
 
-  protected def verifyIsAdminOrExtra(): Unit = {
+  protected def verifyIsAdminOrExtra(): AuthUser = {
     val u = authenticatedUser.getOrElse(halt(401, s"unauthorized"))
     val ok = "admin" == u.userName || extra.contains(u.userName)
-    if (!ok) halt(403, s"unauthorized")
+    if (ok) u else halt(403, s"unauthorized")
   }
 
-  protected def verifyIsUserOrAdminOrExtra(userNames: Set[String]): Unit = {
+  protected def verifyIsUserOrAdminOrExtra(userNames: Set[String]): AuthUser = {
     val u = authenticatedUser.getOrElse(halt(401, s"unauthorized"))
     val ok = userNames.contains(u.userName) || "admin" == u.userName || extra.contains(u.userName)
-    if (!ok) halt(403, s"unauthorized")
+    if (ok) u else halt(403, s"unauthorized")
   }
 
 //  ///////////////////////////////////////////////////////////////////////////

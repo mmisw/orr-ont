@@ -7,7 +7,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.Setup
-import org.mmisw.orr.ont.db.OntVisibility
+import org.mmisw.orr.ont.db.{OntVisibility, Organization}
 import org.mmisw.orr.ont.service.{OntFileWriter, OntService, OrgService, UserService}
 import org.mmisw.orr.ont.swld.ontUtil
 import org.mmisw.orr.ont.util.Emailer
@@ -100,7 +100,7 @@ object AquaImporter extends App with Logging {
     orgNames foreach { orgName =>
       if (!orgService.existsOrg(orgName)) {
         println(s"\t$orgName")
-        orgService.createOrg(orgName, orgName)
+        orgService.createOrg(Organization(orgName, orgName))
       }
     }
   }

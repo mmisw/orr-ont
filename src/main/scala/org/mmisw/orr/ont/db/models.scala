@@ -51,4 +51,7 @@ case class Organization(
             ontUri:                Option[String] = None,
             members:               Set[String] = Set.empty,
             registered:            DateTime = DateTime.now(),
-            updated:               Option[DateTime] = None)
+            registeredBy:          Option[String] = None,    // userName
+            updated:               Option[DateTime] = None,
+            updatedBy:             Option[String] = None     // userName
+           )
