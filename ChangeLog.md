@@ -1,6 +1,9 @@
 ## change log ##
 
 * 2016-06-26: 3.0.2-alpha
+  - fix #19 "uploading of OWX ontology with unresolvable Imports fails".
+    TODO: remove deprecated call with some newer version of the OWL API
+  
   - fix #18 "gcoos Parameter.owl".
 	Actually the file extension is not a issue at all. But the file was uploaded with the "OWL/XML" 
 	format option but the "RDF/XML" would have been more appropriate. 

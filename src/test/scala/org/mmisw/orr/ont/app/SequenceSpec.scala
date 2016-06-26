@@ -455,6 +455,26 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     }
   }
 
+  "Upload OWL/XML file with unresolvable Imports (POST /ont/upload)" should {
+    val owxFile = new File("src/test/resources/example-with-non-exisiting-import.owx")
+    "succeed and return expected info" in {
+      post("/ont/upload", Map("format" -> "owx", "visibility" -> "public"),
+        Map("file" -> owxFile), headers = userHeaders
+      ) {
+        status must_== 200
+        val b = body
+        println(s"upload response body=$b")
+        val uploadedFileInfo = parse(b).extract[UploadedFileInfo]
+        println(s"uploadedFileInfo=$uploadedFileInfo")
+        uploadedFileInfo.userName must_== userName
+        uploadedFileInfo.format must_== "owx"
+        val possibleOntologyUris = uploadedFileInfo.possibleOntologyUris
+        val uris = possibleOntologyUris.keySet
+        uris must_== Set("http://example.com/myOntology")
+      }
+    }
+  }
+
   "Register a new ont (POST /ont) whose file has been previously uploaded" should {
     "succeed with user credentials" in {
       val uploadedOntUri = ont1Uri + "_uploaded"

@@ -1,11 +1,11 @@
 package org.mmisw.orr.ont.swld
 
-import java.io.{IOException, FileOutputStream, File}
+import java.io.{File, FileOutputStream, IOException}
 
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.semanticweb.owlapi.apibinding.OWLManager
-import org.semanticweb.owlapi.io.RDFXMLOntologyFormat
-import org.semanticweb.owlapi.model.{OWLOntology, OWLOntologyManager}
+import org.semanticweb.owlapi.io.{FileDocumentSource, RDFXMLOntologyFormat}
+import org.semanticweb.owlapi.model.{MissingImportHandlingStrategy, OWLOntology, OWLOntologyLoaderConfiguration, OWLOntologyManager}
 
 /**
   * Converted from org.mmisw.orrclient.core.owl.OwlApiHelper in old mmiorr
@@ -20,7 +20,14 @@ object owlApiHelper extends AnyRef with Logging {
     logger.debug("owlApiHelper.loadOntModel: loading file=" + file)
 
     val m: OWLOntologyManager = OWLManager.createOWLOntologyManager
-    val o: OWLOntology = m.loadOntologyFromOntologyDocument(file)
+    val conf = new OWLOntologyLoaderConfiguration
+    conf.setMissingImportHandlingStrategy(MissingImportHandlingStrategy.SILENT)
+    val docSource = new FileDocumentSource(file)
+    // Note: also calling the following deprecated method because the above mechanism
+    // doesn't seem to be honored with currently used version of the OWL API:
+    // TODO remove this call with some newer version of the OWL API
+    m.setSilentMissingImportsHandling(true)
+    val o: OWLOntology = m.loadOntologyFromOntologyDocument(docSource, conf)
 
     // create corresponding conversion to RDF/XML and load that file with
     // jena to return the expected OntModel
