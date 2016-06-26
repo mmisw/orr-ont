@@ -1,5 +1,15 @@
 ## change log ##
 
+* 2016-06-26: 3.0.2-alpha
+  - fix #18 "gcoos Parameter.owl".
+	Actually the file extension is not a issue at all. But the file was uploaded with the "OWL/XML" 
+	format option but the "RDF/XML" would have been more appropriate. 
+	This is not explained in the orr-portal; in particular the ".owl" extension for files that are 
+	actually in RDF/XML if often used, so, at time of uploading, users may tend to pick the "OWL/XML" option.
+	The fix here was just to add "owl" to ontUtil.storedFormats, which is used as a basis 
+	for conversion by OntService.getOntologyFile when resolving a new format not yet cached. 
+
+
 * 2016-06-23: 3.0.2-alpha
   - resolve #10 "capture visibility attribute for ontologies" 
     Only "owner" and "public" now handled.

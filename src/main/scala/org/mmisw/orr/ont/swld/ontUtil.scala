@@ -55,7 +55,7 @@ object ontUtil extends AnyRef with Logging {
   }
 
   // TODO review along with mapping in storedFormat method
-  val storedFormats = List("rdf", "n3", "owx", "jsonld", "v2r", "m2r")
+  val storedFormats = List("rdf", "owl", "n3", "owx", "jsonld", "v2r", "m2r")
 
   // for the files actually stored
   def storedFormat(format: String) = format.toLowerCase match {
