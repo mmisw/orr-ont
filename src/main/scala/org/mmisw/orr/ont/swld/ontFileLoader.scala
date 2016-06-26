@@ -10,6 +10,8 @@ import org.mmisw.orr.ont.util.{Util2, XmlBaseExtractor}
 import org.mmisw.orr.ont.vocabulary.Skos
 import org.xml.sax.InputSource
 
+import scala.annotation.tailrec
+
 
 case class OntModelLoadedResult(file: File,
                                 format: String,
@@ -20,11 +22,19 @@ case class PossibleOntologyInfo(explanations: List[String],
                                 metadata: Map[String,List[String]])
 
 /**
-  * Based on org.mmisw.orrclient.core.util.TempOntologyHelper.getTempOntologyInfo
+  * Initially based on org.mmisw.orrclient.core.util.TempOntologyHelper.getTempOntologyInfo
   */
 object ontFileLoader extends AnyRef with Logging {
 
   def loadOntModel(file: File, fileType: String): OntModelLoadedResult = {
+    if (fileType == "_guess") {
+      loadOntModelGuessFormat(file).getOrElse(throw new RuntimeException("Could not guess fileType"))
+    }
+    else
+      loadOntModelGivenType(file, fileType)
+  }
+
+  private def loadOntModelGivenType(file: File, fileType: String): OntModelLoadedResult = {
     val lang = ontUtil.format2lang(fileType).getOrElse(
       throw new RuntimeException(s"unrecognized fileType=$fileType")
     )
@@ -51,6 +61,25 @@ object ontFileLoader extends AnyRef with Logging {
       logger.warn(error)
       throw new RuntimeException(error)
     }
+  }
+
+  private def loadOntModelGuessFormat(file: File): Option[OntModelLoadedResult] = {
+    @tailrec
+    def rec(fileTypeList: List[String]): Option[OntModelLoadedResult] = fileTypeList match {
+      case Nil => None
+      case fileType :: rest =>
+        logger.debug(s"loadOntModelGuessFormat: trying $fileType")
+        try {
+          Some(loadOntModelGivenType(file, fileType))
+        }
+        catch {
+          case e: Exception =>
+            logger.debug(s"loadOntModelGuessFormat: trying $fileType threw ${e.getClass.getName}: ${e.getMessage}")
+            rec(rest)
+        }
+    }
+    rec(List("rdf", "n3", "nt", "turtle", "owx"))
+    // Note: preference for Jena handling, so we put "owx" (ie., which uses OWL API) at the end.
   }
 
   def getPossibleOntologyUris(model: OntModel, file: File): Map[String, PossibleOntologyInfo] = {

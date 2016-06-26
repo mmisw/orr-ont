@@ -1,0 +1,209 @@
+@prefix dc:      <http://purl.org/dc/elements/1.1/> .
+@prefix :        <http://mmisw.org/ont/ioos/core_variable/> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix omvmmi:  <http://mmisw.org/ont/mmi/20081020/ontologyMetadata/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix omv:     <http://omv.ontoware.org/2005/05/ontology#> .
+
+:optical_properties
+      a       :Core_Variable ;
+      rdfs:label "optical_properties" ;
+      :definition "Optical properties" ;
+      :name   "optical_properties" .
+
+:fish_species
+      a       :Core_Variable ;
+      rdfs:label "fish_species" ;
+      :definition "Fish species" ;
+      :name   "fish_species" .
+
+:bathymetry
+      a       :Core_Variable ;
+      rdfs:label "bathymetry" ;
+      :definition "Bathymetry" ;
+      :name   "bathymetry" .
+
+:dissolved_oxygen
+      a       :Core_Variable ;
+      rdfs:label "dissolved_oxygen" ;
+      :definition "Dissolved oxygen" ;
+      :name   "dissolved_oxygen" .
+
+:heat_flux
+      a       :Core_Variable ;
+      rdfs:label "heat_flux" ;
+      :definition "Heat flux" ;
+      :name   "heat_flux" .
+
+:phytoplankton_species
+      a       :Core_Variable ;
+      rdfs:label "phytoplankton_species" ;
+      :definition "Phytoplankton species" ;
+      :name   "phytoplankton_species" .
+
+<http://mmisw.org/ont/ioos/core_variable>
+      a       owl:Ontology ;
+      omvmmi:contact "SECOORA" ;
+      omvmmi:contactRole "ontology producer" ;
+      omvmmi:creditRequired
+              "not specified" ;
+      omvmmi:hasContentCreator
+              "Sara Haines" ;
+      omvmmi:hasResourceType
+              "keyword" ;
+      omvmmi:origMaintainerCode
+              "ioos" ;
+      omvmmi:origVocManager
+              "SECOORA" ;
+      omvmmi:shortNameUri "http://mmisw.org/ont/mmi/resourcetype/keyword" ;
+      omvmmi:temporaryMmiRole
+              "ontology producer" ;
+      omv:acronym "core_variable" ;
+      omv:creationDate "2016-05-18T23:46:22+0000" ;
+      omv:description "IOOS Core Variables in Table 3-3, in U.S. Integrated Ocean Observing System: A Blueprint for Full Capability Ver 1.0 (Nov 2010). http://www.ioos.gov/library/us_ioos_blueprint_ver1.pdf. Accessed July 31, 2012." ;
+      omv:hasCreator "Sara Haines" ;
+      omv:name "IOOS Core Variable Vocabulary" ;
+      omv:reference "IOOS Core Variables in Table 3-3, in U.S. Integrated Ocean Observing System: A Blueprint for Full Capability Ver 1.0 (Nov 2010). http://www.ioos.gov/library/us_ioos_blueprint_ver1.pdf. Accessed July 31, 2012." ;
+      omv:uri "http://mmisw.org/ont/ioos/core_variable" ;
+      omv:usedOntologyEngineeringTool
+              omvmmi:voc2rdf ;
+      omv:version "20130205T195046" ;
+      dc:creator "Sara Haines" ;
+      dc:date "2013-02-05T19:50:46+0000" ;
+      dc:description "IOOS Core Variables in Table 3-3, in U.S. Integrated Ocean Observing System: A Blueprint for Full Capability Ver 1.0 (Nov 2010). http://www.ioos.gov/library/us_ioos_blueprint_ver1.pdf. Accessed July 31, 2012." .
+
+:name
+      a       owl:DatatypeProperty ;
+      rdfs:domain :Core_Variable ;
+      rdfs:label "name" .
+
+:surface_waves
+      a       :Core_Variable ;
+      rdfs:label "surface_waves" ;
+      :definition "Surface waves" ;
+      :name   "surface_waves" .
+
+:ice_distribution
+      a       :Core_Variable ;
+      rdfs:label "ice_distribution" ;
+      :definition "Ice distribution" ;
+      :name   "ice_distribution" .
+
+:fish_abundance
+      a       :Core_Variable ;
+      rdfs:label "fish_abundance" ;
+      :definition "Fish abundance" ;
+      :name   "fish_abundance" .
+
+:salinity
+      a       :Core_Variable ;
+      rdfs:label "salinity" ;
+      :definition "Salinity" ;
+      :name   "salinity" .
+
+:bottom_character
+      a       :Core_Variable ;
+      rdfs:label "bottom_character" ;
+      :definition "Bottom character" ;
+      :name   "bottom_character" .
+
+:wind
+      a       :Core_Variable ;
+      rdfs:label "wind" ;
+      :definition "Wind Speed and Direction" ;
+      :name   "wind" .
+
+:zooplankton_abundance
+      a       :Core_Variable ;
+      rdfs:label "zooplankton_abundance" ;
+      :definition "Zooplankton abundance" ;
+      :name   "zooplankton_abundance" .
+
+:stream_flow
+      a       :Core_Variable ;
+      rdfs:label "stream_flow" ;
+      :definition "Stream flow" ;
+      :name   "stream_flow" .
+
+:dissolved_nutrients
+      a       :Core_Variable ;
+      rdfs:label "dissolved_nutrients" ;
+      :definition "Dissolved Nutrients" ;
+      :name   "dissolved_nutrients" .
+
+:definition
+      a       owl:DatatypeProperty ;
+      rdfs:domain :Core_Variable ;
+      rdfs:label "definition" .
+
+:zooplankton_species
+      a       :Core_Variable ;
+      rdfs:label "zooplankton_species" ;
+      :definition "Zooplankton species" ;
+      :name   "zooplankton_species" .
+
+:acidity
+      a       :Core_Variable ;
+      rdfs:label "acidity" ;
+      :definition "Acidity" ;
+      :name   "acidity" .
+
+:pathogens
+      a       :Core_Variable ;
+      rdfs:label "pathogens" ;
+      :definition "Pathogens" ;
+      :name   "pathogens" .
+
+:temperature
+      a       :Core_Variable ;
+      rdfs:label "temperature" ;
+      :definition "Temperature" ;
+      :name   "temperature" .
+
+:pco2
+      a       :Core_Variable ;
+      rdfs:label "pco2" ;
+      :definition "Partial pressure of carbon dioxide" ;
+      :name   "pco2" .
+
+:Core_Variable
+      a       owl:Class ;
+      rdfs:label "Core_Variable" .
+
+:contaminants
+      a       :Core_Variable ;
+      rdfs:label "contaminants" ;
+      :definition "Contaminants" ;
+      :name   "contaminants" .
+
+:surface_currents
+      a       :Core_Variable ;
+      rdfs:label "surface_currents" ;
+      :definition "Surface currents" ;
+      :name   "surface_currents" .
+
+:cdom
+      a       :Core_Variable ;
+      rdfs:label "cdom" ;
+      :definition "Color dissolved organic matter" ;
+      :name   "cdom" .
+
+:ocean_color
+      a       :Core_Variable ;
+      rdfs:label "ocean_color" ;
+      :definition "Ocean color" ;
+      :name   "ocean_color" .
+
+:sea_level
+      a       :Core_Variable ;
+      rdfs:label "sea_level" ;
+      :definition "Sea level" ;
+      :name   "sea_level" .
+
+:total_suspended_matter
+      a       :Core_Variable ;
+      rdfs:label "total_suspended_matter" ;
+      :definition "Total suspended matter" ;
+      :name   "total_suspended_matter" .

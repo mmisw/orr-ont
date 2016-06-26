@@ -1,6 +1,9 @@
 ## change log ##
 
 * 2016-06-26: 3.0.2-alpha
+  - accept "_guess" as format in ontFileLoader.loadOntModel.
+    The strategy is simple (try some formats in sequence) and could be improved.
+  
   - fix #19 "uploading of OWX ontology with unresolvable Imports fails".
     TODO: remove deprecated call with some newer version of the OWL API
   
