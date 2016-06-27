@@ -1,6 +1,13 @@
 ## change log ##
 
 * 2016-06-26: 3.0.2-alpha
+  - to facilitate docker image creation a bit (this will be improved later, perhaps all
+    scripted from sbt), add bin/dockerize, and use Dockerfile.in as template to generate actual version.
+    	
+    	sbt7 package
+    	bin/dockerize.sh 3.0.2-alpha
+    	docker push mmisw/orr-ont
+  
   - accept "_guess" as format in ontFileLoader.loadOntModel.
     The strategy is simple (try some formats in sequence) and could be improved.
   
