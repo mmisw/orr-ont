@@ -25,6 +25,9 @@ public class Util2 {
       "RDF/XML",
       "N3",
       "N-TRIPLE",
+      "N-TRIPLES",
+      "JSON-LD",
+      "RDF/JSON",
       "TURTLE"
   ));
 
@@ -33,7 +36,7 @@ public class Util2 {
    */
   public static OntModel loadOntModel(File file, String lang) throws IOException {
 
-    if ( lang != null && ! JENA_LANGS.contains(lang) ) {
+    if ( lang != null && ! JENA_LANGS.contains(lang.toUpperCase()) ) {
       throw new IllegalArgumentException("lang argument must be null or one of " +JENA_LANGS);
     }
 

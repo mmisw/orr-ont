@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-07-03: 3.0.3-alpha
+  - expand list of accepted formats for upload to: "rdf", "n3", "nt", "ttl", "rj", "jsonld", "owx"
+  
 * 2016-06-26: 3.0.2-alpha
   - to facilitate docker image creation a bit (this will be improved later, perhaps all
     scripted from sbt), add bin/dockerize, and use Dockerfile.in as template to generate actual version.

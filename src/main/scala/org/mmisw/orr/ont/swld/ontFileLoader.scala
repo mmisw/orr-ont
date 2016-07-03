@@ -41,7 +41,7 @@ object ontFileLoader extends AnyRef with Logging {
 
     logger.debug(s"ontFileLoader.loadOntModel: lang=$lang")
 
-    if (Util2.JENA_LANGS.contains(lang)) {
+    if (Util2.JENA_LANGS.contains(lang.toUpperCase)) {
       OntModelLoadedResult(file, fileType, Util2.loadOntModel(file, lang))
     }
     else if ("OWX" == lang) {
@@ -78,7 +78,7 @@ object ontFileLoader extends AnyRef with Logging {
             rec(rest)
         }
     }
-    rec(List("rdf", "n3", "nt", "turtle", "owx"))
+    rec(List("rdf", "n3", "nt", "ttl", "rj", "jsonld", "owx"))
     // Note: preference for Jena handling, so we put "owx" (ie., which uses OWL API) at the end.
   }
 
