@@ -254,7 +254,8 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                      userName:       String,
                      ownerName:      String,
                      ontFileWriter:  OntFileWriter,
-                     contact_name:   Option[String] = None  // for AquaImporter
+                     contact_name:   Option[String] = None,  // for AquaImporter
+                     ownerAsAuthorName: Option[String] = None
                     ) = {
 
     if (ontDAO.findOneById(uri).isDefined) throw OntologyAlreadyRegistered(uri)
@@ -263,7 +264,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     val md = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
 
-    val authorOpt: Option[String] = contact_name orElse ontUtil.extractAuthor(md)
+    val authorOpt: Option[String] = contact_name orElse ontUtil.extractAuthor(md) orElse ownerAsAuthorName
 
     logger.debug(s"createOntology: md=$md  authorOpt=$authorOpt")
 
@@ -313,7 +314,8 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     val md = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
 
-    val authorOpt: Option[String] = contact_name orElse ontUtil.extractAuthor(md)
+    val authorOpt: Option[String] = contact_name orElse ontUtil.extractAuthor(md) orElse
+      ont.sortedVersionKeys.headOption.flatMap(latest => ont.versions(latest).author)
 
     logger.debug(s"createOntologyVersion: md=$md  authorOpt=$authorOpt")
 

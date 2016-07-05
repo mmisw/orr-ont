@@ -88,9 +88,13 @@ class OntController(implicit setup: Setup,
     val orgNameOpt     = getParam("orgName")
     val user           = verifyUser(getParam("userName"))
 
-    val ownerName = orgNameOpt match {
-      case Some(orgName) => verifyOrgName(orgName)
-      case None          => "~" + user.userName
+    val (ownerName, ownerAsAuthorName) = orgNameOpt match {
+      case Some(orgName) =>
+        val org = verifyOrgName(orgName)
+        (orgName, s"${org.name}")
+
+      case None  =>
+        ("~" + user.userName, s"${user.firstName} ${user.lastName}")
     }
 
     // visibility will be "owner" if not explicitly given
@@ -106,7 +110,7 @@ class OntController(implicit setup: Setup,
 
     Created(createOntology(uri, originalUriOpt, name, version,
       versionVisibility, version_status,
-      date, ontFileWriter, ownerName))
+      date, ontFileWriter, ownerName, ownerAsAuthorName = Some(ownerAsAuthorName)))
   }
 
   /*
@@ -173,11 +177,11 @@ class OntController(implicit setup: Setup,
     }
   }
 
-  private def verifyOrgName(orgName: String): String = {
+  private def verifyOrgName(orgName: String): db.Organization = {
     orgsDAO.findOneById(orgName) match {
       case Some(org) =>
         verifyIsUserOrAdminOrExtra(org.members)
-        orgName
+        org
 
       case None => bug(s"org '$orgName' should exist")
     }
@@ -274,7 +278,8 @@ class OntController(implicit setup: Setup,
                              version_status:  Option[String],
                              date:            String,
                              ontFileWriter:   OntFileWriter,
-                             ownerName:       String
+                             ownerName:       String,
+                             ownerAsAuthorName: Option[String] = None
                             ) = {
     val user = requireAuthenticatedUser
     logger.debug(s"""
@@ -297,7 +302,8 @@ class OntController(implicit setup: Setup,
           date = date,
           userName = user.userName,
           ownerName = ownerName,
-          ontFileWriter = ontFileWriter
+          ontFileWriter = ontFileWriter,
+          ownerAsAuthorName = ownerAsAuthorName
     )) match {
       case Success(ontologyResult) =>
         loadOntologyInTripleStore(uri, reload = false)

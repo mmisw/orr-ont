@@ -1,6 +1,9 @@
 ## change log ##
 
-* 2016-07-03: 3.0.3-alpha
+* 2016-07-05: 3.0.3-alpha
+  - for author attribute in ontology submission, if not in given contact_name or from ontology metadata: 
+  	- POST /ont: get author attribute from owner (org's name or user's first+last name)
+  	- PUT /ont:  get author attribute from previous version
   - expand list of accepted formats for upload to: "rdf", "n3", "nt", "ttl", "rj", "jsonld", "owx"
   
 * 2016-06-26: 3.0.2-alpha
