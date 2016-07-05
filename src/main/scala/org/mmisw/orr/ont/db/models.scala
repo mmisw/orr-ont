@@ -10,6 +10,8 @@ case class Ontology(
             versions:        Map[String, OntologyVersion] = Map.empty) {
 
   lazy val sortedVersionKeys = versions.keys.toList.sorted(Ordering[String].reverse)
+
+  lazy val latestVersion: Option[OntologyVersion] = sortedVersionKeys.headOption.map(latest => versions(latest))
 }
 
 object OntVisibility extends Enumeration {

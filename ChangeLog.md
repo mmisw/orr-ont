@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-07-05: 3.0.4-alpha
+  - createOntologyVersion: if name not given, take the name from previous version
+  
 * 2016-07-05: 3.0.3-alpha
   - for author attribute in ontology submission, if not in given contact_name or from ontology metadata: 
   	- POST /ont: get author attribute from owner (org's name or user's first+last name)

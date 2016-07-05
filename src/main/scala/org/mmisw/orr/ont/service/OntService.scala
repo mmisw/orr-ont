@@ -315,16 +315,17 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     val md = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
 
     val authorOpt: Option[String] = contact_name orElse ontUtil.extractAuthor(md) orElse
-      ont.sortedVersionKeys.headOption.flatMap(latest => ont.versions(latest).author)
+      ont.latestVersion.flatMap(_.author)
 
-    logger.debug(s"createOntologyVersion: md=$md  authorOpt=$authorOpt")
+    val name = nameOpt.getOrElse(ont.latestVersion.map(_.name).getOrElse(""))
+    logger.debug(s"createOntologyVersion: md=$md  authorOpt=$authorOpt  name=$name")
 
     // TODO remove these special entries in OntologyVersion
     val map = ontUtil.extractSomeProps(md)
     val ontologyTypeOpt = map.get("ontologyType")
     val resourceTypeOpt = map.get("resourceType")
 
-    var ontVersion = OntologyVersion("", userName, ontFileWriter.format, new DateTime(date),
+    val ontVersion = OntologyVersion(name, userName, ontFileWriter.format, new DateTime(date),
                                      visibility = Some(versionVisibility),
                                      status = version_status,
                                      author = authorOpt,
@@ -332,10 +333,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                                      ontologyType = ontologyTypeOpt,
                                      resourceType = resourceTypeOpt)
 
-    nameOpt foreach (name => ontVersion = ontVersion.copy(name = name))
-
-    var update = ont
-    update = update.copy(versions = ont.versions ++ Map(version -> ontVersion))
+    val update = ont.copy(versions = ont.versions ++ Map(version -> ontVersion))
 
     logger.info(s"update: $update")
 
