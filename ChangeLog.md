@@ -1,6 +1,7 @@
 ## change log ##
 
 * 2016-07-05: 3.0.4-alpha
+  - template.orront.conf: use env var with name ORR_ONT_BASE_DIR for consistency with other uses
   - createOntologyVersion: if name not given, take the name from previous version
   
 * 2016-07-05: 3.0.3-alpha
