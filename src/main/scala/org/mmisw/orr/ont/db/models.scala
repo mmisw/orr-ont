@@ -50,6 +50,7 @@ case class PwReset(
 case class Organization(
             @Key("_id") orgName:   String,
             name:                  String,
+            url:                   Option[String] = None,
             ontUri:                Option[String] = None,
             members:               Set[String] = Set.empty,
             registered:            DateTime = DateTime.now(),

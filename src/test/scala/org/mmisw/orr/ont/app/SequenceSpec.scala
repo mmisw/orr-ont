@@ -226,10 +226,12 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   }
 
   val orgName = newOrgName()
+  val orgUrl = s"http://example.org/$orgName"
   val orgMembers = Seq(userName)
   val orgMap =
       ("orgName"    -> orgName) ~
       ("name"       -> "some organization") ~
+      ("url"        -> orgUrl) ~
       ("ontUri"     -> "org.ontUri") ~
       ("members"    -> orgMembers)
 
@@ -259,6 +261,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         status must_== 201
         val res = parse(body).extract[OrgResult]
         res.orgName must_== orgName
+        res.url must beSome(orgUrl)
       }
     }
 
@@ -316,13 +319,15 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
 
     "succeed with member credentials" in {
       val headers = Map("content-type" -> "application/json", "Authorization" -> userCredentials)
-      val map = ("ontUri" -> "updated.ontUri") ~
-                ("members"   -> Seq(userName, userName2))
+      val map = ("url"     -> "http://updated.url") ~
+                ("ontUri"  -> "updated.ontUri") ~
+                ("members" -> Seq(userName, userName2))
       put(s"/org/$orgName", body = pretty(render(map)), headers = headers) {
         val respBody = body
         //println(s"respBody=\n  " + respBody.replace("\n", "\n  "))
         status must_== 200
         val res = parse(respBody).extract[OrgResult]
+        res.url must beSome("http://updated.url")
         res.ontUri must beSome("updated.ontUri")
         res.members must beSome
         res.members.get must haveSize(2)

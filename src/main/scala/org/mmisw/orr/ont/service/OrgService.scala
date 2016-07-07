@@ -46,7 +46,11 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
         Try(orgsDAO.insert(org, WriteConcern.Safe)) match {
           case Success(_) =>
-            OrgResult(orgName, registered = Some(org.registered), registeredBy = org.registeredBy)
+            OrgResult(orgName,
+              url = org.url,
+              ontUri = org.ontUri,
+              registered = Some(org.registered),
+              registeredBy = org.registeredBy)
 
           case Failure(exc) => throw CannotInsertOrg(orgName, exc.getMessage)
               // perhaps duplicate key in concurrent registration
@@ -59,6 +63,7 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
   def updateOrg(orgName: String,
                 membersOpt: Option[Set[String]] = None,
                 name: Option[String] = None,
+                url: Option[String] = None,
                 ontUri: Option[String] = None,
                 registered: Option[DateTime] = None,
                 updated: Option[DateTime] = None,
@@ -73,6 +78,7 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
     }
 
     name foreach {d => update = update.copy(name = d)}
+    url foreach {d => update = update.copy(url = Some(d))}
     ontUri foreach {d => update = update.copy(ontUri = Some(d))}
 
     registered foreach {d => update = update.copy(registered = d)}
@@ -84,6 +90,7 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
     Try(orgsDAO.update(MongoDBObject("_id" -> orgName), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
         OrgResult(orgName,
+          url = update.url,
           ontUri = update.ontUri,
           name = Option(update.name),
           members = Option(update.members),

@@ -32,10 +32,18 @@ class OrgController(implicit setup: Setup) extends BaseController
     logger.info(s"POST body = $map")
     val orgName = require(map, "orgName")
     val name = require(map, "name")
+    val url = getString(map, "url")
     val ontUri = getString(map, "ontUri")
     val members = getSeq(map, "members").toSet
 
-    val org = Organization(orgName, name, ontUri, members, registeredBy = Some(authUser.userName))
+    val org = Organization(
+      orgName,
+      name,
+      url = url,
+      ontUri = ontUri,
+      members = members,
+      registeredBy = Some(authUser.userName)
+    )
     Created(createOrg(org))
   }
 
@@ -48,6 +56,7 @@ class OrgController(implicit setup: Setup) extends BaseController
     val map = body()
 
     val nameOpt = getString(map, "name")
+    val urlOpt  = getString(map, "url")
     val ontUriOpt = getString(map, "ontUri")
 
     val membersOpt = if (map.contains("members")) {
@@ -57,8 +66,11 @@ class OrgController(implicit setup: Setup) extends BaseController
     }
     else None
 
-    Try(orgService.updateOrg(orgName, membersOpt = membersOpt,
-      name = nameOpt, ontUri = ontUriOpt,
+    Try(orgService.updateOrg(orgName,
+      membersOpt = membersOpt,
+      name = nameOpt,
+      url = urlOpt,
+      ontUri = ontUriOpt,
       updated = Some(DateTime.now()),
       updatedBy = Some(authUser.userName)
     )) match {
@@ -111,6 +123,7 @@ class OrgController(implicit setup: Setup) extends BaseController
     var res = OrgResult(
       orgName     = org.orgName,
       name        = Some(org.name),
+      url         = org.url,
       ontUri      = org.ontUri
     )
     if (checkIsUserOrAdminOrExtra(org.members)) {
@@ -123,6 +136,5 @@ class OrgController(implicit setup: Setup) extends BaseController
       )
     }
     grater[OrgResult].toCompactJSON(res)
-
   }
 }

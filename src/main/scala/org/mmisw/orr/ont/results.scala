@@ -30,6 +30,7 @@ case class PasswordResetResult(
 case class OrgResult(
             orgName:     String,
             name:        Option[String] = None,
+            url:         Option[String] = None,
             ontUri:      Option[String] = None,
             members:     Option[Set[String]] = None,
             registered:  Option[DateTime] = None,
