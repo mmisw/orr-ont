@@ -1,6 +1,9 @@
 ## change log ##
 
 * 2016-07-07: 3.0.5-alpha
+  - internal: for simplification, changed OntVisibility from an Enumeration to a helper object.
+    So, OntologyVersion.visibility is now an Option[String].
+    The visibility parameter is optional in POST and PUT /ont, with default OntVisibility.owner.
   - POST/PUT /ont: process status parameter 
   
 * 2016-07-06: 3.0.4-alpha

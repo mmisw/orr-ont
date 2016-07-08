@@ -564,13 +564,9 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         val b = body
         val res = parse(b).extract[OntologyRegistrationResult]
         registeredVersion = res.version
-        //logger.debug(s"---b=$b")
-        //logger.debug(s"registeredVersion=$registeredVersion")
-        //logger.debug(s"---res.status=${res.status}")
-        //logger.debug(s"---res.visibility=${res.visibility}")
         res.uri must_== ont1Uri
         res.status     must beSome(map1("status"))
-        //res.visibility must beSome(OntVisibility.withName(map1("visibility")))
+        res.visibility must beSome(map1("visibility"))
       }
     }
 
@@ -595,7 +591,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         val res = parse(body).extract[OntologyRegistrationResult]
         res.uri must_== map2("uri")
         res.status     must beSome(map2("status"))
-        //res.visibility must beSome(OntVisibility.withName(map2("visibility")))
+        res.visibility must beSome(map2("visibility"))
       }
     }
 
@@ -754,7 +750,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         logger.debug(s"registeredVersion=$registeredVersion")
         res.uri must_== ont1Uri
         res.status     must beSome(map2("status"))
-        //res.visibility must beSome(OntVisibility.withName(map2("visibility")))
+        res.visibility must beSome(map2("visibility"))
       }
     }
 
@@ -816,7 +812,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         val res = parse(body).extract[OntologyRegistrationResult]
         res.uri must_== ont1Uri
         res.status     must beSome(map2("status"))
-        //res.visibility must beSome(OntVisibility.withName(map2("visibility")))
+        res.visibility must beSome(map2("visibility"))
       }
     }
 

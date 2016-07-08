@@ -14,8 +14,16 @@ case class Ontology(
   lazy val latestVersion: Option[OntologyVersion] = sortedVersionKeys.headOption.map(latest => versions(latest))
 }
 
-object OntVisibility extends Enumeration {
-  val owner, public = Value
+object OntVisibility  {
+  val owner   = "owner"
+  val public  = "public"
+
+  val values = List(owner, public)
+
+  def withName(name: String): Option[String] = {
+    val lc = name.toLowerCase
+    if (values.contains(lc)) Some(lc) else None
+  }
 }
 
 case class OntologyVersion(
@@ -23,7 +31,7 @@ case class OntologyVersion(
             userName:        String, // submitter
             format:          String,
             date:            DateTime,
-            visibility:      Option[OntVisibility.Value] = Some(OntVisibility.owner), // TODO No default, nor optional
+            visibility:      Option[String] = Some(OntVisibility.owner),
             status:          Option[String] = None,
             author:          Option[String] = None,    // content creator
             metadata:        List[Map[String, AnyRef]] = List.empty,

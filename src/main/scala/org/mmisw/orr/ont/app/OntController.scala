@@ -80,12 +80,15 @@ class OntController(implicit setup: Setup,
 
   /*
    * Registers a new ontology entry.
+   * visibility will be "owner" by default.
    */
   post("/") {
     val uri            = requireParam("uri")
     val originalUriOpt = getParam("originalUri")  // for fully-hosted mode
     val name           = requireParam("name")
     val orgNameOpt     = getParam("orgName")
+    val versionVisibility = getVisibilityParam
+    val versionStatus     = getParam("status")
     val user           = verifyUser(getParam("userName"))
 
     val (ownerName, ownerAsAuthorName) = orgNameOpt match {
@@ -96,12 +99,6 @@ class OntController(implicit setup: Setup,
       case None  =>
         ("~" + user.userName, s"${user.firstName} ${user.lastName}")
     }
-
-    // visibility will be "owner" if not explicitly given
-    val versionVisibility = OntVisibility.withName(
-      getParam("visibility").getOrElse("owner").toLowerCase)
-
-    val versionStatus: Option[String] = getParam("status")
 
     val (version, date) = getVersion
 
@@ -114,12 +111,13 @@ class OntController(implicit setup: Setup,
 
   /*
    * Updates a given version or adds a new version.
+   * visibility will be "owner" by default.
    */
   put("/") {
     val uri            = requireParam("uri")
     val originalUriOpt = getParam("originalUri")  // for fully-hosted mode
     val versionOpt     = getParam("version")
-    val visibilityOpt  = getParam("visibility")
+    val versionVisibilityOpt = getVisibilityParam
     val versionStatusOpt  = getParam("status")
     val user           = verifyUser(getParam("userName"))
 
@@ -140,7 +138,7 @@ class OntController(implicit setup: Setup,
             "(file upload, embedded contents, or new metadata"))
 
         createOntologyVersion(uri, originalUriOpt, user,
-          versionVisibility = OntVisibility.withName(visibilityOpt.getOrElse("owner").toLowerCase),
+          versionVisibility = versionVisibilityOpt,
           versionStatus = versionStatusOpt,
           nameOpt = getParam("name"),
           ontFileWriter, doVerifyOwner)
@@ -149,12 +147,17 @@ class OntController(implicit setup: Setup,
         updateOntologyVersion(uri,
           originalUriOpt = originalUriOpt,
           version = version,
-          versionVisibilityOpt = visibilityOpt map OntVisibility.withName,
+          versionVisibilityOpt = versionVisibilityOpt,
           versionStatusOpt = versionStatusOpt,
           nameOpt = getParam("name"),
           user = user,
           doVerifyOwner = doVerifyOwner)
     }
+  }
+
+  private def getVisibilityParam: Option[String] = getParam("visibility") match {
+    case Some(v) => OntVisibility.withName(v) orElse error(400, s"invalid visibility value: $v")
+    case None => None
   }
 
   private def visibilityFilter(userOrgNames: List[String], osr: OntologySummaryResult): Boolean = {
@@ -172,6 +175,8 @@ class OntController(implicit setup: Setup,
 
           case None => false
         }
+
+      case _ => false
     }
   }
 
@@ -279,7 +284,7 @@ class OntController(implicit setup: Setup,
                              originalUriOpt:  Option[String],
                              name:            String,
                              version:         String,
-                             versionVisibility: OntVisibility.Value,
+                             versionVisibility: Option[String],
                              versionStatus:   Option[String],
                              date:            String,
                              ontFileWriter:   OntFileWriter,
@@ -454,7 +459,7 @@ class OntController(implicit setup: Setup,
   private def createOntologyVersion(uri:            String,
                                     originalUriOpt: Option[String],
                                     user:           db.User,
-                                    versionVisibility: OntVisibility.Value,
+                                    versionVisibility: Option[String],
                                     versionStatus:  Option[String],
                                     nameOpt:        Option[String],
                                     ontFileWriter:  OntFileWriter,
@@ -483,8 +488,8 @@ class OntController(implicit setup: Setup,
   private def updateOntologyVersion(uri:            String,
                                     originalUriOpt: Option[String],
                                     version:        String,
-                                    versionVisibilityOpt: Option[OntVisibility.Value],
-                                    versionStatusOpt:     Option[String],
+                                    versionVisibilityOpt: Option[String],
+                                    versionStatusOpt:  Option[String],
                                     nameOpt:        Option[String],
                                     user:           db.User,
                                     doVerifyOwner:  Boolean = true

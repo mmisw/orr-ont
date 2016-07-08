@@ -196,7 +196,7 @@ object AquaImporter extends App with Logging {
       for(ontFileWriter <- getOntFileWriter(uri, version, orgName, o)) {
         val dateCreated = DateTime.parse(o.date_created)
         firstSubmission = Some(dateCreated)
-        val versionVisibility: OntVisibility.Value = OntVisibility.public
+        val versionVisibility = Some(OntVisibility.public)
         ontService.createOntology(
           o.uri, None, o.display_label, o.version_number,
           versionVisibility,
@@ -215,7 +215,7 @@ object AquaImporter extends App with Logging {
         if (o.version_status.isDefined) {
           version_status = o.version_status  // update to use here and propagate
         }
-        val versionVisibility: OntVisibility.Value = OntVisibility.public
+        val versionVisibility = Some(OntVisibility.public)
         ontService.createOntologyVersion(
           o.uri, None, Some(o.display_label), users.get(o.user_id).get.username,
           o.version_number, versionVisibility, version_status,
