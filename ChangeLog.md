@@ -4,7 +4,8 @@
   - internal: for simplification, changed OntVisibility from an Enumeration to a helper object.
     So, OntologyVersion.visibility is now an Option[String].
     The visibility parameter is optional in POST and PUT /ont, with default OntVisibility.owner.
-  - POST/PUT /ont: process status parameter 
+  - resolve #11 "capture status" - POST/PUT /ont: process status parameter.
+    Note: the status attribute is an Option[String] in the model with not forced set of possible values.
   
 * 2016-07-06: 3.0.4-alpha
   - add URL attribute to organization model
