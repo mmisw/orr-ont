@@ -249,12 +249,12 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                      name:           String,
                      version:        String,
                      versionVisibility: OntVisibility.Value,
-                     version_status: Option[String],
+                     versionStatus:  Option[String],
                      date:           String,
                      userName:       String,
                      ownerName:      String,
                      ontFileWriter:  OntFileWriter,
-                     contact_name:   Option[String] = None,  // for AquaImporter
+                     contact_name:   Option[String] = None, // for AquaImporter
                      ownerAsAuthorName: Option[String] = None
                     ) = {
 
@@ -275,7 +275,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     val ontVersion = OntologyVersion(name, userName, ontFileWriter.format, new DateTime(date),
                                      visibility = Some(versionVisibility),
-                                     status = version_status,
+                                     status = versionStatus,
                                      author = authorOpt,
                                      metadata = ontUtil.toOntMdList(md),
                                      ontologyType = ontologyTypeOpt,
@@ -285,7 +285,12 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
       case Success(_) =>
-        OntologyRegistrationResult(uri, version = Some(version), registered = Some(ontVersion.date))
+        OntologyRegistrationResult(uri,
+          version = Some(version),
+          visibility = ontVersion.visibility,
+          status = ontVersion.status,
+          registered = Some(ontVersion.date)
+        )
 
       case Failure(exc) => throw CannotInsertOntology(uri, exc.getMessage)
           // perhaps duplicate key in concurrent registration
@@ -301,11 +306,11 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                             userName:        String,
                             version:         String,
                             versionVisibility: OntVisibility.Value,
-                            version_status:  Option[String],
+                            versionStatus:   Option[String],
                             date:            String,
                             ontFileWriter:   OntFileWriter,
                             doVerifyOwner:   Boolean = true,
-                            contact_name:    Option[String] = None  // for AquaImporter
+                            contact_name:    Option[String] = None // for AquaImporter
                            ) = {
 
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
@@ -327,7 +332,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     val ontVersion = OntologyVersion(name, userName, ontFileWriter.format, new DateTime(date),
                                      visibility = Some(versionVisibility),
-                                     status = version_status,
+                                     status = versionStatus,
                                      author = authorOpt,
                                      metadata = ontUtil.toOntMdList(md),
                                      ontologyType = ontologyTypeOpt,
@@ -339,7 +344,12 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
-        OntologyRegistrationResult(uri, version = Some(version), updated = Some(ontVersion.date))
+        OntologyRegistrationResult(uri,
+          visibility = ontVersion.visibility,
+          status = ontVersion.status,
+          version = Some(version),
+          updated = Some(ontVersion.date)
+        )
 
       case Failure(exc)  => throw CannotInsertOntologyVersion(uri, version, exc.getMessage)
     }
@@ -352,6 +362,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                             originalUriOpt: Option[String],
                             version:        String,
                             versionVisibilityOpt: Option[OntVisibility.Value],
+                            versionStatusOpt:     Option[String],
                             nameOpt:        Option[String],
                             userName:       String,
                             doVerifyOwner:  Boolean = true) = {
@@ -366,6 +377,10 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
       ontVersion = ontVersion.copy(visibility = versionVisibilityOpt)
     }
 
+    versionStatusOpt foreach { _ =>
+      ontVersion = ontVersion.copy(status = versionStatusOpt)
+    }
+
     nameOpt foreach { name =>
       ontVersion = ontVersion.copy(name = name)
     }
@@ -376,7 +391,12 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
-        OntologyRegistrationResult(uri, version = Some(version), updated = Some(ontVersion.date))
+        OntologyRegistrationResult(uri,
+          version = Some(version),
+          visibility = ontVersion.visibility,
+          status = ontVersion.status,
+          updated = Some(ontVersion.date)
+        )
 
       case Failure(exc)  => throw CannotUpdateOntologyVersion(uri, version, exc.getMessage)
     }

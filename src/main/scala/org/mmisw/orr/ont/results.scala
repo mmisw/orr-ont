@@ -44,6 +44,8 @@ case class OrgResult(
 case class OntologyRegistrationResult(
             uri:         String,
             version:     Option[String] = None,
+            visibility:  Option[OntVisibility.Value] = None,
+            status:      Option[String] = None,
             registered:  Option[DateTime] = None,
             updated:     Option[DateTime] = None,
             removed:     Option[DateTime] = None)

@@ -217,7 +217,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     }
   }
 
-  "Get non-existent organization (GET /ont)" should {
+  "Get non-existent organization (GET /org)" should {
     "fail with not found status" in {
       get(s"/org/${newOrgName()}") {
         status must_== 404
@@ -540,7 +540,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     "orgName" -> orgName,
     "userName" -> userName,
     "format" -> format,
-    "visibility" -> "public"
+    "visibility" -> "public",
+    "status" -> "draft"
   )
   var registeredVersion: Option[String] = None
 
@@ -560,10 +561,16 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     "succeed with organization member credentials" in {
       post("/ont", map1, Map("file" -> ont1File), headers = userHeaders) {
         status must_== 201
-        val res = parse(body).extract[OntologyRegistrationResult]
+        val b = body
+        val res = parse(b).extract[OntologyRegistrationResult]
         registeredVersion = res.version
-        logger.debug(s"registeredVersion=$registeredVersion")
+        //logger.debug(s"---b=$b")
+        //logger.debug(s"registeredVersion=$registeredVersion")
+        //logger.debug(s"---res.status=${res.status}")
+        //logger.debug(s"---res.visibility=${res.visibility}")
         res.uri must_== ont1Uri
+        res.status     must beSome(map1("status"))
+        //res.visibility must beSome(OntVisibility.withName(map1("visibility")))
       }
     }
 
@@ -580,12 +587,15 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         "orgName" -> orgName,
         "userName" -> userName,
         "format" -> format,
-        "visibility" -> "public"
+        "visibility" -> "public",
+        "status" -> "stable"
       )
       post("/ont", map2, Map("file" -> ont1File), headers = adminHeaders) {
         status must_== 201
         val res = parse(body).extract[OntologyRegistrationResult]
         res.uri must_== map2("uri")
+        res.status     must beSome(map2("status"))
+        //res.visibility must beSome(OntVisibility.withName(map2("visibility")))
       }
     }
 
@@ -716,7 +726,11 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   }
 
   "Register a new ont version (PUT /ont)" should {
-    val map2 = map1 + ("name" -> "modified name")
+    val map2 = map1 + (
+      "name" -> "modified name",
+      "visibility" -> "owner",
+      "status" -> "deprecated"
+      )
     //val body2 = pretty(render(Extraction.decompose(map2)))
 
     "fail with no credentials" in {
@@ -739,6 +753,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         registeredVersion = res.version
         logger.debug(s"registeredVersion=$registeredVersion")
         res.uri must_== ont1Uri
+        res.status     must beSome(map2("status"))
+        //res.visibility must beSome(OntVisibility.withName(map2("visibility")))
       }
     }
 
@@ -771,7 +787,11 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   }
 
   "Update a specific ont version (PUT /ont)" should {
-    val map2 = map1 + ("name" -> "modified name on version")
+    val map2 = map1 + (
+      "name" -> "modified name on version",
+      "visibility" -> "owner",
+      "status" -> "testing"
+      )
 
     // pass the specific version (registeredVersion).
     // note: this is done within each check below such that registeredVersion
@@ -795,6 +815,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         status must_== 200
         val res = parse(body).extract[OntologyRegistrationResult]
         res.uri must_== ont1Uri
+        res.status     must beSome(map2("status"))
+        //res.visibility must beSome(OntVisibility.withName(map2("visibility")))
       }
     }
 

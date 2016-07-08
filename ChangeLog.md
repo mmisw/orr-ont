@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-07-07: 3.0.5-alpha
+  - POST/PUT /ont: process status parameter 
+  
 * 2016-07-06: 3.0.4-alpha
   - add URL attribute to organization model
   
