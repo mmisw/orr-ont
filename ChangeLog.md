@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-07-12: 3.0.0-beta
+  - start beta status
+  
 * 2016-07-12: 3.0.6-alpha
   - bump version to align with orr-portal
   
