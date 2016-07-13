@@ -1,6 +1,12 @@
 ## change log ##
 
 * 2016-07-12: 3.0.0-beta
+  - dockerize with deployable named as ont.war. 
+    This mainly to avoiding issues with different external context path. Internally orr-ont uses the 
+    servlet-based reported context path to differentiate fully- and re-hosted registrations.  
+    (this could alternatively be handled with some extra config parameter, but I'm not doing that right now.)
+  
+* 2016-07-12: 3.0.0-beta
   - start beta status
   
 * 2016-07-12: 3.0.6-alpha

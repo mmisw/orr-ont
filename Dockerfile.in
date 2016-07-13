@@ -4,4 +4,4 @@ MAINTAINER Carlos Rueda <carueda@gmail.com>
 
 RUN mkdir -p /opt/orr-ont-base-directory
 
-COPY target/scala-2.11/orr-ont_2.11-@@version.war /usr/local/tomcat/webapps/ont3.war
+COPY target/scala-2.11/orr-ont_2.11-@@version.war /usr/local/tomcat/webapps/ont.war
