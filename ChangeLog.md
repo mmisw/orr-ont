@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-07-12: 3.0.6-alpha
+  - bump version to align with orr-portal
+  
 * 2016-07-07: 3.0.5-alpha
   - internal: for simplification, changed OntVisibility from an Enumeration to a helper object.
     So, OntologyVersion.visibility is now an Option[String].
