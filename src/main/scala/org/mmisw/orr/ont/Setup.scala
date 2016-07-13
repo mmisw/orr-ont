@@ -58,6 +58,8 @@ class Setup(val config: Config,
     }
   }
 
+  val instanceName = config.getString("branding.instanceName")
+
   com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers()
 
   val db: Db = new Db(mongoConfig)

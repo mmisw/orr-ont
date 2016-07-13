@@ -16,6 +16,11 @@ trait BaseSpec extends Mockito {
       |  password = test
       |  email    = "dummy@example.org"
       |}
+      |
+      |branding {
+      |  instanceName = "MMI ORR"
+      |}
+      |
       |mongo {
       |  host = localhost
       |  port = 27017

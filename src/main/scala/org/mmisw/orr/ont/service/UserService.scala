@@ -110,14 +110,13 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
       s"""
         |Hi $email,
         |
-        |A request has been received to send a reminder of account information
-        |associated with your email address.
+        |A request has been received to send a reminder of account information associated with your email address.
         |
         |The following account$be associated:
         |    $header
         |    ${users.map(user2info).mkString("\n    ")}
         |
-        |The orr-ont team
+        |The ${setup.instanceName} team
         """.stripMargin
     }
 
@@ -129,7 +128,7 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
       logger.debug(s"sendUsername: email=$email: emailText:\n$emailText")
       try {
         setup.emailer.sendEmail(email,
-          s"Your orr-ont username${if (users.size > 1) "s" else ""}",
+          s"Your username${if (users.size > 1) "s" else ""}",
           emailText)
       }
       catch {
@@ -149,7 +148,7 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
       s"""
         | Hi ${user.firstName} ${user.lastName},
         |
-        | You have requested to reset your password at the orr-ont.
+        | You have requested to reset your password at the ${setup.instanceName}.
         |
         | Please visit this link to reset it:
         |   $resetLink
@@ -160,7 +159,7 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
         |
         | If you did not make this request, please disregard this email.
         |
-        | The orr-ont team
+        | The ${setup.instanceName} team
         """.stripMargin
     }
 
@@ -175,7 +174,7 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
         logger.debug(s"resetPassword: PwReset: $obj emailText:\n$emailText")
         try {
           setup.emailer.sendEmail(user.email,
-            "Reset your orr-ont password",
+            s"Reset your ${setup.instanceName} password",
             emailText)
         }
         catch {
@@ -189,19 +188,19 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
   def notifyPasswordHasBeenReset(user: db.User): Unit = {
     val emailText =
       s"""
-         |Your orr-ont password has been changed.
+         |Your password has been changed.
          |
          | Your account:
          |    username: ${user.userName}
          |    email:    ${user.email}
          |
-         | The orr-ont team
+         | The ${setup.instanceName} team
        """.stripMargin
     logger.debug(s"notifyPasswordReset:\n$emailText")
 
     try {
       setup.emailer.sendEmail(user.email,
-        "orr-ont password change confirmation",
+        s"${setup.instanceName} password change confirmation",
         emailText
       )
     }

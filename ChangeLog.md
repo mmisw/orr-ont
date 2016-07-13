@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-07-13: 3.0.0-beta
+  - introduce branding.instanceName config to adjust email messages
+  
 * 2016-07-12: 3.0.0-beta
   - dockerize with deployable named as ont.war. 
     This mainly to avoiding issues with different external context path. Internally orr-ont uses the 
