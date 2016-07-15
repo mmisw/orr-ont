@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-07-15: 3.0.1-beta
+  - align version with orr-portal
+  
 * 2016-07-13: 3.0.0-beta
   - introduce branding.instanceName config to adjust email messages
   
