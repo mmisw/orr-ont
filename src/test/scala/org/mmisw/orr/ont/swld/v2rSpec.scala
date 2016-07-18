@@ -64,7 +64,7 @@ class v2rSpec extends Specification {
       val someProp   = model.createProperty("http://some/prop")
 
       model.contains(Parameter,  RDF.`type`, OWL.Class)            === true
-      model.contains(definition, RDF.`type`, OWL.DatatypeProperty) === true
+      model.contains(definition, RDF.`type`, RDF.Property) === true
 
       ontUtil.getValues(pressure, definition).toSet === Set("Definition of pressure")
       ontUtil.getValues(pressure, someProp).toSet   === Set("one value for some/prop", "other value for some/prop")
@@ -81,7 +81,7 @@ class v2rSpec extends Specification {
       val someProp   = model.createProperty("http://some/prop")
 
       model.contains(Parameter,  RDF.`type`, OWL.Class)            === true
-      model.contains(definition, RDF.`type`, OWL.DatatypeProperty) === true
+      model.contains(definition, RDF.`type`, RDF.Property) === true
 
       ontUtil.getValues(pressure, definition).toSet === Set("Definition of pressure")
       ontUtil.getValues(pressure, someProp).toSet   === Set("one value for some/prop", "other value for some/prop")
