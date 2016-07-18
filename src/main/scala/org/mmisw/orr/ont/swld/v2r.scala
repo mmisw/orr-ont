@@ -15,7 +15,8 @@ import org.mmisw.orr.ont.vocabulary.Omv
 
 case class IdL(name:  Option[String] = None,
                uri:   Option[String] = None,
-               label: Option[String] = None
+               label: Option[String] = None,
+               valueClassUri: Option[String] = None
               ) {
   def getUri(namespaceOpt: Option[String] = None) =
     uri.getOrElse(namespaceOpt.getOrElse("") + name.get)
@@ -46,8 +47,14 @@ case class Vocab(`class`:     IdL,
 
     val propList: List[Property] = properties map { pe =>
       val property = model.createProperty(pe.getUri(namespaceOpt))
-      if (pe.uri.isEmpty) model.add(property, RDF.`type`, OWL.DatatypeProperty)
+      if (pe.uri.isEmpty) {
+        // TODO capture more specific type of property;
+        //      for now, defined as the most general RDF.Property:
+        model.add(property, RDF.`type`, RDF.Property)
+      }
       //Else, we don't define any attributes for the given property
+      // TODO: also, any pe.valueClassUri is NOT transferred to the model for now
+      // (ie., it's only an internal v2r mechanism to facilitate data entry in UI).
       property
     }
 

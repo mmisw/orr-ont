@@ -1,5 +1,12 @@
 ## change log ##
 
+* 2016-07-17: 3.0.2-beta
+  - resolve #20: "v2r: for a property definition allow to indicate vocabulary from which to select values"
+    Add `valueClassUri: Option[String] = None` to IdL case class.
+    This piece is not yet transferred to any ontology representation as it's more an internal mechanism
+    at least for now.
+  - also, define property as generic RDF.Property (and not overly restrictive and unnecessary OWL.DatatypeProperty)
+  
 * 2016-07-15: 3.0.1-beta
   - align version with orr-portal
   
