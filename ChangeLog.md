@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-07-27: 3.0.3-beta
+  - align version with orr-portal
+  
 * 2016-07-17: 3.0.2-beta
   - resolve #20: "v2r: for a property definition allow to indicate vocabulary from which to select values"
     Add `valueClassUri: Option[String] = None` to IdL case class.
