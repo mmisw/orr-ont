@@ -26,8 +26,6 @@ The following are steps to build it also including the
   for instructions to build and install the UI under `orr-ont` so everything gets included;
 - Then, under your `orr-ont` clone:
 		
-		```shell
         $ sbt test package
         $ bin/dockerize.sh 3.0.4-alpha
 		$ docker push mmisw/orr-ont:3.0.4-alpha
-		```
