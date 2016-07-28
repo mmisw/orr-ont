@@ -10,11 +10,8 @@ The docker images comprising the ORR system are:
 - [`mongo`]          (https://hub.docker.com/_/mongo/)
 - [`franzinc/agraph`](https://hub.docker.com/r/franzinc/agraph/)
 - [`mmisw/orr-ont`]  (https://hub.docker.com/r/mmisw/orr-ont/)
-- [`mmisw/httpd`]    (https://hub.docker.com/r/mmisw/httpd/)
 
-> NOTE: specific tagging is still TBD.
 
-  
 ### Preparations
 
 - Designate a directory on your host machine as a base location for all data 
@@ -39,20 +36,16 @@ bash script makes launching the ORR containers very straightforward.
 
     curl -o docker-run https://raw.githubusercontent.com/mmisw/orr-ont/master/bin/docker-run
     chmod +x docker-run
-    ./docker-run mongo agraph orront httpd
+    ./docker-run mongo agraph orront
 
 That's it!
 
 Now open http://localhost/ont in your browser.
-
-
-> On a Mac, open `http://<docker-machine-ip>/ont`.
  
 
 ### Making your ORR instance visible to the world
 
-Currently this consists of exposing port 80 (as indicated under the `httpd` option in `docker-run`). 
+This basically consists of exposing port 9090 (as indicated under the `run_orront` option in `docker-run`).
+Typically you would be adjusting your main HTTP server to expose the service as desired (in term of
+actual URL) via proxy or similar mechanism.
 Check with your sysadmin. 
-
-> This part is still WiP particularly regarding HTTPS (port 443; certificates, etc.)
-
