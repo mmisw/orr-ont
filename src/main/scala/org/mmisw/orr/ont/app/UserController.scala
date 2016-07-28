@@ -185,10 +185,17 @@ class UserController(implicit setup: Setup) extends BaseController
    * Registers a new user.
    */
   post("/") {
-    // TODO: re-captcha to verify this is a request from a human
     // TODO: email with account confirmation link
 
     val map = body()
+
+    setup.recaptchaPrivateKey foreach { key =>
+      val recaptchaResponse = require(map, "recaptchaResponse")
+      recaptcha.validateResponse(key, recaptchaResponse) match {
+        case Right(success) => if (!success) error(400, "invalid recaptchaResponse")
+        case Left(exception) => error500(exception)
+      }
+    }
 
     val userName  = require(map, "userName")
     val email     = require(map, "email")

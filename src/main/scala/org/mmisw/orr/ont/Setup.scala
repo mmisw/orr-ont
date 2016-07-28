@@ -66,6 +66,12 @@ class Setup(val config: Config,
 
   dbOpt = Some(db)
 
+  val recaptchaPrivateKey = {
+    val path = "recaptcha.privateKey"
+    if (config.hasPath(path)) Some(config.getString(path))
+    else None
+  }
+
   def destroy() {
     logger.debug(s"destroying application setup")
     dbOpt foreach { _.destroy() }

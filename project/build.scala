@@ -9,7 +9,7 @@ import scoverage.ScoverageKeys._
 object build extends Build {
   val Organization = "org.mmisw"
   val Name = "orr-ont"
-  val Version = "3.0.3-beta"
+  val Version = "3.0.4-beta"
 
   val ScalaVersion      = "2.11.6"
   val ScalatraVersion   = "2.3.0"
@@ -84,6 +84,7 @@ object build extends Build {
         "org.jasypt"                 % "jasypt"               % "1.9.2",
 
         "net.databinder.dispatch"   %% "dispatch-core"        % "0.11.2",
+        "net.databinder.dispatch"    % "dispatch-json4s-native_2.11" % "0.11.2",
 
         "com.firebase"               % "firebase-token-generator" % "2.0.0",
         "com.auth0"                  % "java-jwt"                 % "2.1.0",
