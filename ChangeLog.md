@@ -1,5 +1,14 @@
 ## change log ##
 
+* 2016-08-06:
+  - add swagger.json generated from http://editor.swagger.io/.
+    This, along with an installation of swagger-ui, is deployed at http://mmisw.org/orrdoc/api/,
+    which is liked from http://mmisw.org/orrdoc/rest/
+    
+    NOTE: Unfortunately upgrading the relevant scalatra libs for automatic generation of the spec
+    from the code itself is tricky at this point.
+    
+   
 * 2016-07-27: 3.0.4-beta
   - resolve #21 "recaptcha"
   

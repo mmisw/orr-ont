@@ -1,0 +1,195 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "version": "v0",
+        "title": "ORR Ont API Documentation",
+        "description": "This is the first version of the ORR Ont API documentation.\n\nThe main ORR documentation is located at: http://mmisw.org/orrdoc/\n\n__Note__: This API documentation is preliminary.\nPlease let us know if you have any questions while we update this documentation.\n\nAt the moment:\n\n- Only operations not requiring authorization are described.\n  \n- Set of operations not yet automatically generated from the code itself \n  but manually via http://editor.swagger.io/\n\n- Using endpoint at http://cor.esipfed.org \n  while the main instance at http://mmisw.org is upgraded to ORR v3.\n\nSome additional information about the API can be found at \nhttps://github.com/mmisw/orr-ont/wiki/basic-interaction\n",
+        "termsOfService": "https://marinemetadata.org/orr/tou"
+    },
+    "host": "cor.esipfed.org",
+    "basePath": "/ont/api/v0",
+    "paths": {
+        "/ont": {
+            "get": {
+                "description": "Gets the registered ontologies.\n",
+                "parameters": [
+                    {
+                        "name": "uri",
+                        "in": "query",
+                        "type": "string",
+                        "required": false,
+                        "description": "With this parameter the backend will first try an \"ontology request.\" If no ontlogy is registered by the given value, then it will try a \"term request.\""
+                    },
+                    {
+                        "name": "ouri",
+                        "in": "query",
+                        "type": "string",
+                        "required": false,
+                        "description": "Use this parameter to exclusively make a \"ontology request\"."
+                    },
+                    {
+                        "name": "turi",
+                        "in": "query",
+                        "type": "string",
+                        "required": false,
+                        "description": "Use this parameter to exclusively make a \"term request.\""
+                    },
+                    {
+                        "name": "version",
+                        "in": "query",
+                        "type": "string",
+                        "required": false,
+                        "description": "Desired version in the case of an \"ontology request.\""
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "type": "string",
+                        "required": false,
+                        "description": "Desired format for the response."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Ont"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/org": {
+            "get": {
+                "description": "Gets basic information of all registered organizations.\n",
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Org"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/org/{orgName}": {
+            "get": {
+                "description": "Gets basic information of a particular organization.\n",
+                "parameters": [
+                    {
+                        "name": "orgName",
+                        "in": "path",
+                        "type": "string",
+                        "required": true,
+                        "description": "The code (short name) of the organization."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "schema": {
+                            "$ref": "#/definitions/Org"
+                        }
+                    }
+                }
+            }
+        },
+        "/user": {
+            "get": {
+                "description": "Gets the registered users.\n",
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/User"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{userName}": {
+            "get": {
+                "description": "Gets basic information of a particular user.\n",
+                "parameters": [
+                    {
+                        "name": "userName",
+                        "in": "path",
+                        "type": "string",
+                        "required": true,
+                        "description": "The login (short name) of the user."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "schema": {
+                            "$ref": "#/definitions/User"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "Ont": {
+            "type": "object",
+            "properties": {
+                "uri": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                },
+                "ownerName": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "format": {
+                    "type": "string"
+                },
+                "visibility": {
+                    "type": "string"
+                }
+            }
+        },
+        "Org": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "orgName": {
+                    "type": "string"
+                }
+            }
+        },
+        "User": {
+            "type": "object",
+            "properties": {
+                "userName": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
