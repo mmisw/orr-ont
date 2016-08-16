@@ -1,6 +1,7 @@
 ## change log ##
 
 * 2016-08-16:  3.1.0
+  - some simplification and additional documentation in `template.orront.conf`
   - use java 8 (in docker image)
   - adjustments in ontology registration email notifications
   - adjustment in docker-run to specify "notify emails" file for orr-ont
@@ -13,7 +14,7 @@
 * 2016-08-06:
   - add swagger.json generated from http://editor.swagger.io/.
     This, along with an installation of swagger-ui, is deployed at http://mmisw.org/orrdoc/api/,
-    which is liked from http://mmisw.org/orrdoc/rest/
+    which is linked from http://mmisw.org/orrdoc/rest/
     
     NOTE: Unfortunately upgrading the relevant scalatra libs for automatic generation of the spec
     from the code itself is tricky at this point.
