@@ -1,7 +1,7 @@
 package org.mmisw.orr.ont.app
 
 import com.typesafe.config.ConfigFactory
-import org.mmisw.orr.ont.Setup
+import org.mmisw.orr.ont.{Cfg, Setup}
 import org.mmisw.orr.ont.auth.authUtil
 import org.mmisw.orr.ont.service.JwtUtil
 import org.mmisw.orr.ont.util.IEmailer
@@ -35,8 +35,8 @@ trait BaseSpec extends Mockito {
       |agraph {
       |  userName = dummy
       |  password = dummy
-      |  tsName = mmiorr
-      |  orrEndpoint = "example.org/repos/mmiorr"
+      |  repoName = mmiorr
+      |  sparqlEndpoint = "dummy"
       |}
       |
       |email {
@@ -55,22 +55,30 @@ trait BaseSpec extends Mockito {
       |  mailer  = "orr-ont"
       |}
       |
+      |recaptcha {
+      |  #privateKey
+      |}
+      |
       |firebase {
       |  secret = "dummy"
       |}
       |
+      |import {
+      |  #aquaUploadsDir
+      |}
       |""".stripMargin
   )
+  val cfg = Cfg(config)
 
   // use collection names composed from the name of the test class
   private val testing = Some(getClass.getSimpleName)
-  implicit val setup = new Setup(config,
+  implicit val setup = new Setup(cfg,
     emailer = mock[IEmailer],
     testing = testing)
 
   val jwtUtil = new JwtUtil(config.getString("firebase.secret"))
 
-  val adminCredentials = authUtil.basicCredentials("admin", setup.config.getString("admin.password"))
+  val adminCredentials = authUtil.basicCredentials("admin", setup.cfg.admin.password)
 
   def newUserName() = randomStr("user")
 

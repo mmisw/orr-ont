@@ -9,7 +9,7 @@ import scoverage.ScoverageKeys._
 object build extends Build {
   val Organization = "org.mmisw"
   val Name = "orr-ont"
-  val Version = "3.0.4-beta"
+  val Version = "3.1.0"
 
   val ScalaVersion      = "2.11.6"
   val ScalatraVersion   = "2.3.0"
@@ -78,7 +78,7 @@ object build extends Build {
 
         "net.sourceforge.owlapi"     % "owlapi-distribution"  % "3.4.5",
 
-        "com.typesafe"               % "config"               % "1.2.1",
+        "com.typesafe"               % "config"               % "1.3.0",
         "com.typesafe.scala-logging"%% "scala-logging"        % "3.1.0",
 
         "org.jasypt"                 % "jasypt"               % "1.9.2",

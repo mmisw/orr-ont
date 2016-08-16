@@ -339,9 +339,9 @@ class UserController(implicit setup: Setup) extends BaseController
     usersDAO.findOneById(admin) match {
       case None =>
         logger.debug("creating 'admin' user")
-        val password = setup.config.getString("admin.password")
+        val password = setup.cfg.admin.password
         val encPassword = userAuth.encryptPassword(password)
-        val obj = db.User(admin, "Adm", "In", encPassword, setup.config.getString("admin.email"))
+        val obj = db.User(admin, "Adm", "In", encPassword, setup.cfg.admin.email)
 
         Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
           case Success(r) =>

@@ -14,10 +14,10 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
 //  val secretKey = setup.config.getString("api.secret")
 //  var signedRequest = false
 
-  protected val extra: List[String] = if (setup.config.hasPath("admin.extra")) {
-    import scala.collection.JavaConversions.collectionAsScalaIterable
-    collectionAsScalaIterable(setup.config.getStringList("admin.extra")).toList
-  } else List.empty
+  protected val extra: List[String] = setup.cfg.admin.extra match {
+    case Some(extraString) => extraString.split("\\s*,\\s*").toList
+    case None              => List.empty
+  }
 
   // assigned in the before filter
   protected var authenticatedUser: Option[AuthUser] = None
@@ -31,7 +31,7 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
 
   protected val userAuth    = setup.db.authenticator
 
-  protected val jwtUtil = new JwtUtil(setup.config.getString("firebase.secret"))
+  protected val jwtUtil = new JwtUtil(setup.cfg.firebase.secret)
 
   ///////////////////////////////////////////////////////////////////////////
 

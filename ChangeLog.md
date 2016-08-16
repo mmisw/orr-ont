@@ -1,5 +1,9 @@
 ## change log ##
 
+* 2016-08-15:  3.1.0
+  - use tscfg-generated configuration (from orront.spec.conf) for type-safe access
+  - remove "beta" tag per today's discussion
+  
 * 2016-08-06:
   - add swagger.json generated from http://editor.swagger.io/.
     This, along with an installation of swagger-ui, is deployed at http://mmisw.org/orrdoc/api/,

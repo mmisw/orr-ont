@@ -1,7 +1,6 @@
 package org.mmisw.orr.ont
 
 import com.typesafe.scalalogging.{StrictLogging => Logging}
-import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import org.mmisw.orr.ont.db.Db
 import org.mmisw.orr.ont.util.IEmailer
 
@@ -9,11 +8,11 @@ import org.mmisw.orr.ont.util.IEmailer
 /**
  * Sets up the application according to configuration.
  *
- * @param config   Base configuration
+ * @param cfg   Base configuration
  * @param emailer  emailer
  * @param testing  optional string for testing purposes
  */
-class Setup(val config: Config,
+class Setup(val cfg: Cfg,
             val emailer: IEmailer,
             val testing: Option[String] = None
             ) extends AnyRef with Logging {
@@ -22,43 +21,35 @@ class Setup(val config: Config,
 
   // todo omit/obfuscate any passwords in output logging
   if (logger.underlying.isInfoEnabled()) {
-    val options: ConfigRenderOptions = ConfigRenderOptions.defaults
-      .setFormatted(true).setComments(false).setOriginComments(false)
-    logger.info(s"mongoConfig = ${config.root.render(options)}")
+    logger.info(s"Configuration:\n$cfg")
   }
 
   val mongoConfig = {
-    val mc = config.getConfig("mongo")
+    val mc = cfg.mongo
     testing match {
       case None => mc
 
       case Some(baseName) =>
         // adjust collection names:
-        val string = List("ontologies", "users", "organizations") map { collName =>
-          val testName = s"ztest-$baseName-${mc.getString(collName)}"
-          s"$collName=$testName"
-        } mkString "\n"
-        logger.info(s"test mode: using:\n$string")
-        ConfigFactory.parseString(string).withFallback(mc)
+        mc.copy(
+          ontologies    = s"ztest-$baseName-${mc.ontologies}",
+          users         = s"ztest-$baseName-${mc.users}",
+          organizations = s"ztest-$baseName-${mc.organizations}"
+        )
     }
   }
 
   val filesConfig = {
-    val fc = config.getConfig("files")
+    val fc = cfg.files
     testing match {
       case None => fc
 
       case Some(baseName) =>
-        val string = List("baseDirectory") map { name =>
-          val testName = s"${fc.getString(name)}-test"
-          s"$name=$testName"
-        } mkString "\n"
-        logger.info(s"test mode: using:\n$string")
-        ConfigFactory.parseString(string).withFallback(fc)
+        fc.copy(baseDirectory = s"${fc.baseDirectory}-test")
     }
   }
 
-  val instanceName = config.getString("branding.instanceName")
+  val instanceName = cfg.branding.instanceName
 
   com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers()
 
@@ -66,11 +57,7 @@ class Setup(val config: Config,
 
   dbOpt = Some(db)
 
-  val recaptchaPrivateKey = {
-    val path = "recaptcha.privateKey"
-    if (config.hasPath(path)) Some(config.getString(path))
-    else None
-  }
+  val recaptchaPrivateKey = cfg.recaptcha.privateKey
 
   def destroy() {
     logger.debug(s"destroying application setup")

@@ -249,9 +249,9 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
     usersDAO.findOneById(admin) match {
       case None =>
         logger.debug("creating 'admin' user")
-        val password    = setup.config.getString("admin.password")
+        val password    = setup.cfg.admin.password
         val encPassword = userAuth.encryptPassword(password)
-        val email       = setup.config.getString("admin.email")
+        val email       = setup.cfg.admin.email
         val obj = db.User(admin, "Adm", "In", encPassword, email)
 
         Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
