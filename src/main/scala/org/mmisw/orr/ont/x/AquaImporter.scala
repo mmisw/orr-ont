@@ -6,7 +6,7 @@ import java.util.ServiceConfigurationError
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.joda.time.DateTime
-import org.mmisw.orr.ont.Setup
+import org.mmisw.orr.ont.{Cfg, Setup}
 import org.mmisw.orr.ont.db.{OntVisibility, Organization}
 import org.mmisw.orr.ont.service.{OntFileWriter, OntService, OrgService, UserService}
 import org.mmisw.orr.ont.swld.ontUtil
@@ -30,8 +30,9 @@ object AquaImporter extends App with Logging {
     }
     ConfigFactory.parseFile(configFile).resolve()
   }
+  val cfg = Cfg(config)
 
-  implicit val setup = new Setup(config, emailer = new Emailer(config.getConfig("email")))
+  implicit val setup = new Setup(cfg, emailer = new Emailer(cfg.email))
 
   val userService = new UserService
   val orgService = new OrgService
@@ -41,7 +42,7 @@ object AquaImporter extends App with Logging {
   orgService.deleteAll()
   ontService.deleteAll()
 
-  val importConfig = setup.config.getConfig("import")
+  val importConfig = config.getConfig("import")
   val users    = AquaUser.loadEntities(importConfig.getString("aquaUsers"))
   val onts     = VAquaOntology.loadEntities(importConfig.getString("aquaOnts"))
   val ontFiles = AquaOntologyFile.loadEntities(importConfig.getString("aquaOntFiles"))

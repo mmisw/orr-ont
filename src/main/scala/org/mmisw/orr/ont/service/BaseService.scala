@@ -14,4 +14,27 @@ abstract class BaseService(setup: Setup) {
     usersDAO.findOneById(userName).getOrElse(throw NoSuchUser(userName))
   }
 
+  protected def sendNotificationEmail(subject: String, msg: String): Unit = {
+    new Thread(new Runnable {
+      def run() {
+        doIt()
+      }
+    }).start()
+
+    def doIt(): Unit = {
+      setup.cfg.notifications.recipientsFilename foreach { filename =>
+        val body = msg +
+          "\n\n" +
+          s"(you have received this email because your address is included in $filename)"
+
+        try {
+          val emails = io.Source.fromFile(filename).getLines.mkString(",")
+          setup.emailer.sendEmail(emails, subject, body)
+        }
+        catch {
+          case exc:Exception => exc.printStackTrace()
+        }
+      }
+    }
+  }
 }

@@ -278,10 +278,10 @@ with TripleStoreService with Logging {
     val (_, ontVersion, version) = ontService.resolveOntologyVersion(uri)
     val (file, actualFormat) = ontService.getOntologyFile(uri, version, ontVersion.format)
 
-    val (k, v) = if (setup.config.hasPath("import.aquaUploadsDir"))
-      ("file", file.getAbsolutePath)
-    else
-      ("url", uri)
+    val (k, v) = setup.cfg.`import`.aquaUploadsDir match {
+      case Some(aquaUploadsDir) => ("file", file.getAbsolutePath)
+      case None => ("url", uri)
+    }
 
     val req = (svc / "statements")
       .setContentType(formats(actualFormat), charset = "UTF-8")
@@ -333,20 +333,20 @@ with TripleStoreService with Logging {
     res
   }
 
-  private val agConfig = setup.config.getConfig("agraph")
+  private val agConfig = setup.cfg.agraph
 
-  private val agHost     = agConfig.getString("host")
-  private val agPort     = agConfig.getString("port")
-  private val userName   = agConfig.getString("userName")
-  private val password   = agConfig.getString("password")
-  private val repoName   = agConfig.getString("repoName")
+  private val agHost     = agConfig.host
+  private val agPort     = agConfig.port
+  private val userName   = agConfig.userName
+  private val password   = agConfig.password
+  private val repoName   = agConfig.repoName
 
   private val agEndpoint  = s"$agHost:$agPort"
   private val orrEndpoint = s"$agEndpoint/repositories/$repoName"
 
   private val svc = host(orrEndpoint)
 
-  private val sparqlEndpoint = url(agConfig.getString("sparqlEndpoint"))
+  private val sparqlEndpoint = url(agConfig.sparqlEndpoint)
 
   private object termResolver {
     import java.util.regex.Pattern

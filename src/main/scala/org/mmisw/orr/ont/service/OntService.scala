@@ -285,6 +285,17 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
       case Success(_) =>
+        sendNotificationEmail("New ontology registered",
+          s"""
+            |The following ontology has been registered:
+            |
+            | URI: $uri
+            | Version: $version
+            | Visibility: ${ontVersion.visibility.getOrElse("(undefined)")}
+            | Status: ${ontVersion.status.getOrElse("(undefined)")}
+            | Registered: ${ontVersion.date}
+          """.stripMargin
+        )
         OntologyRegistrationResult(uri,
           version = Some(version),
           visibility = ontVersion.visibility,
@@ -344,6 +355,17 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
+        sendNotificationEmail("New ontology version registered",
+          s"""
+             |A new ontology version has been registered:
+             |
+             | URI: $uri
+             | Version: $version
+             | Visibility: ${ontVersion.visibility.getOrElse("(undefined)")}
+             | Status: ${ontVersion.status.getOrElse("(undefined)")}
+             | Updated: ${ontVersion.date}
+          """.stripMargin
+        )
         OntologyRegistrationResult(uri,
           visibility = ontVersion.visibility,
           status = ontVersion.status,
@@ -572,7 +594,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     ontUtil.getPropsFromOntMetadata(uri, destFile, ontFileWriter.format)
   }
 
-  private val baseDir = setup.filesConfig.getString("baseDirectory")
+  private val baseDir = setup.filesConfig.baseDirectory
   private val uploadsDir = new File(baseDir, "uploads")
   private val ontsDir = new File(baseDir, "onts")
 

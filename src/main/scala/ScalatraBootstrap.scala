@@ -33,8 +33,9 @@ class ScalatraBootstrap extends LifeCycle with StrictLogging {
       }
       ConfigFactory.parseFile(configFile).resolve()
     }
+    val cfg = Cfg(config)
 
-    implicit val setup = new Setup(config, new Emailer(config.getConfig("email")))
+    implicit val setup = new Setup(cfg, new Emailer(cfg.email))
     implicit val ontService = new OntService
     implicit val tsService: TripleStoreService = new TripleStoreServiceAgRest
 

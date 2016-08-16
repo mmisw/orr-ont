@@ -1,47 +1,47 @@
 package org.mmisw.orr.ont.db
 
 import com.typesafe.scalalogging.{StrictLogging => Logging}
-import com.typesafe.config.{ConfigFactory, Config}
 import com.mongodb.casbah.Imports._
 import com.mongodb.ServerAddress
 import com.novus.salat.dao.SalatDAO
 import com.novus.salat.global._
+import org.mmisw.orr.ont.Cfg
 import org.mmisw.orr.ont.auth.userAuth
 
 
 /**
  *
  */
-class Db(mongoConfig: Config) extends AnyRef with Logging {
+class Db(mongoConfig: Cfg.Mongo) extends AnyRef with Logging {
 
   private[this] var mcOpt: Option[MongoClient] = None
 
   logger.info(s"mongoConfig = $mongoConfig")
 
-  val host = mongoConfig.getString("host")
-  val port = mongoConfig.getInt(   "port")
-  val db   = mongoConfig.getString("db")
+  val host = mongoConfig.host
+  val port = mongoConfig.port
+  val db   = mongoConfig.db
 
   val serverAddress = new ServerAddress(host, port)
 
-  private[this] val mongoClient: MongoClient = if (mongoConfig.hasPath("user")) {
-    val user = mongoConfig.getString("user")
-    val pw   = mongoConfig.getString("pw")
-    logger.info(s"connecting to $host:$port/$db using credentials ...")
-    val credential = MongoCredential.createMongoCRCredential(user, db, pw.toCharArray)
-    MongoClient(serverAddress, List(credential))
-  }
-  else {
-    logger.info(s"connecting to $host:$port/$db with no credentials ...")
-    MongoClient(serverAddress)
+  private[this] val mongoClient: MongoClient = mongoConfig.user match {
+    case Some(user) =>
+      val pw = mongoConfig.pw.get
+      logger.info(s"connecting to $host:$port/$db using credentials ...")
+      val credential = MongoCredential.createMongoCRCredential(user, db, pw.toCharArray)
+      MongoClient(serverAddress, List(credential))
+
+    case None =>
+      logger.info(s"connecting to $host:$port/$db with no credentials ...")
+      MongoClient(serverAddress)
   }
 
   private[this] val mongoClientDb = mongoClient(db)
 
-  private[this] val ontologiesColl  = mongoClientDb(mongoConfig.getString("ontologies"))
-  private[this] val usersColl       = mongoClientDb(mongoConfig.getString("users"))
+  private[this] val ontologiesColl  = mongoClientDb(mongoConfig.ontologies)
+  private[this] val usersColl       = mongoClientDb(mongoConfig.users)
   private[this] val pwrColl         = mongoClientDb("pwr")
-  private[this] val orgsColl        = mongoClientDb(mongoConfig.getString("organizations"))
+  private[this] val orgsColl        = mongoClientDb(mongoConfig.organizations)
 
   val ontDAO      = new SalatDAO[Ontology,     String](ontologiesColl) {}
   val usersDAO    = new SalatDAO[User,         String](usersColl) {}

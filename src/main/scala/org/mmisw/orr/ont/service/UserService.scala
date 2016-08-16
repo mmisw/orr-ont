@@ -41,6 +41,16 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
 
         Try(usersDAO.insert(user, WriteConcern.Safe)) match {
           case Success(_) =>
+            sendNotificationEmail("New user registered",
+              s"""
+                 |The following user has been registered:
+                 |
+                 | Username: $userName
+                 | Name: $firstName $lastName
+                 | Email: $email
+                 | registered: ${user.registered}
+              """.stripMargin
+            )
             UserResult(userName, registered = Some(user.registered))
 
           case Failure(exc) => throw CannotInsertUser(userName, exc.getMessage)
@@ -249,9 +259,9 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
     usersDAO.findOneById(admin) match {
       case None =>
         logger.debug("creating 'admin' user")
-        val password    = setup.config.getString("admin.password")
+        val password    = setup.cfg.admin.password
         val encPassword = userAuth.encryptPassword(password)
-        val email       = setup.config.getString("admin.email")
+        val email       = setup.cfg.admin.email
         val obj = db.User(admin, "Adm", "In", encPassword, email)
 
         Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
