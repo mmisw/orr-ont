@@ -35,6 +35,7 @@ function run_orront() {
            -e AGRAPH_HOST=agraph \
            -e AGRAPH_PORT=10035 \
            -v `pwd`/orront.conf:/etc/orront.conf \
+           -v `pwd`/orront-notifyemails:/etc/orront-notifyemails \
            -v ${ORR_ONT_BASE_DIR}:/opt/orr-ont-base-directory \
            -p 9090:8080 \
            mmisw/orr-ont
@@ -57,7 +58,7 @@ function usage() {
 	echo
 	echo "Examples:"
 	echo "     docker-run ALL     # same as: docker-run mongo agraph orront httpd"
-	echo "     docker-run orront httpd"
+	echo "     docker-run orront"
 	echo
 }
 

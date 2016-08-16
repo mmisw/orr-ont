@@ -2,6 +2,8 @@
 
 * 2016-08-16:  3.1.0
   - use java 8 (in docker image)
+  - adjustments in ontology registration email notifications
+  - adjustment in docker-run to specify "notify emails" file for orr-ont
 
 * 2016-08-15:  3.1.0
   - resolve #13 "email notifications"

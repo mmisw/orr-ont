@@ -291,9 +291,9 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
             |
             | URI: $uri
             | Version: $version
-            | Visibility: ${ontVersion.visibility.getOrElse("(undefined)")}
-            | Status: ${ontVersion.status.getOrElse("(undefined)")}
             | Registered: ${ontVersion.date}
+            | Owner: $ownerName
+            | Submitter: $userName
           """.stripMargin
         )
         OntologyRegistrationResult(uri,
@@ -361,8 +361,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
              |
              | URI: $uri
              | Version: $version
-             | Visibility: ${ontVersion.visibility.getOrElse("(undefined)")}
-             | Status: ${ontVersion.status.getOrElse("(undefined)")}
+             | Submitter: $userName
              | Updated: ${ontVersion.date}
           """.stripMargin
         )
