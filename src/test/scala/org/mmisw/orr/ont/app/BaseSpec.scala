@@ -55,6 +55,10 @@ trait BaseSpec extends Mockito {
       |  mailer  = "orr-ont"
       |}
       |
+      |notifications {
+      |  #recipientsFilename
+      |}
+      |
       |recaptcha {
       |  #privateKey
       |}

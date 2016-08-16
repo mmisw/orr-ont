@@ -32,7 +32,7 @@ object AquaImporter extends App with Logging {
   }
   val cfg = Cfg(config)
 
-  implicit val setup = new Setup(cfg, emailer = new Emailer(config.getConfig("email")))
+  implicit val setup = new Setup(cfg, emailer = new Emailer(cfg.email))
 
   val userService = new UserService
   val orgService = new OrgService

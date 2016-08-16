@@ -46,6 +46,17 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
         Try(orgsDAO.insert(org, WriteConcern.Safe)) match {
           case Success(_) =>
+            sendNotificationEmail("New organization registered",
+              s"""
+                 |The following organization has been registered:
+                 |
+                 | Short name: $orgName
+                 | Name: ${org.name}
+                 | Members: ${org.members}
+                 | Registered: ${org.registered}
+                 | By: ${org.registeredBy.getOrElse("undefined")}
+              """.stripMargin
+            )
             OrgResult(orgName,
               url = org.url,
               ontUri = org.ontUri,
@@ -89,6 +100,17 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(orgsDAO.update(MongoDBObject("_id" -> orgName), update, false, false, WriteConcern.Safe)) match {
       case Success(result) =>
+        sendNotificationEmail("Organization updated",
+          s"""
+             |The following organization has been updated:
+             |
+             | Short name: $orgName
+             | name: ${update.name}
+             | Members: ${update.members}
+             | Updated: ${update.updated}
+             | By: ${update.updatedBy.getOrElse("(undefined)")}
+              """.stripMargin
+        )
         OrgResult(orgName,
           url = update.url,
           ontUri = update.ontUri,

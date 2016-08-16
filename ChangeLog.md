@@ -1,6 +1,7 @@
 ## change log ##
 
 * 2016-08-15:  3.1.0
+  - resolve #13 "email notifications"
   - use tscfg-generated configuration (from orront.spec.conf) for type-safe access
   - remove "beta" tag per today's discussion
   

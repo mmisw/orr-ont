@@ -41,6 +41,16 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
 
         Try(usersDAO.insert(user, WriteConcern.Safe)) match {
           case Success(_) =>
+            sendNotificationEmail("New user registered",
+              s"""
+                 |The following user has been registered:
+                 |
+                 | Username: $userName
+                 | Name: $firstName $lastName
+                 | Email: $email
+                 | registered: ${user.registered}
+              """.stripMargin
+            )
             UserResult(userName, registered = Some(user.registered))
 
           case Failure(exc) => throw CannotInsertUser(userName, exc.getMessage)
