@@ -1,9 +1,8 @@
 #!/bin/bash
 
 #
-# Note: the use of `-p` is actually only necessary for the httpd container.
-# The other uses are for convenience and can be removed or the host
-# ports changed as desired.
+# Note: the use of `-p` is not actually necessary.
+# It's used for convenience; can be removed or the host ports changed as needed.
 #
 
 function run_mongo() {
@@ -41,23 +40,15 @@ function run_orront() {
            mmisw/orr-ont
 }
 
-function run_httpd() {
-    docker run --name httpd -d \
-           -p 80:80 \
-           --link agraph \
-           --link orr-ont \
-           mmisw/httpd
-}
-
 function usage() {
 	echo "Usage:"
-	echo "  docker-run [ mongo | agraph | orront | httpd ]* | ALL"
+	echo "  docker-run [ mongo | agraph | orront ]*"
 	echo "  (order is important)"
 	echo
 	echo "Env var ORR_ONT_BASE_DIR must be defined."
 	echo
 	echo "Examples:"
-	echo "     docker-run ALL     # same as: docker-run mongo agraph orront httpd"
+	echo "     docker-run mongo agraph orront   # launches everything"
 	echo "     docker-run orront"
 	echo
 }
@@ -75,10 +66,6 @@ else
 	echo "ORR_ONT_BASE_DIR = ${ORR_ONT_BASE_DIR}"
 
 	args=$*
-	if [ "$what" = "ALL" ]; then
-		args="mongo agraph orront httpd"
-	fi
-
 	for what in $args; do
 		echo "run_$what"
 		run_$what

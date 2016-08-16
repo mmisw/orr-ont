@@ -1,6 +1,9 @@
 ## change log ##
 
 * 2016-08-16:  3.1.0
+  - simplify `docker-run`: in particular, no use of the preliminary "httpd" container as the most
+    flexible strategy is to have a host mechanism (e.g., Apache Httpd) to proxy/expose the ORR
+    (as it's currently done in the COR instance).
   - some simplification and additional documentation in `template.orront.conf`
   - use java 8 (in docker image)
   - adjustments in ontology registration email notifications
