@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-08-16:  3.1.0
+  - use java 8 (in docker image)
+
 * 2016-08-15:  3.1.0
   - resolve #13 "email notifications"
   - use tscfg-generated configuration (from orront.spec.conf) for type-safe access
