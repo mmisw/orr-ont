@@ -1,6 +1,9 @@
 ## change log ##
 
 * 2016-08-16:  3.1.0
+  - add google analytics processing for index.html files.
+    This was captured in orr-portal#67, but decided to do the handling here (at least for the time being) as
+    it is more convenient to adjust those index.html files.
   - re #28 "simplify docker-based deployment procedure" - update DEPLOYMENT.md reflecting also adjustments
     in orr-portal
   - at startup, "deploy" local.config.js for the UI if this file is found under `cfg.files.baseDirectory`

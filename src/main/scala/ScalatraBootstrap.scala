@@ -46,10 +46,7 @@ class ScalatraBootstrap extends LifeCycle with StrictLogging {
     context.mount(new FirebaseController,      "/api/v0/fb/")
     context.mount(new SelfHostedOntController, "/*")
 
-    try setLocalConfigJs(context, setup.cfg)
-    catch {
-      case e:Exception => logger.error("Error setting local.config.js", e)
-    }
+    setOrrPortalStuff(context, setup.cfg)
 
     setupOpt = Some(setup)
   }
@@ -58,17 +55,50 @@ class ScalatraBootstrap extends LifeCycle with StrictLogging {
     setupOpt foreach { _.destroy() }
   }
 
-  private def setLocalConfigJs(context: ServletContext, cfg: Cfg): Unit = {
+  private def setOrrPortalStuff(context: ServletContext, cfg: Cfg): Unit = {
     import java.nio.file.{Paths, Files, StandardCopyOption}
-    val from = Paths.get(cfg.files.baseDirectory, "local.config.js")
-    logger.info(s"setLocalConfigJs: from=$from")
-    if (from.toFile.exists()) {
-      val jsDir = new File(context.getRealPath("js/config.js")).getParentFile
-      logger.info(s"setLocalConfigJs: jsDir=$jsDir")
-      if (jsDir.exists()) {
-        val dest = Paths.get(jsDir.getAbsolutePath, "local.config.js")
-        logger.info(s"setLocalConfigJs: copying $from to $dest")
-        Files.copy(from, dest, StandardCopyOption.REPLACE_EXISTING)
+
+    try setLocalConfigJs() catch { case e:Exception => logger.error("Error setting local.config.js", e) }
+
+    try setGoogleAnalytics() catch { case e:Exception => logger.error("Error setting google analytics", e) }
+
+    def setLocalConfigJs(): Unit = {
+      val from = Paths.get(cfg.files.baseDirectory, "local.config.js")
+      logger.info(s"setLocalConfigJs: from=$from")
+      if (from.toFile.exists()) {
+        val jsDir = new File(context.getRealPath("js/config.js")).getParentFile
+        logger.info(s"setLocalConfigJs: jsDir=$jsDir")
+        if (jsDir.exists()) {
+          val dest = Paths.get(jsDir.getAbsolutePath, "local.config.js")
+          logger.info(s"setLocalConfigJs: copying $from to $dest")
+          Files.copy(from, dest, StandardCopyOption.REPLACE_EXISTING)
+        }
+      }
+    }
+
+    def setGoogleAnalytics(): Unit = {
+      val snippet = (cfg.googleAnalytics.propertyId map { propertyId =>
+        s"""<script>
+            |window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+            |ga('create', '$propertyId', 'auto');
+            |ga('send', 'pageview');
+            |</script>
+            |<script async src='//www.google-analytics.com/analytics.js'></script>
+        """.stripMargin
+      }).getOrElse("")
+
+      List("index.html", "sparql/index.html") foreach { indexHtml =>
+        val indexPath = Paths.get(context.getRealPath(indexHtml))
+        if (indexPath.toFile.exists()) {
+          import java.nio.charset.StandardCharsets.UTF_8
+          import scala.collection.JavaConversions._
+          val contents = Files.readAllLines(indexPath, UTF_8).mkString("\n")
+          if (!contents.contains("www.google-analytics.com/analytics.js")) {
+            val newContents = contents.replace("</head>", snippet + "\n</head>")
+            Files.write(indexPath, newContents.getBytes(UTF_8))
+          }
+          logger.info(s"setGoogleAnalytics: $indexPath")
+        }
       }
     }
   }
