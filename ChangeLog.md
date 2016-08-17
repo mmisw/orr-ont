@@ -1,6 +1,8 @@
 ## change log ##
 
 * 2016-08-16:  3.1.0
+  - re #28 "simplify docker-based deployment procedure" - update DEPLOYMENT.md reflecting also adjustments
+    in orr-portal
   - at startup, "deploy" local.config.js for the UI if this file is found under `cfg.files.baseDirectory`
     and the js/ directory exists under the application context (indicating that the orr-portal has
     been included in the installable ont.war).
