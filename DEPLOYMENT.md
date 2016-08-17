@@ -1,15 +1,17 @@
 # Deployment
 
 Only basic requirement is to have a [Docker engine](https://www.docker.com/products/docker-engine)
-on the target system. 
+on the target system.
 The user performing the deployment should have the relevant Docker privileges.
 Check with your sysadmin.
 
-The docker images comprising the ORR system are:
+The docker images the run the ORR system are:
 
-- [`mongo`]          (https://hub.docker.com/_/mongo/)
-- [`franzinc/agraph`](https://hub.docker.com/r/franzinc/agraph/)
-- [`mmisw/orr-ont`]  (https://hub.docker.com/r/mmisw/orr-ont/)
+| Image                                       |  Purpose |
+|---------------------------------------------|---------------------------|
+| [`mongo`](https://hub.docker.com/_/mongo/)  | MongoDB used for all data |
+| [`franzinc/agraph`](https://hub.docker.com/r/franzinc/agraph/) | AllegroGraph server and SPARQL endpoint |
+| [`mmisw/orr-ont`](https://hub.docker.com/r/mmisw/orr-ont/)   | The ORR System itself |
 
 
 ### Preparations
@@ -22,7 +24,7 @@ The docker images comprising the ORR system are:
     
 - Navigate to `$ORR_ONT_BASE_DIR`:
 
-      cd $ORR_ONT_BASE_DIR
+        cd $ORR_ONT_BASE_DIR
     
 - Prepare your local "orr-ont" configuration file for the back-end service:
   - Make a local copy, with the name `orront.conf`, of
@@ -45,7 +47,7 @@ The docker images comprising the ORR system are:
 
 ### Run the containers
 
-ORR's [`docker-run`](https://raw.githubusercontent.com/mmisw/orr-ont/master/bin/docker-run) 
+ORR's [`docker-run`](https://raw.githubusercontent.com/mmisw/orr-ont/master/bin/docker-run)
 bash script makes launching the ORR containers very straightforward.
 
     curl -o docker-run https://raw.githubusercontent.com/mmisw/orr-ont/master/bin/docker-run
@@ -58,7 +60,7 @@ Now open http://localhost/ont in your browser.
 
 Please note, this is a minimal setup for running your ORR instance.
 Of course, there are several aspects to consider and put in place toward a production
-environment including making your ORR instance visible to the world (se below),
+environment including making your ORR instance visible to the world (see below),
 re-starting containers, reflecting image updates, logging, backups, etc.
 Please check with your sysadmin.
  
@@ -68,4 +70,4 @@ Please check with your sysadmin.
 This basically consists of exposing port 9090 (as indicated under the `run_orront` option in `docker-run`).
 Typically you would be adjusting your main HTTP server to expose the service as desired (in terms of
 actual URL) via proxy or similar mechanism.
-Check with your sysadmin. 
+Check with your sysadmin.
