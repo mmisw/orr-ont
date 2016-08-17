@@ -11,6 +11,7 @@
     <appender-ref ref="STDOUT" />
   </root>
 
+  <logger name="ScalatraBootstrap"           level="INFO" />
   <logger name="org.mmisw.orr.ont"           level="INFO" />
   <logger name="org.mmisw.orr.ont.app"       level="DEBUG" />
   <logger name="org.mmisw.orr.ont.service"   level="DEBUG" />
