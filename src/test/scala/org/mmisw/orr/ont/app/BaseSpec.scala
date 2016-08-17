@@ -63,6 +63,10 @@ trait BaseSpec extends Mockito {
       |  #privateKey
       |}
       |
+      |googleAnalytics {
+      |  #propertyId
+      |}
+      |
       |firebase {
       |  secret = "dummy"
       |}
