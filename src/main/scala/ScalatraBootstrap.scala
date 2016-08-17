@@ -46,10 +46,30 @@ class ScalatraBootstrap extends LifeCycle with StrictLogging {
     context.mount(new FirebaseController,      "/api/v0/fb/")
     context.mount(new SelfHostedOntController, "/*")
 
+    try setLocalConfigJs(context, setup.cfg)
+    catch {
+      case e:Exception => logger.error("Error setting local.config.js", e)
+    }
+
     setupOpt = Some(setup)
   }
 
   override def destroy(context: ServletContext) {
     setupOpt foreach { _.destroy() }
+  }
+
+  private def setLocalConfigJs(context: ServletContext, cfg: Cfg): Unit = {
+    import java.nio.file.{Paths, Files, StandardCopyOption}
+    val from = Paths.get(cfg.files.baseDirectory, "local.config.js")
+    logger.info(s"setLocalConfigJs: from=$from")
+    if (from.toFile.exists()) {
+      val jsDir = new File(context.getRealPath("js/config.js")).getParentFile
+      logger.info(s"setLocalConfigJs: jsDir=$jsDir")
+      if (jsDir.exists()) {
+        val dest = Paths.get(jsDir.getAbsolutePath, "local.config.js")
+        logger.info(s"setLocalConfigJs: copying $from to $dest")
+        Files.copy(from, dest, StandardCopyOption.REPLACE_EXISTING)
+      }
+    }
   }
 }

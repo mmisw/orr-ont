@@ -1,6 +1,9 @@
 ## change log ##
 
 * 2016-08-16:  3.1.0
+  - at startup, "deploy" local.config.js for the UI if this file is found under `cfg.files.baseDirectory`
+    and the js/ directory exists under the application context (indicating that the orr-portal has
+    been included in the installable ont.war).
   - simplify `docker-run`: in particular, no use of the preliminary "httpd" container as the most
     flexible strategy is to have a host mechanism (e.g., Apache Httpd) to proxy/expose the ORR
     (as it's currently done in the COR instance).
