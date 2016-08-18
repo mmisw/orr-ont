@@ -1,43 +1,46 @@
 #!/bin/bash
 
-#
-# Note: the use of `-p` is not actually necessary.
-# It's used for convenience; can be removed or the host ports changed as needed.
-#
+# The concrete docker images to be run:
+MONGO=mongo
+AGRAPH=franzinc/agraph
+ORRONT=mmisw/orr-ont:3.1.0
+
 
 function run_mongo() {
 	if [ "`uname`" = "Linux" ]; then
 		docker run --name mongo -d \
 			   -p 27017:27017 \
 			   -v ${ORR_ONT_BASE_DIR}/mongo:/data/db \
-			   mongo
+			   $MONGO
 	else
 		echo "WARN: Not using -v for mongo as this is not a Linux box"
 		docker run --name mongo -d \
 			   -p 27017:27017 \
-			   mongo
+			   $MONGO
 	fi
 }
 
 function run_agraph() {
-    docker run --name agraph -d \
-           -v ${ORR_ONT_BASE_DIR}:/opt/orr-ont-base-directory \
-           -m 1g -p 10000-10035:10000-10035 franzinc/agraph
+	docker run --name agraph -d \
+		   -v ${ORR_ONT_BASE_DIR}:/opt/orr-ont-base-directory \
+		   -m 1g \
+		   -p 10000-10035:10000-10035 \
+		   $AGRAPH
 }
 
 function run_orront() {
     docker run --name orr-ont -d \
-           --link mongo \
-           --link agraph \
-           -e MONGO_HOST=mongo \
-           -e MONGO_PORT=27017 \
-           -e AGRAPH_HOST=agraph \
-           -e AGRAPH_PORT=10035 \
-           -v `pwd`/orront.conf:/etc/orront.conf \
-           -v `pwd`/orront-notifyemails:/etc/orront-notifyemails \
-           -v ${ORR_ONT_BASE_DIR}:/opt/orr-ont-base-directory \
-           -p 9090:8080 \
-           mmisw/orr-ont
+		   --link mongo \
+		   --link agraph \
+		   -e MONGO_HOST=mongo \
+		   -e MONGO_PORT=27017 \
+		   -e AGRAPH_HOST=agraph \
+		   -e AGRAPH_PORT=10035 \
+		   -v ${ORR_ONT_BASE_DIR}/orront.conf:/etc/orront.conf \
+		   -v ${ORR_ONT_BASE_DIR}/orront-notifyemails:/etc/orront-notifyemails \
+		   -v ${ORR_ONT_BASE_DIR}:/opt/orr-ont-base-directory \
+		   -p 9090:8080 \
+		   $ORRONT
 }
 
 function usage() {
@@ -46,9 +49,12 @@ function usage() {
 	echo "  (order is important)"
 	echo
 	echo "Env var ORR_ONT_BASE_DIR must be defined."
+	echo "If needed, edit this script to adjust the concrete images"
+	echo "to be run for your ORR instance."
 	echo
-	echo "Examples:"
-	echo "     docker-run mongo agraph orront   # launches everything"
+	echo "To launch all images:"
+	echo "     docker-run mongo agraph orront"
+	echo "To launch only the ORR (assuming mongo and agraph are already running):"
 	echo "     docker-run orront"
 	echo
 }
@@ -60,6 +66,11 @@ if [ "$what" = "" ]; then
 else
 	if [ "${ORR_ONT_BASE_DIR}" = "" ]; then
 		echo "ERROR: env var ORR_ONT_BASE_DIR undefined"
+		exit 1
+	fi
+
+	if [ ! -d "${ORR_ONT_BASE_DIR}" ]; then
+		echo "ERROR: $ORR_ONT_BASE_DIR: invalid directory"
 		exit 1
 	fi
 

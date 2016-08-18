@@ -1,17 +1,18 @@
 # Deployment
 
-Only basic requirement is to have a [Docker engine](https://www.docker.com/products/docker-engine)
-on the target system.
-The user performing the deployment should have the relevant Docker privileges.
-Check with your sysadmin.
+**NOTE** These instructions are for a [Docker](https://www.docker.com/products/docker-engine)
+based deployment.
 
-The docker images the run the ORR system are:
+The Docker images to run the ORR system are:
 
 | Image                                       |  Purpose |
 |---------------------------------------------|---------------------------|
 | [`mongo`](https://hub.docker.com/_/mongo/)  | MongoDB used for all data |
 | [`franzinc/agraph`](https://hub.docker.com/r/franzinc/agraph/) | AllegroGraph server and SPARQL endpoint |
 | [`mmisw/orr-ont`](https://hub.docker.com/r/mmisw/orr-ont/)   | The ORR System itself |
+
+The user performing the deployment should have the relevant Docker privileges.
+Check with your sysadmin.
 
 
 ### Preparations
@@ -32,9 +33,12 @@ The docker images the run the ORR system are:
     
         curl -o orront.conf https://raw.githubusercontent.com/mmisw/orr-ont/master/template.orront.conf
     
-  - edit `./orront.conf` as needed.
+  - edit `orront.conf` as needed.
     Note that some settings there interplay with corresponding settings in the "orr-portal" configuration
     indicated below.
+    
+  - Create an edit a text file `orront-notifyemails` with the email addresses (one per line) for
+    notification of registration events. The file can be left empty.
     
 - Prepare your local "orr-portal" configuration file for the frontend:
   - Make a local copy, with the name `local.config.js`, of
@@ -42,7 +46,7 @@ The docker images the run the ORR system are:
     
         curl -o local.config.js https://raw.githubusercontent.com/mmisw/orr-portal/master/template.local.config.js
     
-  - edit `./local.config.js` as needed.
+  - edit `local.config.js` as needed.
     
 
 ### Run the containers

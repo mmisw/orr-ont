@@ -1,6 +1,9 @@
 ## change log ##
 
 * 2016-08-16:  3.1.0
+  - some deployment related adjustments
+  
+* 2016-08-16:  3.1.0
   - add google analytics processing for index.html files.
     This was captured in orr-portal#67, but decided to do the handling here (at least for the time being) as
     it is more convenient to adjust those index.html files.
