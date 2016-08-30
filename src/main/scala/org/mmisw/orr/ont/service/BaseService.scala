@@ -28,8 +28,11 @@ abstract class BaseService(setup: Setup) {
           s"(you have received this email because your address is included in $filename)"
 
         try {
-          val emails = io.Source.fromFile(filename).getLines.filterNot(_.trim.startsWith("#")).mkString(",")
-          setup.emailer.sendEmail(emails, subject, body)
+          val emails = io.Source.fromFile(filename).getLines.map(_.trim).filterNot { line =>
+            line.isEmpty || line.startsWith("#")
+          }
+          if (emails.nonEmpty)
+            setup.emailer.sendEmail(emails.mkString(","), subject, body)
         }
         catch {
           case exc:Exception => exc.printStackTrace()
