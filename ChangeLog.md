@@ -1,6 +1,17 @@
 ## change log ##
 
 * 2016-08-30:  3.1.1
+  - fix #29 "triple store not being updated"
+    - `cfg.import.aquaUploadsDir` was used by TripleStoreServiceAgRest in condition to perform load
+      of local file in AllegroGraph. But this was incorrect (seems like it was like this from an old
+      version of the AquaImporter that also performed the load of the file in the triple store).
+      TripleStoreServiceAgRest now *always* load from local file (as before, assuming that both AG and the
+      ORR are deployed on the same server/filesystem)
+      
+      TODO Remove the `import` section (which includes `aquaUploadsDir`) from the regular specified configuration.
+      This section is only used by AquaImporter (which will go away once we migrate the MMI ORR to the new version)
+      with direct editing of the runtime configuration.
+      
   - allow leading `#` to indicate comment in email file for sending notifications
   - some logging adjustments in triple store service
   

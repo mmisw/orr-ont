@@ -87,10 +87,10 @@ with TripleStoreService with Logging {
   }
 
   def loadUri(uri: String): Either[Throwable, String] =
-    loadUri(reload = false, uri)
+    loadUriFromLocal(uri, reload = false)
 
   def reloadUri(uri: String): Either[Throwable, String] =
-    loadUri(reload = true, uri)
+    loadUriFromLocal(uri, reload = true)
 
   def reloadUris(uris: Iterator[String]) = {
     logger.warn(s"reloadUris:")
@@ -265,44 +265,6 @@ with TripleStoreService with Logging {
       case Failure(exception) =>
         logger.warn(s"Could not set access for AG anonymous user", exception)
     }
-  }
-
-  /**
-   * Loads the given ontology in the triple store.
-   * If reload is true, the contents are replaced.
-   */
-  private def loadUri(reload: Boolean, uri: String): Either[Throwable, String] = {
-    val prom = Promise[Either[Throwable, String]]()
-
-    logger.debug(s"loadUri: $uri")
-    val (_, ontVersion, version) = ontService.resolveOntologyVersion(uri)
-    val (file, actualFormat) = ontService.getOntologyFile(uri, version, ontVersion.format)
-
-    val (k, v) = setup.cfg.`import`.aquaUploadsDir match {
-      case Some(aquaUploadsDir) => ("file", file.getAbsolutePath)
-      case None                 => ("url",  uri)
-    }
-    logger.debug(s"loadUri: k=$k v=$v")
-
-    val req = (svc / "statements")
-      .setContentType(formats(actualFormat), charset = "UTF-8")
-      .addQueryParameter("context", "\"" + uri + "\"")
-      .addQueryParameter(k, v)
-      .setHeader("Accept", formats("json"))
-      .setHeader("Authorization", authUtil.basicCredentials(userName, password))
-
-    logger.debug(s"loadUri REQ query params=${req.toRequest.getQueryParams}")
-    logger.debug(s"loadUri REQ headers=${req.toRequest.getHeaders}")
-
-    val complete = dispatch.Http((if (reload) req.PUT else req.POST) OK as.String)
-    complete onComplete {
-      case Success(content)   => prom.complete(Try(Right(content)))
-      case Failure(exception) => prom.complete(Try(Left(exception)))
-    }
-
-    val res = prom.future()
-    logger.debug(s"loadUri res=$res")
-    res
   }
 
   /**
