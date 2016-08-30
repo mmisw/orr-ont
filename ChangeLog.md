@@ -1,5 +1,9 @@
 ## change log ##
 
+* 2016-08-30:  3.1.1
+  - allow leading `#` to indicate comment in email file for sending notifications
+  - some logging adjustments in triple store service
+  
 * 2016-08-16:  3.1.0
   - some deployment related adjustments
   

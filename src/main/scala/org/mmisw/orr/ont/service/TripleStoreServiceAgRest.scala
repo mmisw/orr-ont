@@ -41,7 +41,7 @@ with TripleStoreService with Logging {
       case Failure(exception) => prom.complete(Try(Left(exception)))
     }
     val res = prom.future()
-    println(s"RES=$res")
+    logger.debug(s"getSize res=$res")
     res
   }
 
@@ -102,7 +102,7 @@ with TripleStoreService with Logging {
     logger.warn(s"reloadAll:")
     unloadAll()
     val uris = ontService.getAllOntologyUris.toList
-    logger.warn(s"loading: ${uris.size} ontologies...")
+    logger.debug(s"loading: ${uris.size} ontologies...")
     uris map loadUri
     Right("done")
   }
@@ -274,14 +274,15 @@ with TripleStoreService with Logging {
   private def loadUri(reload: Boolean, uri: String): Either[Throwable, String] = {
     val prom = Promise[Either[Throwable, String]]()
 
-    logger.warn(s"loadUri: $uri")
+    logger.debug(s"loadUri: $uri")
     val (_, ontVersion, version) = ontService.resolveOntologyVersion(uri)
     val (file, actualFormat) = ontService.getOntologyFile(uri, version, ontVersion.format)
 
     val (k, v) = setup.cfg.`import`.aquaUploadsDir match {
       case Some(aquaUploadsDir) => ("file", file.getAbsolutePath)
-      case None => ("url", uri)
+      case None                 => ("url",  uri)
     }
+    logger.debug(s"loadUri: k=$k v=$v")
 
     val req = (svc / "statements")
       .setContentType(formats(actualFormat), charset = "UTF-8")
@@ -290,8 +291,9 @@ with TripleStoreService with Logging {
       .setHeader("Accept", formats("json"))
       .setHeader("Authorization", authUtil.basicCredentials(userName, password))
 
-//    println(s"REQ query params=${req.toRequest.getQueryParams}")
-//    println(s"REQ headers=${req.toRequest.getHeaders}")
+    logger.debug(s"loadUri REQ query params=${req.toRequest.getQueryParams}")
+    logger.debug(s"loadUri REQ headers=${req.toRequest.getHeaders}")
+
     val complete = dispatch.Http((if (reload) req.PUT else req.POST) OK as.String)
     complete onComplete {
       case Success(content)   => prom.complete(Try(Right(content)))
@@ -299,7 +301,7 @@ with TripleStoreService with Logging {
     }
 
     val res = prom.future()
-    //println(s"RES=$res")
+    logger.debug(s"loadUri res=$res")
     res
   }
 
@@ -319,8 +321,8 @@ with TripleStoreService with Logging {
       case None      => baseReq
     }
 
-    println(s"REQ query params=${req.toRequest.getQueryParams}")
-    println(s"REQ headers=${req.toRequest.getHeaders}")
+    logger.debug(s"unload REQ query params=${req.toRequest.getQueryParams}")
+    logger.debug(s"unload REQ headers=${req.toRequest.getHeaders}")
 
     val complete = dispatch.Http(req.DELETE OK as.String)
     complete onComplete {
@@ -329,7 +331,7 @@ with TripleStoreService with Logging {
     }
 
     val res = prom.future()
-    println(s"RES=$res")
+    logger.debug(s"unload res=$res")
     res
   }
 
