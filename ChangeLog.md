@@ -1,6 +1,13 @@
 ## change log ##
 
 * 2016-08-30:  3.1.1
+  - re #28 "simplify docker-based deployment procedure"
+  	- deployment now based on Docker Compose
+  	
+  			$ docker/build/dockerize.sh 3.1.1
+  			
+  	- TODO complete tuning up the instructions
+  	
   - fix #29 "triple store not being updated"
     - `cfg.import.aquaUploadsDir` was used by TripleStoreServiceAgRest in condition to perform load
       of local file in AllegroGraph. But this was incorrect (seems like it was like this from an old
