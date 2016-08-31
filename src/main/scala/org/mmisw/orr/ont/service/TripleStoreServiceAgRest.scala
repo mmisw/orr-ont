@@ -80,9 +80,11 @@ with TripleStoreService with Logging {
       .setHeader("Accept", formats("json"))
       .setHeader("Authorization", authUtil.basicCredentials(userName, password))
 
-    logger.debug(s"loadUriFromLocal: req=$req")
+    val method = if (reload) req.PUT else req.POST
 
-    val future = dispatch.Http((if (reload) req.PUT else req.POST) OK as.String)
+    if (false) debugReqResponse(method, "loadUriFromLocal")
+
+    val future = dispatch.Http(method OK as.String)
 
     val prom = Promise[Either[Throwable, String]]()
     future onComplete {
@@ -176,7 +178,7 @@ with TripleStoreService with Logging {
       ).asScala.toMap.mapValues(_.asScala.toList)
     }
 
-    val response: Either[Throwable, Map[String, List[String]]] = Http(req.POST > asMyDebug).either()
+    val response: Either[Throwable, Map[String, List[String]]] = Http(req > asMyDebug).either()
     response match {
       case Right(headers) =>
         headers.foreach { case (k, v) => str ++= s"\t$k : $v\n" }
@@ -359,7 +361,7 @@ with TripleStoreService with Logging {
         .setHeader("Accept", accept)
         .addParameter("query", query)
 
-      //debugReqResponse(req, s"resolveTermUri: $uri")
+      if (false) debugReqResponse(req.POST, s"resolveTermUri: $uri")
 
       val future = dispatch.Http(req.POST > as.String)
 
