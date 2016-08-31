@@ -8,7 +8,7 @@
       TripleStoreServiceAgRest now *always* load from local file (as before, assuming that both AG and the
       ORR are deployed on the same server/filesystem)
       
-      TODO Remove the `import` section (which includes `aquaUploadsDir`) from the regular specified configuration.
+    - remove the `import` section (which includes `aquaUploadsDir`) from the regular specified configuration.
       This section is only used by AquaImporter (which will go away once we migrate the MMI ORR to the new version)
       with direct editing of the runtime configuration.
       
