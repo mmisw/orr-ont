@@ -60,7 +60,7 @@ class ScalatraBootstrap extends LifeCycle with StrictLogging {
 
     try setLocalConfigJs() catch { case e:Exception => logger.error("Error setting local.config.js", e) }
 
-    try setGoogleAnalytics() catch { case e:Exception => logger.error("Error setting google analytics", e) }
+    try adjustIndexHtmls() catch { case e:Exception => logger.error("Error setting index.html files", e) }
 
     def setLocalConfigJs(): Unit = {
       val from = Paths.get(cfg.files.baseDirectory, "local.config.js")
@@ -76,8 +76,10 @@ class ScalatraBootstrap extends LifeCycle with StrictLogging {
       }
     }
 
-    def setGoogleAnalytics(): Unit = {
-      val snippet = (cfg.googleAnalytics.propertyId map { propertyId =>
+    def adjustIndexHtmls(): Unit = {
+      val indexes = List("index.html", "sparql/index.html")
+
+      val googleSnippetOpt = cfg.googleAnalytics.propertyId map { propertyId =>
         s"""<script>
             |window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
             |ga('create', '$propertyId', 'auto');
@@ -85,19 +87,38 @@ class ScalatraBootstrap extends LifeCycle with StrictLogging {
             |</script>
             |<script async src='//www.google-analytics.com/analytics.js'></script>
         """.stripMargin
-      }).getOrElse("")
+      }
 
-      List("index.html", "sparql/index.html") foreach { indexHtml =>
+      indexes foreach { indexHtml =>
         val indexPath = Paths.get(context.getRealPath(indexHtml))
         if (indexPath.toFile.exists()) {
           import java.nio.charset.StandardCharsets.UTF_8
           import scala.collection.JavaConversions._
           val contents = Files.readAllLines(indexPath, UTF_8).mkString("\n")
-          if (!contents.contains("www.google-analytics.com/analytics.js")) {
-            val newContents = contents.replace("</head>", snippet + "\n</head>")
+
+          var newContentsOpt: Option[String] = None
+
+          googleSnippetOpt foreach { snippet =>
+            val fragment = snippet + "\n</head>"
+            val c = newContentsOpt.getOrElse(contents)
+            if (!c.contains(fragment)) {
+              newContentsOpt = Some(c.replace("</head>", fragment))
+              logger.info(s"adjustIndexHtmls: set google analytics: $indexPath")
+            }
+          }
+
+          cfg.branding.footer foreach { footer =>
+            val fragment = footer + "\n</body>"
+            val c = newContentsOpt.getOrElse(contents)
+            if (!c.contains(fragment)) {
+              newContentsOpt = Some(c.replace("</body>", fragment))
+              logger.info(s"adjustIndexHtmls: set footer: $indexPath")
+            }
+          }
+
+          newContentsOpt foreach { newContents =>
             Files.write(indexPath, newContents.getBytes(UTF_8))
           }
-          logger.info(s"setGoogleAnalytics: $indexPath")
         }
       }
     }

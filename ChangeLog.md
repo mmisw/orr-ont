@@ -1,6 +1,8 @@
 ## change log ##
 
 * 2016-08-31:  3.1.1
+  - add cfg.branding.footer as a mechanism to add a footer to the portal index.html files
+  
   - actual fix #29 "triple store not being updated"
     The reason was that the AG container runs under the "agraph" user, but this user doesn't have permission to
     read the files. An example of the response to the orr-ont container from the request to AG:
