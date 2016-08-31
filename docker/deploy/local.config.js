@@ -31,7 +31,7 @@ appConfig.branding.title  = "My ORR";
 // (optional) recaptcha siteKey.
 // If given, then the corresponding
 // privateKey must be specified in `orront.conf`
-//appConfig.recaptcha.siteKey = "the-public-key"
+//appConfig.recaptcha = { siteKey: "the-public-key" };
 
 
 // Required: Firebase application URL (https://www.firebase.com/docs/web/guide/login/custom.html)
