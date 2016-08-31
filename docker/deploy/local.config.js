@@ -25,7 +25,7 @@ appConfig.branding.title  = "My ORR";
 
 // (optional) "Contact us" link.
 // No default value.
-//appConfig.branding.contactUs: "http://somewhere/contactus"  // OR  "mailto:addr@example.net"
+//appConfig.branding.contactUs = "http://somewhere/contactus";  // OR  "mailto:addr@example.net";
 
 
 // (optional) recaptcha siteKey.
@@ -34,4 +34,7 @@ appConfig.branding.title  = "My ORR";
 //appConfig.recaptcha.siteKey = "the-public-key"
 
 
-appConfig.firebase.url = "https://mmiorr.firebaseio.com";
+// Required: Firebase application URL (https://www.firebase.com/docs/web/guide/login/custom.html)
+// NOTE: This dependency is planned to be removed, see https://github.com/mmisw/orr-ont/issues/25.
+// In the mean time, please contact us if this is preventing you from moving forward with your ORR instance.
+appConfig.firebase.url = "https://[myapp].firebaseio.com";
