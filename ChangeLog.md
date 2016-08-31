@@ -1,5 +1,31 @@
 ## change log ##
 
+* 2016-08-31:  3.1.1
+  - actual fix #29 "triple store not being updated"
+    The reason was that the AG container runs under the "agraph" user, but this user doesn't have permission to
+    read the files. An example of the response to the orr-ont container from the request to AG:
+  
+  			response:
+             status=400
+             body=MALFORMED DATA: File
+            /opt/orr-ont-base-directory/onts/https:||xdomes.tamucc.edu|ont|testorg|moretest/20160831T175824/file.rdf
+            does not exist
+
+		The actual error is "permission denied" as seen by trying the read diorectly as "agraph" under the AG container:
+    
+    		[agraph@2f47a7bdfd97 ~]$ ls -l '/opt/orr-ont-base-directory/onts/https:||xdomes.tamucc.edu|ont|testorg|moretest/20160831T175824/file.rdf'
+            ls: cannot access /opt/orr-ont-base-directory/onts/https:||xdomes.tamucc.edu|ont|testorg|moretest/20160831T175824/file.rdf: Permission denied
+            
+        But the file is there as can be seen as "root":
+            
+            [root@2f47a7bdfd97 /]# ls -l '/opt/orr-ont-base-directory/onts/https:||xdomes.tamucc.edu|ont|testorg|moretest/20160831T175824/file.rdf'
+            -rw-r-----. 1 root root 1927 Aug 31 17:58 /opt/orr-ont-base-directory/onts/https:||xdomes.tamucc.edu|ont|testorg|moretest/20160831T175824/file.rdf
+            
+        The simple fix is to make sure the file is readable by anyone prior to submitting the load-to-triple-store request.
+        Alternative approaches (eg, making AG run under "root", or adding the "root" group to "agraph", and similar) would
+        involve additional settings external to the orr-ont code itself.
+  
+  
 * 2016-08-30:  3.1.1
   - re #28 "simplify docker-based deployment procedure"
   	- deployment now based on Docker Compose

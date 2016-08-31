@@ -7,6 +7,7 @@ import org.json4s.native.JsonParser
 import org.mmisw.orr.ont.Setup
 import org.mmisw.orr.ont.auth.authUtil
 import org.mmisw.orr.ont.swld.ontUtil
+import org.mmisw.orr.ont.util.FileUtils
 
 import scala.concurrent.Promise
 import scala.util.{Failure, Success, Try}
@@ -60,6 +61,11 @@ with TripleStoreService with Logging {
     val contentType = ontUtil.mimeMappings(actualFormat)
 
     val absPath = file.getAbsolutePath
+
+    FileUtils.makeReadableByAnyone(file) foreach { error =>
+      logger.warn(s"loadUriFromLocal: error trying to make $absPath readable: $error")
+    }
+
     logger.debug( s"""loadUriFromLocal:
          |  uri=$uri reload=$reload
          |  absPath=$absPath  contentType=$contentType
