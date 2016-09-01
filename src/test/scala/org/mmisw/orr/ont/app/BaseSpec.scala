@@ -17,6 +17,10 @@ trait BaseSpec extends Mockito {
       |  email    = "dummy@example.org"
       |}
       |
+      |deployment {
+      |  url = "http://example.net/ont"
+      |}
+      |
       |branding {
       |  instanceName = "MMI ORR"
       |}

@@ -290,6 +290,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
             |The following ontology has been registered:
             |
             | URI: $uri
+            | ${getResolveWith(uri)}
             | Version: $version
             | Registered: ${ontVersion.date}
             | Owner: $ownerName
@@ -360,6 +361,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
              |A new ontology version has been registered:
              |
              | URI: $uri
+             | ${getResolveWith(uri)}
              | Version: $version
              | Submitter: $userName
              | Updated: ${ontVersion.date}
@@ -475,6 +477,14 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   def deleteAll() = ontDAO.remove(MongoDBObject())
 
   ///////////////////////////////////////////////////////////////////////////
+
+  /**
+    * @return Empty string if uri is self-resolvable; otherwise: "Resolve with: &lt;url?uri=uri>",
+    */
+  private def getResolveWith(uri: String): String = {
+    val myUrl = setup.cfg.deployment.url + "/"
+    if (uri.startsWith(myUrl)) "" else s"Resolve with: $myUrl?uri=$uri"
+  }
 
   private def doDeleteOntology(ont: Ontology) = {
     logger.debug(s"doDeleteOntology: ont.uri=${ont.uri}")

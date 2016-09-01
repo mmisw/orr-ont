@@ -1,6 +1,11 @@
 ## change log ##
 
 * 2016-09-01:  3.1.2
+  - introduce cfg.deployment.url to support better notification emails about ontology registrations
+    (and possibly other uses later on). Ontology registration email will now include a
+    `Resolve with: <url>?uri=<uri>` line when the ontology URI is not self-resolvable.
+    NOTE: determining the deployment URL in the code itself (e.g., from the servlet context) risks
+    being inaccurate depending on external factors (http proxies and the like).
   - regenerate Cfg with tscfg 0.3.3 - no external impact at all
   
 * 2016-08-31:  3.1.1
