@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-09-01:  3.1.2
+  - regenerate Cfg with tscfg 0.3.3 - no external impact at all
+  
 * 2016-08-31:  3.1.1
   - add cfg.branding.footer as a mechanism to add a footer to the portal index.html files
   
