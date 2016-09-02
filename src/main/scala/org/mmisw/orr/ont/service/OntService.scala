@@ -603,7 +603,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     ontUtil.getPropsFromOntMetadata(uri, destFile, ontFileWriter.format)
   }
 
-  private val baseDir = setup.filesConfig.baseDirectory
+  private val baseDir = setup.baseDir
   private val uploadsDir = new File(baseDir, "uploads")
   private val ontsDir = new File(baseDir, "onts")
 

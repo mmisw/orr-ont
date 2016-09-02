@@ -5,10 +5,12 @@ import java.io.File
 object FileUtils {
 
   /**
-    * @return None or Some("error: ...")
+    * @param file      The file to make readable
+    * @param baseDir   Limit to adjust permissions in ancestor directories (by default, `/`)
+    * @return          None or Some("error: ...")
     */
   // introduced for #29 "triple store not being updated"
-  def makeReadableByAnyone(file: File): Option[String] = {
+  def makeReadableByAnyone(file: File, baseDir: File = new File("/")): Option[String] = {
     var f = file
     while (f != null) {
       if (f.isFile || f.isDirectory) {
@@ -16,17 +18,16 @@ object FileUtils {
         try {
           if (!f.setReadable(true, false))
             return Some(s"error: could not set readable to $abs")
-          if (f.isDirectory) {
-            if (!f.setExecutable(true, false))
-              return Some(s"error: could not set executable to $abs")
-          }
+          if (f.isDirectory && !f.setExecutable(true, false))
+            return Some(s"error: could not set executable to $abs")
         }
         catch {
           case e: SecurityException =>
             return Some(s"error: SecurityException for $abs: ${e.getMessage}")
         }
       }
-      f = f.getParentFile
+      val p = f.getParentFile
+      f = if (baseDir != f && baseDir != p) p else null
     }
     None
   }

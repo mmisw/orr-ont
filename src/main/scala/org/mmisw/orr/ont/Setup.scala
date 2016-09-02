@@ -49,6 +49,8 @@ class Setup(val cfg: Cfg,
     }
   }
 
+  val baseDir = new java.io.File(filesConfig.baseDirectory)
+
   val instanceName = cfg.branding.instanceName
 
   com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers()

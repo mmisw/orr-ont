@@ -1,6 +1,7 @@
 ## change log ##
 
 * 2016-09-01:  3.1.2
+  - set cfg.files.baseDirectory as limit in use of FileUtils.makeReadableByAnyone
   - introduce cfg.deployment.url to support better notification emails about ontology registrations
     (and possibly other uses later on). Ontology registration email will now include a
     `Resolve with: <url>?uri=<uri>` line when the ontology URI is not self-resolvable.

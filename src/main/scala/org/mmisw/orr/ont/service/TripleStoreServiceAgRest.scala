@@ -62,7 +62,7 @@ with TripleStoreService with Logging {
 
     val absPath = file.getAbsolutePath
 
-    FileUtils.makeReadableByAnyone(file) foreach { error =>
+    FileUtils.makeReadableByAnyone(file, setup.baseDir) foreach { error =>
       logger.warn(s"loadUriFromLocal: error trying to make $absPath readable: $error")
     }
 
