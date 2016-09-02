@@ -2,11 +2,11 @@
 
 The Docker images required to run the ORR system are:
 
-| Image                                       |  Purpose |
-|---------------------------------------------|---------------------------|
-| [`mongo`](https://hub.docker.com/_/mongo/)  | MongoDB used for all data |
-| [`franzinc/agraph`](https://hub.docker.com/r/franzinc/agraph/) | AllegroGraph server and SPARQL endpoint |
-| [`mmisw/orr-ont`](https://hub.docker.com/r/mmisw/orr-ont/)   | The ORR System itself |
+| Image               |  Name        |  Purpose |
+|---------------------|------------- | ---------|
+| [`mmisw/orr-ont`]   | ORR          | The ORR system itself |
+| [`mongo`]           | MongoDB      | Persist all data |
+| [`franzinc/agraph`] | AllegroGraph | Triple store and SPARQL endpoint |
 
 The user performing the deployment should have the relevant Docker privileges.
 
@@ -66,12 +66,41 @@ email address on a line by itself, e.g.,:
         Removing agraph ... done
 
 
-Please note: The above Docker set-up should in general be complemented with appropriate
+- To stop and restart individual containers:
+
+        $ docker stop orr-ont
+        $ docker start orr-ont
+        $ docker restart orr-ont
+
+    A crontab like the following could be defined for a complete ORR start at reboot time:
+     
+        @reboot docker start mongo agraph orr-ont
+
+
+
+**Please note**: The above Docker set-up should in general be complemented with appropriate
 mechanism toward a production environment.
 Aspects to consider include:
 making your ORR instance externally visible, re-starting the containers to reflect configuration
 and image updates, logging, backups, etc.
 Please check with your sysadmin.
 
-TODO: illustrate typical Apache HTTPD proxy configuration to expose the ORR itself and the
-SPARQL endpoint.
+
+### Apache HTTPD proxy configuration
+
+Just as a suggestion (please check with your sysadmin), the following is a possible Apache
+proxy configuration to expose the ORR itself and the SPARQL endpoint through the `/ont`
+and `/sparql` context paths under your main HTTP server:
+
+    ProxyPass        /ont http://localhost:9090/ont
+    ProxyPassReverse /ont http://localhost:9090/ont
+
+    ProxyPass        /sparql http://localhost:10035/repositories/mmiorr
+    ProxyPassReverse /sparql http://localhost:10035/repositories/mmiorr
+
+
+
+-------------
+[`mmisw/orr-ont`]: https://hub.docker.com/r/mmisw/orr-ont/
+[`mongo`]: https://hub.docker.com/_/mongo/
+[`franzinc/agraph`]: https://hub.docker.com/r/franzinc/agraph/
