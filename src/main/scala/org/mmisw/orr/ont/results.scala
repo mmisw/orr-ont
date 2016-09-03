@@ -17,6 +17,8 @@ case class UserResult(
             organizations: Option[List[OrgResult]] = None
             )
 
+case class AuthToken(token: String)
+
 case class UsernameReminderResult(
             email:       String,
             message:     Option[String] = None)

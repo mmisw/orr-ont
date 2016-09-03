@@ -165,8 +165,6 @@ class UserController(implicit setup: Setup) extends BaseController
       case Failure(exc)    => error500(exc)
     }
 
-    // TODO: update firebase.
-
     userService.notifyPasswordHasBeenReset(user)
 
     <html>
@@ -208,15 +206,26 @@ class UserController(implicit setup: Setup) extends BaseController
     Created(createUser(userName, email, firstName, lastName, password, phone, ontUri))
   }
 
+  // authenticates user returning a JWT if successful
   post("/auth") {
     val map = body()
-    val userName  = require(map, "userName")
-    val password  = require(map, "password")
-    val user = getUser(userName)
+    val userName = require(map, "username")
+    val password = require(map, "password")
+    val user     = getUserOpt(userName).getOrElse(error(401, "invalid credentials"))
 
-    if (userAuth.checkPassword(password, user)) UserResult(userName,
-      role = if (extra.contains(userName)) Some("extra") else None)
-    else error(401, "bad password")
+    if (userAuth.checkPassword(password, user)) {
+      val payload = Map(
+        "uid"       -> userName,
+        "firstName" -> user.firstName,
+        "lastName"  -> user.lastName,
+        "displayName" -> s"${user.firstName} ${user.lastName}", // TODO remove displayName
+        "email"     -> user.email,
+        "phone"     -> user.phone.getOrElse("")
+      )
+      val jwt = jwtUtil.createToken(payload)
+      AuthToken(jwt)
+    }
+    else error(401, "invalid credentials")
   }
 
 //  ////////////////////////////////////////////////////////////////////////
