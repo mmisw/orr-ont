@@ -24,9 +24,51 @@ with TripleStoreService with Logging {
 
   def setFormats(formats: Map[String,String]): Unit = { this.formats = formats }
 
+  /**
+    * Initializes the triple store for ORR.
+    */
   def initialize(): Unit = {
-    createRepositoryIfMissing()
-    createAnonymousUserIfMissing()
+    logger.info("TripleStoreServiceAgRest.initialize")
+
+    def doInit(): Unit = {
+      logger.info("TripleStoreServiceAgRest.doInit")
+      createRepository()
+      createAnonymousUserIfMissing()
+    }
+
+    // use getSize as a way to check whether the repository already exists
+    getSize() match {
+      case e@Right(content) =>
+        logger.info("AG repository already exists.")
+        createAnonymousUserIfMissing()
+
+      case Left(exc) =>
+        logger.info(s"Could not get AG repository size (${exc.getMessage})")
+
+        setup.cfg.agraph.initDelay match {
+          case None =>
+            logger.info(s"Assuming non-existence. Attempting to create AG repository")
+            doInit()
+
+          case Some(delaySecs) =>
+            logger.info(s"Perhaps AG is not fully started yet. Will check again in $delaySecs seconds")
+            new Thread(new Runnable {
+              def run() {
+                Thread.sleep(delaySecs * 1000)
+                logger.info(s"Checking AG repository again")
+                getSize() match {
+                  case Right(content) =>
+                    logger.info("AG repository exists.")
+                    createAnonymousUserIfMissing()
+
+                  case Left(exc2) =>
+                    logger.info(s"2nd attempt: could not get AG repository size (${exc2.getMessage})." +
+                      s" Assuming non-existence. Attempting to create AG repository")
+                    doInit()
+              }
+            }}).start()
+        }
+    }
   }
 
   def getSize(contextOpt: Option[String] = None): Either[Throwable, String] = {
@@ -189,34 +231,24 @@ with TripleStoreService with Logging {
     }
   }
 
-  private def createRepositoryIfMissing(): Either[Throwable, String] = {
-    // use getSize as a way to check whether the repository already exists
-    getSize() match {
-      case e@Right(content) =>
-        logger.debug("AG repository already exists")
-        e
+  private def createRepository(): Either[Throwable, String] = {
+    val prom = Promise[Either[Throwable, String]]()
 
-      case Left(exc) =>
-        logger.info(s"Could not get AG repository size (${exc.getMessage})." +
-          " Assuming non-existence. Will now attempt to create AG repository")
-        val prom = Promise[Either[Throwable, String]]()
+    // NOTE: Not using `svc` directly because host(orrEndpoint) adds a trailing slash
+    // to the URL thus making AG to fail with a 404
+    val req = sparqlEndpoint
+      .setHeader("Accept", formats("json"))
+      .setHeader("Authorization", authUtil.basicCredentials(userName, password))
 
-        // NOTE: Not using `svc` directly because host(orrEndpoint) adds a trailing slash
-        // to the URL thus making AG to fail with a 404
-        val req = sparqlEndpoint
-          .setHeader("Accept", formats("json"))
-          .setHeader("Authorization", authUtil.basicCredentials(userName, password))
+    dispatch.Http(req.PUT OK as.String) onComplete {
+      case Success(content) =>
+        prom.complete(Try(Right(content)))
+        logger.info(s"AG repository creation succeeded. content=$content")
 
-        dispatch.Http(req.PUT OK as.String) onComplete {
-          case Success(content) =>
-            prom.complete(Try(Right(content)))
-            logger.info(s"AG repository creation succeeded. content=$content")
-
-          case Failure(exception) => prom.complete(Try(Left(exception)))
-            logger.warn("AG repository creation failed", exception)
-        }
-        prom.future()
+      case Failure(exception) => prom.complete(Try(Left(exception)))
+        logger.warn("AG repository creation failed", exception)
     }
+    prom.future()
   }
 
   private def createAnonymousUserIfMissing(): Unit = {
