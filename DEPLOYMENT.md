@@ -2,7 +2,7 @@
 
 ## Docker-based deployment
 
-See instructions at
+Instructions
 [here](https://github.com/mmisw/orr-ont/blob/master/docker/deploy/README.md).
 
 
