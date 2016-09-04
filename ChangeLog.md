@@ -1,6 +1,7 @@
 ## change log ##
 
 * 2016-09-02:  3.1.3
+  - update readme and add development.md
   - introduce optional cfg.agraph.initDelay; if given, the triple store initialization sequence
     will include a 2nd re-attempt after the given delay
   - resolve #25 "remove firebase"
