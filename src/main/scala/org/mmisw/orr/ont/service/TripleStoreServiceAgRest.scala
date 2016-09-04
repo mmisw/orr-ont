@@ -203,7 +203,7 @@ with TripleStoreService with Logging {
 
         // NOTE: Not using `svc` directly because host(orrEndpoint) adds a trailing slash
         // to the URL thus making AG to fail with a 404
-        val req = url(s"http://$orrEndpoint")
+        val req = sparqlEndpoint
           .setHeader("Accept", formats("json"))
           .setHeader("Authorization", authUtil.basicCredentials(userName, password))
 
