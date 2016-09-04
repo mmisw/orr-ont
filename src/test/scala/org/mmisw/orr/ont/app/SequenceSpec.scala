@@ -110,13 +110,13 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
 
   "Check password (POST /user/auth)" should {
     "return 200 with correct password" in {
-      post("/user/auth", body = pretty(render(Map("userName" -> userName, "password" -> password))),
+      post("/user/auth", body = pretty(render(Map("username" -> userName, "password" -> password))),
         headers = Map("content-type" -> "application/json")) {
         status must_== 200
       }
     }
     "return 401 with bad password" in {
-      post("/user/auth", body = pretty(render(Map("userName" -> userName, "password" -> "wrong"))),
+      post("/user/auth", body = pretty(render(Map("username" -> userName, "password" -> "wrong"))),
         headers = Map("content-type" -> "application/json")) {
         status must_== 401
       }
@@ -137,7 +137,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
       }
     }
 
-    val jwt = jwtUtil.createToken(userName, Map())
+    val jwt = jwtUtil.createToken(Map("uid" -> userName))
     "succeed with JWT" in {
       val headers = Map("content-type" -> "application/json")
       val reqBody2 = pretty(render(Map("jwt" -> jwt)))

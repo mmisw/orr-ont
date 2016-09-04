@@ -2,7 +2,7 @@ version: '2'
 
 services:
   orr-ont:
-    image: mmisw/orr-ont:3.1.2
+    image: mmisw/orr-ont:3.1.3
     container_name: orr-ont
     depends_on:
       - agraph

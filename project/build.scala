@@ -9,7 +9,7 @@ import scoverage.ScoverageKeys._
 object build extends Build {
   val Organization = "org.mmisw"
   val Name = "orr-ont"
-  val Version = "3.1.2"
+  val Version = "3.1.3"
 
   val ScalaVersion      = "2.11.6"
   val ScalatraVersion   = "2.3.0"
@@ -28,7 +28,6 @@ object build extends Build {
   lazy val coverageSettings = Seq(
     coverageExcludedPackages := ".*\\.x;ScalatraBootstrap;.*\\.util.MailSender;.*\\.Emailer;" +
       ".*\\.ApiAuthenticationSupport;.*\\.apiAuthenticator;.*\\.HmacUtils;" +
-      ".*\\.FirebaseController;" +
       ".*\\.TripleStoreServiceAgRest;" +
       ".*\\.SelfHostedOntController;" +
       ".*\\.Skos",
@@ -86,8 +85,7 @@ object build extends Build {
         "net.databinder.dispatch"   %% "dispatch-core"        % "0.11.2",
         "net.databinder.dispatch"    % "dispatch-json4s-native_2.11" % "0.11.2",
 
-        "com.firebase"               % "firebase-token-generator" % "2.0.0",
-        "com.auth0"                  % "java-jwt"                 % "2.1.0",
+        "com.auth0"                  % "java-jwt"             % "2.1.0",
 
         "javax.mail"                 % "mail"                 % "1.4.7",
 

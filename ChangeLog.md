@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-09-02:  3.1.3
+  - resolve #25 "remove firebase"
+
 * 2016-09-01:  3.1.2
   - set cfg.files.baseDirectory as limit in use of FileUtils.makeReadableByAnyone
   - introduce cfg.deployment.url to support better notification emails about ontology registrations

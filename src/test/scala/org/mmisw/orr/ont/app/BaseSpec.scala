@@ -17,6 +17,10 @@ trait BaseSpec extends Mockito {
       |  email    = "dummy@example.org"
       |}
       |
+      |auth {
+      |  secret = "dummy"
+      |}
+      |
       |deployment {
       |  url = "http://example.net/ont"
       |}
@@ -71,10 +75,6 @@ trait BaseSpec extends Mockito {
       |  #propertyId
       |}
       |
-      |firebase {
-      |  secret = "dummy"
-      |}
-      |
       |import {
       |  #aquaUploadsDir
       |}
@@ -88,7 +88,7 @@ trait BaseSpec extends Mockito {
     emailer = mock[IEmailer],
     testing = testing)
 
-  val jwtUtil = new JwtUtil(config.getString("firebase.secret"))
+  val jwtUtil = new JwtUtil(config.getString("auth.secret"))
 
   val adminCredentials = authUtil.basicCredentials("admin", setup.cfg.admin.password)
 

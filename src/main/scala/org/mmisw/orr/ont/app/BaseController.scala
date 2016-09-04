@@ -31,7 +31,7 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
 
   protected val userAuth    = setup.db.authenticator
 
-  protected val jwtUtil = new JwtUtil(setup.cfg.firebase.secret)
+  protected val jwtUtil = new JwtUtil(setup.cfg.auth.secret)
 
   ///////////////////////////////////////////////////////////////////////////
 
