@@ -1,7 +1,7 @@
 # `orr-ont` build
 
 By default, the `orr-ont` build will only have the repository backend services.
-This completely fine as the front-end can be deployed and configured separately.
+(The front-end can be deployed and configured separately.)
 
 The following are steps to build `orr-ont` also including the `orr-portal` front-end
 so everything is integrated in a single deployable artifact.

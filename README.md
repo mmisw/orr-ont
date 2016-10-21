@@ -11,12 +11,11 @@ of its [Semantic Framework](http://marinemetadata.org/semanticframework) vision.
 
 # What's orr-ont?
 
-The ORR system is comprised of: a backend component, the `orr-ont` service;
+The ORR system is comprised of two main components: a backend component, the `orr-ont` service;
 and a front-end component, the `orr-portal` web application.
 
 This is the repository for the `orr-ont` component.
- 
-For the front-end component see [orr-ont](https://github.com/mmisw/orr-portal).
+For the front-end component see [orr-portal](https://github.com/mmisw/orr-portal).
 
 
 # Deployment
