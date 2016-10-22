@@ -1,0 +1,46 @@
+FORMAT: 1A
+HOST: http://cor.esipfed.org/ont/api/v0
+
+# orr-ont
+
+
+orr-ont is the service supporting registration and hosting of ontologies.
+
+# Group Users
+
+Resources related to users in the API.
+
+
+## User Collection [/user]
+
+
+## User [/user/{username}]
+
+A User object has the following attributes:
+
++ firstName - First name
++ lastName - Last name
+
++ Parameters
+    + username (required, string, `calvin`) ... ID of the user
+
+### View a User Detail [GET]
+
++ Response 200 (application/json)
+
+        {
+            "firstName": "Calvin",
+            "lastName": "Doe",
+            "userName": "calvin"
+        }
+
+
+### Register a User [POST]
+
+This action allows an admion to register a new user.
+
++ Response 201
+
+    + Headers
+
+            Location: /questions/1
