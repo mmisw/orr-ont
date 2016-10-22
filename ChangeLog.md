@@ -1,5 +1,11 @@
 ## change log ##
 
+* 2016-10-21:  3.1.4
+  - re #24 "generate API documentation", add /api-docs to respond with swagger.yaml,
+    edited in http://editor.swagger.io/
+    Note that editor.swagger.io seems to have some glitches (not always reflect changes, trouble to
+    perform operations requiring authentication..), but the dispatch is OK in http://petstore.swagger.io/
+   
 * 2016-09-02:  3.1.3
   - update readme and add development.md
   - introduce optional cfg.agraph.initDelay; if given, the triple store initialization sequence

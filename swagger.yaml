@@ -1,0 +1,283 @@
+swagger: '2.0'
+info:
+  version: v0
+  title: ORR Ont API Documentation
+  description: >
+    ORR Ont API documentation.
+
+    The main ORR documentation is located at: http://mmisw.org/orrdoc/
+
+
+    __Note__:
+
+    - This API documentation is work in progress.
+      Please let us know if you have any questions while we update this documentation.
+
+    - Using endpoint at http://cor.esipfed.org
+      while the main instance at http://mmisw.org is upgraded to ORR v3.
+
+  termsOfService: 'https://marinemetadata.org/orr/tou'
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+
+host: cor.esipfed.org
+basePath: /ont/api/v0
+schemes:
+  - http
+  - https
+
+consumes:
+  - application/json
+produces:
+  - application/json
+
+securityDefinitions:
+  basicAuth:
+    type: basic
+    description: HTTP Basic Authentication. Works over `HTTP` and `HTTPS`.
+paths:
+  /ont:
+    get:
+      description: |
+        Gets the registered ontologies.
+      parameters:
+        - name: uri
+          in: query
+          type: string
+          required: false
+          description: >-
+            With this parameter the backend will first try an "ontology
+            request." If no ontlogy is registered by the given value, then it
+            will try a "term request."
+        - name: ouri
+          in: query
+          type: string
+          required: false
+          description: Use this parameter to exclusively make a "ontology request".
+        - name: turi
+          in: query
+          type: string
+          required: false
+          description: Use this parameter to exclusively make a "term request."
+        - name: version
+          in: query
+          type: string
+          required: false
+          description: Desired version in the case of an "ontology request."
+        - name: format
+          in: query
+          type: string
+          required: false
+          description: Desired format for the response.
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Ont'
+    post:
+      summary: Registers an ontology
+      description: ""
+      operationId: addOnt
+      parameters:
+        - in: body
+          name: body
+          description: Ontology object that needs to be registered
+          schema:
+            $ref: "#/definitions/PostOnt"
+      responses:
+        "405":
+          description: Invalid input
+      security:
+       - basicAuth: []
+
+  /org:
+    get:
+      description: |
+        Gets basic information of all registered organizations.
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Org'
+    post:
+      summary: Registers an organization
+      description: ""
+      operationId: addOrg
+      parameters:
+        - in: body
+          name: body
+          description: Organization object that needs to be registered
+          schema:
+            $ref: "#/definitions/PostOrg"
+      responses:
+        "405":
+          description: Invalid input
+      security:
+       - basicAuth: []
+  '/org/{orgName}':
+    get:
+      description: |
+        Gets basic information of a particular organization.
+      parameters:
+        - name: orgName
+          in: path
+          type: string
+          required: true
+          description: The code (short name) of the organization.
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            $ref: '#/definitions/Org'
+
+  /user:
+    get:
+      description: |
+        Gets the registered users.
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/User'
+    post:
+      summary: Registers a user
+      description: ""
+      operationId: addUser
+      parameters:
+        - in: body
+          name: body
+          description: User object that needs to be registered
+          schema:
+            $ref: "#/definitions/PostUser"
+      responses:
+        "405":
+          description: Invalid input
+      security:
+       - basicAuth: []
+  '/user/{userName}':
+    get:
+      description: |
+        Gets basic information of a particular user.
+      parameters:
+        - name: userName
+          in: path
+          type: string
+          required: true
+          description: The login (short name) of the user.
+      responses:
+        '200':
+          description: Successful response
+          schema:
+            $ref: '#/definitions/User'
+definitions:
+  #
+  # Ontology
+  #
+  PostOnt:
+    type: object
+    properties:
+      uri:
+        type: string
+        description: The URI of the ontology.
+      originalUri:
+        type: string
+        description: |
+          In case a fully-hosted registration is requested enter this field to indicate
+          the original URI to be used for the "migration" of corresponding entities to the new URI.
+      name:
+        type: string
+      orgName:
+        type: string
+        description: |
+          ID of the organization that will own the ontology registration.
+          By default, the owner will be the submitting user.
+
+      visibility:
+        type: string
+      status:
+        type: string
+      userName:
+        type: string
+  Ont:
+    type: object
+    properties:
+      uri:
+        type: string
+      name:
+        type: string
+      version:
+        type: string
+      ownerName:
+        type: string
+      status:
+        type: string
+      format:
+        type: string
+      visibility:
+        type: string
+
+  #
+  # Organization
+  #
+  PostOrg:
+    type: object
+    properties:
+      name:
+        type: string
+      orgName:
+        type: string
+      members:
+        type: array
+        items:
+          type: string
+        description: Members of this organization
+      url:
+        type: string
+        description: Website URL of the organization
+  Org:
+    type: object
+    properties:
+      name:
+        type: string
+      orgName:
+        type: string
+      members:
+        type: array
+        items:
+          type: string
+
+  #
+  # User
+  #
+  PostUser:
+    type: object
+    properties:
+      userName:
+        type: string
+      email:
+        type: string
+      firstName:
+        type: string
+      lastName:
+        type: string
+      password:
+        type: string
+        format: password
+      phone:
+        type: string
+  User:
+    type: object
+    properties:
+      userName:
+        type: string
+      firstName:
+        type: string
+      lastName:
+        type: string
