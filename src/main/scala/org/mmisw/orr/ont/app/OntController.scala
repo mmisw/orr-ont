@@ -328,11 +328,11 @@ class OntController(implicit setup: Setup,
   }
 
   /**
-   * Preliminary mapping from given parameters to a query for filtering purposes
+    * Preliminary mapping from given parameters to a query for filtering purposes.
     *
     * @param keys keys to be considered
-   * @return MongoDBObject
-   */
+    * @return MongoDBObject
+    */
   /*
    * TODO(low priority) more options for the query, eg., glob filtering (orgName=mmi*),
    * or perhaps allow to pass a Mongo query directly in an special
@@ -397,15 +397,15 @@ class OntController(implicit setup: Setup,
     * Gets OntFileWriter for purposes on new **version**
     * according to given relevant parameters
     */
-  private def getOntFileWriterOpt(user: db.User): Option[OntFileWriter] = {
-    Option(if (fileParams.isDefinedAt("file"))
+  private def getOntFileWriterOpt(user: db.User): Option[OntFileWriter] = Option(
+    if (fileParams.isDefinedAt("file"))
       getOntFileWriterForJustUploadedFile
     else if (getParam("contents").isDefined)
       getOntFileWriterForGivenContents
     else if (getParam("uploadedFilename").isDefined && getParam("uploadedFormat").isDefined)
       getOntFileWriterForPreviouslyUploadedFile(user.userName)
-    else null)
-  }
+    else null
+  )
 
   private def getOntFileWriterForJustUploadedFile: OntFileWriter = {
     val fileItem = fileParams.getOrElse("file", missing("file"))
