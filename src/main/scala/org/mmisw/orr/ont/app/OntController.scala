@@ -90,6 +90,7 @@ class OntController(implicit setup: Setup,
     val versionVisibility = getVisibilityParam
     val versionStatus     = getParam("status")
     val user           = verifyUser(getParam("userName"))
+    val userName       = user.userName
 
     val (ownerName, ownerAsAuthorName) = orgNameOpt match {
       case Some(orgName) =>
@@ -102,7 +103,7 @@ class OntController(implicit setup: Setup,
 
     val (version, date) = getVersion
 
-    val ontFileWriter = getOntFileWriter(user)
+    val ontFileWriter = getOntFileWriter(userName)
 
     Created(createOntology(uri, originalUriOpt, name, version,
       versionVisibility, versionStatus,
@@ -120,12 +121,13 @@ class OntController(implicit setup: Setup,
     val versionVisibilityOpt = getVisibilityParam
     val versionStatusOpt  = getParam("status")
     val user           = verifyUser(getParam("userName"))
+    val userName       = user.userName
 
     val (ont, _, _) = resolveOntologyVersion(uri, versionOpt)
 
     verifyOwnerName(ont.ownerName)
 
-    val ontFileWriterOpt: Option[OntFileWriter] = getOntFileWriterOpt(user) orElse {
+    val ontFileWriterOpt: Option[OntFileWriter] = getOntFileWriterOpt(userName) orElse {
       getParam("metadata") map (getOntFileWriterWithMetadata(uri, versionOpt, _))
     }
 
@@ -137,7 +139,7 @@ class OntController(implicit setup: Setup,
           error(400, "creation of new version requires specification of contents " +
             "(file upload, embedded contents, or new metadata"))
 
-        createOntologyVersion(uri, originalUriOpt, user,
+        createOntologyVersion(uri, originalUriOpt, userName,
           versionVisibility = versionVisibilityOpt,
           versionStatus = versionStatusOpt,
           nameOpt = getParam("name"),
@@ -150,7 +152,7 @@ class OntController(implicit setup: Setup,
           versionVisibilityOpt = versionVisibilityOpt,
           versionStatusOpt = versionStatusOpt,
           nameOpt = getParam("name"),
-          user = user,
+          userName = userName,
           doVerifyOwner = doVerifyOwner)
     }
   }
@@ -388,8 +390,8 @@ class OntController(implicit setup: Setup,
     * Gets OntFileWriter for purposes of brand new ontology registration
     * according to given relevant parameters.
     */
-  private def getOntFileWriter(user: db.User): OntFileWriter = {
-    getOntFileWriterOpt(user).getOrElse(
+  private def getOntFileWriter(userName: String): OntFileWriter = {
+    getOntFileWriterOpt(userName).getOrElse(
       error(400, s"no suitable parameters were specified to indicate contents"))
   }
 
@@ -397,13 +399,13 @@ class OntController(implicit setup: Setup,
     * Gets OntFileWriter for purposes on new **version**
     * according to given relevant parameters
     */
-  private def getOntFileWriterOpt(user: db.User): Option[OntFileWriter] = Option(
+  private def getOntFileWriterOpt(userName: String): Option[OntFileWriter] = Option(
     if (fileParams.isDefinedAt("file"))
       getOntFileWriterForJustUploadedFile
     else if (getParam("contents").isDefined)
       getOntFileWriterForGivenContents
     else if (getParam("uploadedFilename").isDefined && getParam("uploadedFormat").isDefined)
-      getOntFileWriterForPreviouslyUploadedFile(user.userName)
+      getOntFileWriterForPreviouslyUploadedFile(userName)
     else null
   )
 
@@ -458,7 +460,7 @@ class OntController(implicit setup: Setup,
    */
   private def createOntologyVersion(uri:            String,
                                     originalUriOpt: Option[String],
-                                    user:           db.User,
+                                    userName:       String,
                                     versionVisibility: Option[String],
                                     versionStatus:  Option[String],
                                     nameOpt:        Option[String],
@@ -467,7 +469,7 @@ class OntController(implicit setup: Setup,
                                    ) = {
     val (version, date) = getVersion
 
-    Try(ontService.createOntologyVersion(uri, originalUriOpt, nameOpt, user.userName,
+    Try(ontService.createOntologyVersion(uri, originalUriOpt, nameOpt, userName,
         version, versionVisibility, versionStatus,
         date, ontFileWriter, doVerifyOwner)) match {
       case Success(ontologyResult) =>
@@ -491,7 +493,7 @@ class OntController(implicit setup: Setup,
                                     versionVisibilityOpt: Option[String],
                                     versionStatusOpt:  Option[String],
                                     nameOpt:        Option[String],
-                                    user:           db.User,
+                                    userName:       String,
                                     doVerifyOwner:  Boolean = true
                                    ) = {
     Try(ontService.updateOntologyVersion(uri, originalUriOpt,
@@ -499,7 +501,7 @@ class OntController(implicit setup: Setup,
         versionVisibilityOpt,
         versionStatusOpt = versionStatusOpt,
         nameOpt,
-        user.userName,
+        userName,
         doVerifyOwner)
     ) match {
       case Success(ontologyResult) =>
