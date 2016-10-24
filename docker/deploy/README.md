@@ -25,10 +25,10 @@ consists of the following steps.
 - Get these files:
 
         $ curl -o docker-compose.yml https://raw.githubusercontent.com/mmisw/orr-ont/master/docker/deploy/docker-compose.yml
-        $ curl -o orront.conf https://raw.githubusercontent.com/mmisw/orr-ont/master/docker/deploy/orront.conf
-        $ curl -o local.config.js https://raw.githubusercontent.com/mmisw/orr-ont/master/docker/deploy/local.config.js
+        $ curl -o orront.conf        https://raw.githubusercontent.com/mmisw/orr-ont/master/docker/deploy/orront.conf
+        $ curl -o local.config.js    https://raw.githubusercontent.com/mmisw/orr-ont/master/docker/deploy/local.config.js
 
-- To specify a list of email address that should be notified whenever there's a
+- To specify a list of email addresses that should be notified whenever there's a
 user, organization, or ontology registration, create a `notifyemails` text file and put each
 email address on a line by itself, e.g.,:
 
@@ -79,7 +79,7 @@ email address on a line by itself, e.g.,:
 
 
 **Please note**: The above Docker set-up should in general be complemented with appropriate
-mechanism toward a production environment.
+mechanisms toward a production environment.
 Aspects to consider include:
 making your ORR instance externally visible, re-starting the containers to reflect configuration
 and image updates, logging, backups, etc.
