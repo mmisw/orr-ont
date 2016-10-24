@@ -141,10 +141,9 @@ object ontFileLoader extends AnyRef with Logging {
         yield xmlBase.toString
     }
     catch {
-      case e: Throwable => {
+      case e: Throwable =>
         logger.warn(s"error while trying to read xml:base attribute from $file", e)
         None
-      }
     }
   }
 

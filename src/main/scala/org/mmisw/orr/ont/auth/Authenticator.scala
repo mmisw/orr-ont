@@ -9,7 +9,7 @@ import com.novus.salat.dao.SalatDAO
 
 
 object userAuth {
-  private var authenticator: Authenticator = null
+  private var authenticator: Authenticator = _
 
   def getAuthenticator = {
     require(authenticator != null, "authenticator must have been created already")

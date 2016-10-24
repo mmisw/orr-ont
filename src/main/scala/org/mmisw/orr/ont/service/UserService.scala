@@ -66,24 +66,24 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
     var update = getUser(userName)
 
     if (map.contains("email")) {
-      update = update.copy(email = map.get("email").get)
+      update = update.copy(email = map("email"))
     }
     if (map.contains("phone")) {
       update = update.copy(phone = map.get("phone"))
     }
     if (map.contains("firstName")) {
-      update = update.copy(firstName = map.get("firstName").get)
+      update = update.copy(firstName = map("firstName"))
     }
     if (map.contains("lastName")) {
-      update = update.copy(lastName = map.get("lastName").get)
+      update = update.copy(lastName = map("lastName"))
     }
 
     if (map.contains("password")) {
-      val encPassword = userAuth.encryptPassword(map.get("password").get)
+      val encPassword = userAuth.encryptPassword(map("password"))
       update = update.copy(password = encPassword)
     }
     else if (map.contains("encPassword")) {
-      update = update.copy(password = map.get("encPassword").get)
+      update = update.copy(password = map("encPassword"))
     }
 
     if (map.contains("ontUri")) {

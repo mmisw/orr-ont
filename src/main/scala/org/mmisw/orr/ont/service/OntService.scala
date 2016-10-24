@@ -189,7 +189,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
   private def getLatestVersion(ont: Ontology): Option[(OntologyVersion,String)] = {
     ont.sortedVersionKeys.headOption match {
-      case Some(version) => Some((ont.versions.get(version).get, version))
+      case Some(version) => Some((ont.versions(version), version))
       case None => None
     }
   }
@@ -354,7 +354,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     logger.info(s"update: $update")
 
-    Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
+    Try(ontDAO.update(MongoDBObject("_id" -> uri), update, upsert = false, multi = false, WriteConcern.Safe)) match {
       case Success(result) =>
         sendNotificationEmail("New ontology version registered",
           s"""
@@ -412,7 +412,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     val update = ont.copy(versions = newVersions)
     //logger.info(s"update: $update")
 
-    Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
+    Try(ontDAO.update(MongoDBObject("_id" -> uri), update, upsert = false, multi = false, WriteConcern.Safe)) match {
       case Success(result) =>
         OntologyRegistrationResult(uri,
           version = Some(version),
@@ -447,7 +447,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     }
     else {
       logger.debug(s"deleteOntologyVersion: uri=$uri version=$version")
-      Try(ontDAO.update(MongoDBObject("_id" -> uri), update, false, false, WriteConcern.Safe)) match {
+      Try(ontDAO.update(MongoDBObject("_id" -> uri), update, upsert = false, multi = false, WriteConcern.Safe)) match {
         case Success(result) =>
           logger.debug(s"deleteOntologyVersion: success: result=$result")
           OntologyRegistrationResult(uri, version = Some(version), removed = Some(DateTime.now())) //TODO

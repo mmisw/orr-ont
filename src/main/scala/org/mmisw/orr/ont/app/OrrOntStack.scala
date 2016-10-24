@@ -39,7 +39,7 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSuppor
 
   protected def acceptOnly(paramNames: String*) {
     val unrecognized = params.keySet -- Set(paramNames: _*)
-    if (unrecognized.size > 0) error(400, s"unrecognized parameters: $unrecognized")
+    if (unrecognized.nonEmpty) error(400, s"unrecognized parameters: $unrecognized")
   }
 
   protected def body(): Map[String, JValue] = {

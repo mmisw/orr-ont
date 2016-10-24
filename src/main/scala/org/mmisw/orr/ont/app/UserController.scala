@@ -154,7 +154,7 @@ class UserController(implicit setup: Setup) extends BaseController
 
     // all ok, update password:
     val update = user.copy(password = userAuth.encryptPassword(password))
-    Try(usersDAO.update(MongoDBObject("_id" -> userName), update, false, false, WriteConcern.Safe)) match {
+    Try(usersDAO.update(MongoDBObject("_id" -> userName), update, upsert = false, multi = false, WriteConcern.Safe)) match {
       case Success(result) =>
       case Failure(exc)    => error500(exc)
     }

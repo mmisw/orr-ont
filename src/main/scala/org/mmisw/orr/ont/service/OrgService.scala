@@ -98,7 +98,7 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
       updatedBy foreach {by => update = update.copy(updatedBy = updatedBy)}
     }
 
-    Try(orgsDAO.update(MongoDBObject("_id" -> orgName), update, false, false, WriteConcern.Safe)) match {
+    Try(orgsDAO.update(MongoDBObject("_id" -> orgName), update, upsert = false, multi = false, WriteConcern.Safe)) match {
       case Success(result) =>
         sendNotificationEmail("Organization updated",
           s"""
