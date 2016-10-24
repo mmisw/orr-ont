@@ -10,11 +10,13 @@ info:
 
     __Note__:
 
-    - This API documentation is work in progress.
-      Please let us know if you have any questions while we update this documentation.
+    - We are in the process of writing this API documentation.
+      Please let us know if you have any questions.
 
-    - Using endpoint at http://cor.esipfed.org
-      while the main instance at http://mmisw.org is upgraded to ORR v3.
+    - Actual requests from this page are against the endpoint at
+      `http://cor.esipfed.org/sparql`. This may change in a future version in
+      particular regarding a more general way of exercising the API (regardless
+      of concrete endpoint), or by allowing the selection of the particular endpoint.
 
   termsOfService: 'https://marinemetadata.org/orr/tou'
   license:
@@ -36,40 +38,97 @@ securityDefinitions:
   basicAuth:
     type: basic
     description: HTTP Basic Authentication. Works over `HTTP` and `HTTPS`.
+
 paths:
+  #
+  # Ontology
+  #
+  /ont/upload:
+    post:
+      summary: Uploads an ontology file for subsequent registration.
+      description: |
+        This operation allows to upload an ontology file as a preliminary step
+        for subsequent registration.
+      operationId: uploadOnt
+      parameters:
+        - in: formData
+          name: file
+          description: The file to be uploaded.
+          required: true
+          type: file
+        - in: formData
+          name: format
+          description: Format of the file.
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Information about the uploaded file.
+          schema:
+            $ref: '#/definitions/UploadedFileInfo'
+      security:
+       - basicAuth: []
+
   /ont:
     get:
       description: |
-        Gets the registered ontologies.
+        General ontology or term report according to given parameters,
+        associated ontology visibility,
+        and privilege of the requesting user.
+        All parameters are optional.
+
+
+        Any given `uri`, `ouri`, or `turi` parameter indicates a request for a
+        particular ontology or term.
+
+        If none of the `uri`, `ouri`, and `turi` parameters is given,
+        this will indicate a query for a list of ontologies. In this case, only
+        a metadata summary is provided for each reported ontology (in particular,
+        no ontology contents per se is reported). Also, other supplied
+        parameters will be used to query for the desired ontologies.
+        For example, with the query paramenter and value `ownerName=acme`, all
+        ontologies owned by the `acme` organization will be considered for reporting.
+
+
       parameters:
         - name: uri
           in: query
           type: string
           required: false
-          description: >-
+          description: |
             With this parameter the backend will first try an "ontology
-            request." If no ontlogy is registered by the given value, then it
+            request." If no ontlogy is registered by the given URI, then it
             will try a "term request."
+
         - name: ouri
           in: query
           type: string
           required: false
-          description: Use this parameter to exclusively make a "ontology request".
-        - name: turi
-          in: query
-          type: string
-          required: false
-          description: Use this parameter to exclusively make a "term request."
+          description: |
+            Use this parameter to exclusively make a "ontology request."
+
         - name: version
           in: query
           type: string
           required: false
-          description: Desired version in the case of an "ontology request."
+          description: |
+            Desired version in the case of an "ontology request."
+
+        - name: turi
+          in: query
+          type: string
+          required: false
+          description: |
+            Use this parameter to exclusively make a "term request."
+
         - name: format
           in: query
           type: string
           required: false
-          description: Desired format for the response.
+          description: |
+            Desired format for the response in the case of a single ontology
+            or term request.
+
       responses:
         '200':
           description: Successful response
@@ -77,14 +136,18 @@ paths:
             type: array
             items:
               $ref: '#/definitions/Ont'
+
     post:
       summary: Registers an ontology
-      description: ""
+      description: |
+        Performs the registration of a brand new ontology in the registry by
+        the URI in the given object in the body.
       operationId: addOnt
       parameters:
         - in: body
           name: body
-          description: Ontology object that needs to be registered
+          description: |
+            Object with information for the ontology to be registered.
           schema:
             $ref: "#/definitions/PostOnt"
       responses:
@@ -93,6 +156,56 @@ paths:
       security:
        - basicAuth: []
 
+    put:
+      summary: Updates a given ontology version or adds a new version
+      description: |
+        Use this operation to create a new version for a registered ontology,
+        or to update an exisiting version.
+
+      operationId: updateOnt
+      parameters:
+        - in: body
+          name: body
+          description: Ontology object that needs to be registered
+          schema:
+            $ref: "#/definitions/PutOnt"
+      responses:
+        "405":
+          description: Invalid input
+      security:
+       - basicAuth: []
+
+    delete:
+      summary: Deletes a particular version or a whole ontology entry.
+      operationId: deleteOnt
+      parameters:
+        - in: query
+          name: uri
+          description: Ontology URI
+          type: string
+          required: true
+        - in: query
+          name: version
+          description: |
+            Particular version to be deleted.
+            If omitted, the whole entry by the given URI will be unregistered.
+          type: string
+        - in: query
+          name: userName
+          type: string
+          required: true
+          description: |
+            Registered user making the request. Must be an owner of the ontology.
+
+      responses:
+        "405":
+          description: Invalid input
+      security:
+       - basicAuth: []
+
+  #
+  # Organization
+  #
   /org:
     get:
       description: |
@@ -104,6 +217,7 @@ paths:
             type: array
             items:
               $ref: '#/definitions/Org'
+
     post:
       summary: Registers an organization
       description: ""
@@ -119,6 +233,7 @@ paths:
           description: Invalid input
       security:
        - basicAuth: []
+
   '/org/{orgName}':
     get:
       description: |
@@ -135,6 +250,49 @@ paths:
           schema:
             $ref: '#/definitions/Org'
 
+    put:
+      summary: Updates information about a registered organization.
+      operationId: updateOrg
+      parameters:
+        - name: orgName
+          in: path
+          type: string
+          required: true
+          description: The code (short name) of the organization to be updated.
+        - in: body
+          name: body
+          description: Object with information for the organization to be updated.
+          schema:
+            $ref: "#/definitions/PutOrg"
+      responses:
+        "405":
+          description: Invalid input
+      security:
+       - basicAuth: []
+
+    delete:
+      summary: Unregisters an organization.
+      description: |
+        Only users with administrative privilege can perform this operation.
+      operationId: deleteOrg
+      parameters:
+        - in: path
+          name: orgName
+          description: Identifier of the organization
+          type: string
+          required: true
+
+      responses:
+        "200":
+          description: Successful unregistration
+        "404":
+          description: No such organization
+      security:
+       - basicAuth: []
+
+  #
+  # User
+  #
   /user:
     get:
       description: |
@@ -146,6 +304,7 @@ paths:
             type: array
             items:
               $ref: '#/definitions/User'
+
     post:
       summary: Registers a user
       description: ""
@@ -161,6 +320,7 @@ paths:
           description: Invalid input
       security:
        - basicAuth: []
+
   '/user/{userName}':
     get:
       description: |
@@ -176,35 +336,197 @@ paths:
           description: Successful response
           schema:
             $ref: '#/definitions/User'
+
+    put:
+      summary: Updates information about a registered user.
+      description: |
+        Only the same user and users with administrative privilege can perform this operation.
+      operationId: updateUser
+      parameters:
+        - name: userName
+          in: path
+          type: string
+          required: true
+          description: The identifier of the user to be updated.
+        - in: body
+          name: body
+          description: Object with information for the user to be updated.
+          schema:
+            $ref: "#/definitions/PutUser"
+      responses:
+        "405":
+          description: Invalid input
+      security:
+       - basicAuth: []
+
+    delete:
+      summary: Unregisters a user.
+      description: |
+        Only users with administrative privilege can perform this operation.
+      operationId: deleteUser
+      parameters:
+        - in: path
+          name: userName
+          description: Identifier of the user
+          type: string
+          required: true
+
+      responses:
+        "200":
+          description: Successful unregistration
+        "404":
+          description: No such user
+      security:
+       - basicAuth: []
+
+#####################################################################################
 definitions:
   #
   # Ontology
   #
+  UploadedFileInfo:
+    type: object
+    properties:
+      userName:
+        type: string
+        description: The user that requested the upload.
+      filename:
+        type: string
+        description: The name associated with the file.
+      format:
+        type: string
+        description: The format of the file.
+      possibleOntologyUris:
+        type: object
+        description: The format of the file.
+        additionalProperties:
+          $ref: '#/definitions/PossibleOntologyInfo'
+
+  PossibleOntologyInfo:
+    type: object
+    properties:
+      explanations:
+        type: array
+        items:
+          type: string
+        description: |
+          Explanations for the extraction of the given possible ontology URI.
+      metadata:
+        type: object
+        description: Metadata associated to the ontology URI.
+        additionalProperties:
+          type: array
+          items:
+            type: string
+
+
   PostOnt:
     type: object
     properties:
       uri:
         type: string
-        description: The URI of the ontology.
+        description: |
+          The URI of the ontology.
+
       originalUri:
         type: string
         description: |
-          In case a fully-hosted registration is requested enter this field to indicate
-          the original URI to be used for the "migration" of corresponding entities to the new URI.
+          In case of a fully-hosted registration, enter this field to indicate
+          the original URI in the provided contents to be used for the "migration"
+          of corresponding entities to the new URI.
+
       name:
         type: string
+        description: |
+          The name for the ontology. If omitted, the ORR will try to get this
+          information from standard metadata in the submitted ontology contents.
+
       orgName:
         type: string
         description: |
           ID of the organization that will own the ontology registration.
-          By default, the owner will be the submitting user.
+          If omitted, the owner will be the submitting user.
 
       visibility:
         type: string
+        description: |
+          One of: `owner` or `public`. The default visibility is `owner`.
+
       status:
         type: string
+        description: |
+          One of: `draft`, `unstable`, `testing`, `stable`,  `deprecated`, `archaic`.
+          There's no default value.
+
       userName:
         type: string
+        description: |
+          Registered user making the request.
+
+  PutOnt:
+    type: object
+    properties:
+      uri:
+        type: string
+        description: The URI of the ontology to be updated.
+
+      version:
+        type: string
+        description: |
+          If given, this particular version will be updated.
+          Otherwise, a new version (which is generated by the ORR) is created.
+
+      originalUri:
+        type: string
+        description: |
+          In case a fully-hosted registration and ontology contents are provided for this update, enter this field to indicate
+          the original URI to be used for the "migration" of corresponding entities to the URI used for registration.
+
+      name:
+        type: string
+        description: |
+          If given, this will be the new name for the ontology.
+
+      visibility:
+        type: string
+        description: |
+          One of: `owner` or `public`.
+
+      status:
+        type: string
+        description: |
+          One of: `draft`, `unstable`, `testing`, `stable`,  `deprecated`, `archaic`.
+
+      metadata:
+        type: string
+        description: |
+          Ontology metadata as a JSON formatted object.
+          This parameter allows to perform the update solely based on changes
+          to the metadata.
+
+      uploadedFilename:
+        type: string
+        description: |
+          Name of file previously uploaded via prior `POST /ont/upload` request.
+      uploadedFormat:
+        type: string
+        description: |
+          Format of the file previously uploaded via prior `POST /ont/upload` request.
+
+      contents:
+        type: string
+        description: |
+          Direct contents of the ontology.
+      format:
+        type: string
+        description: |
+          Format of the `contents`.
+
+      userName:
+        type: string
+        description: |
+          Registered user making the request.
+
   Ont:
     type: object
     properties:
@@ -241,6 +563,23 @@ definitions:
       url:
         type: string
         description: Website URL of the organization
+
+  PutOrg:
+    type: object
+    properties:
+      name:
+        type: string
+      orgName:
+        type: string
+      members:
+        type: array
+        items:
+          type: string
+        description: Members of this organization
+      url:
+        type: string
+        description: Website URL of the organization
+
   Org:
     type: object
     properties:
@@ -272,6 +611,22 @@ definitions:
         format: password
       phone:
         type: string
+
+  PutUser:
+    type: object
+    properties:
+      email:
+        type: string
+      firstName:
+        type: string
+      lastName:
+        type: string
+      password:
+        type: string
+        format: password
+      phone:
+        type: string
+
   User:
     type: object
     properties:
