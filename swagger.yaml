@@ -45,7 +45,7 @@ paths:
   #
   /ont/upload:
     post:
-      summary: Uploads an ontology file for subsequent registration.
+      summary: Uploads an ontology file for subsequent registration
       description: |
         This operation allows to upload an ontology file as a preliminary step
         for subsequent registration.
@@ -71,6 +71,7 @@ paths:
 
   /ont:
     get:
+      summary: Gets information about registered ontologies or terms
       description: |
         General ontology or term report according to given parameters,
         associated ontology visibility,
@@ -176,7 +177,7 @@ paths:
        - basicAuth: []
 
     delete:
-      summary: Deletes a particular version or a whole ontology entry.
+      summary: Deletes a particular version or a whole ontology entry
       operationId: deleteOnt
       parameters:
         - in: query
@@ -208,8 +209,10 @@ paths:
   #
   /org:
     get:
+      summary: Gets information about registered organizations
       description: |
         Gets basic information of all registered organizations.
+        This will include additional information depending on privileges of requesting user.
       responses:
         '200':
           description: Successful response
@@ -236,8 +239,7 @@ paths:
 
   '/org/{orgName}':
     get:
-      description: |
-        Gets basic information of a particular organization.
+      summary: Gets basic information of a particular organization.
       parameters:
         - name: orgName
           in: path
@@ -251,7 +253,7 @@ paths:
             $ref: '#/definitions/Org'
 
     put:
-      summary: Updates information about a registered organization.
+      summary: Updates information about a registered organization
       operationId: updateOrg
       parameters:
         - name: orgName
@@ -295,8 +297,10 @@ paths:
   #
   /user:
     get:
+      summary: Gets information about registered users
       description: |
-        Gets the registered users.
+        Gets information about registered users.
+        This will include additional information depending on privileges of requesting user.
       responses:
         '200':
           description: Successful response
@@ -323,8 +327,7 @@ paths:
 
   '/user/{userName}':
     get:
-      description: |
-        Gets basic information of a particular user.
+      summary: Gets basic information of a particular user
       parameters:
         - name: userName
           in: path
@@ -338,7 +341,7 @@ paths:
             $ref: '#/definitions/User'
 
     put:
-      summary: Updates information about a registered user.
+      summary: Updates information about a registered user
       description: |
         Only the same user and users with administrative privilege can perform this operation.
       operationId: updateUser
