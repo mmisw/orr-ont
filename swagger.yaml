@@ -3,8 +3,6 @@ info:
   version: v0
   title: ORR Ont API Documentation
   description: >
-    ORR Ont API documentation.
-
     The main ORR documentation is located at: http://mmisw.org/orrdoc/
 
 
@@ -45,6 +43,7 @@ paths:
   #
   /ont/upload:
     post:
+      tags: [ontology]
       summary: Uploads an ontology file for subsequent registration
       description: |
         This operation allows to upload an ontology file as a preliminary step
@@ -71,6 +70,7 @@ paths:
 
   /ont:
     get:
+      tags: [ontology]
       summary: Gets information about registered ontologies or terms
       description: |
         General ontology or term report according to given parameters,
@@ -139,6 +139,7 @@ paths:
               $ref: '#/definitions/Ont'
 
     post:
+      tags: [ontology]
       summary: Registers an ontology
       description: |
         Performs the registration of a brand new ontology in the registry by
@@ -158,6 +159,7 @@ paths:
        - basicAuth: []
 
     put:
+      tags: [ontology]
       summary: Updates a given ontology version or adds a new version
       description: |
         Use this operation to create a new version for a registered ontology,
@@ -177,6 +179,7 @@ paths:
        - basicAuth: []
 
     delete:
+      tags: [ontology]
       summary: Deletes a particular version or a whole ontology entry
       operationId: deleteOnt
       parameters:
@@ -209,6 +212,7 @@ paths:
   #
   /org:
     get:
+      tags: [organization]
       summary: Gets information about registered organizations
       description: |
         Gets basic information of all registered organizations.
@@ -222,6 +226,7 @@ paths:
               $ref: '#/definitions/Org'
 
     post:
+      tags: [organization]
       summary: Registers an organization
       description: ""
       operationId: addOrg
@@ -239,6 +244,7 @@ paths:
 
   '/org/{orgName}':
     get:
+      tags: [organization]
       summary: Gets basic information of a particular organization.
       parameters:
         - name: orgName
@@ -253,6 +259,7 @@ paths:
             $ref: '#/definitions/Org'
 
     put:
+      tags: [organization]
       summary: Updates information about a registered organization
       operationId: updateOrg
       parameters:
@@ -273,6 +280,7 @@ paths:
        - basicAuth: []
 
     delete:
+      tags: [organization]
       summary: Unregisters an organization.
       description: |
         Only users with administrative privilege can perform this operation.
@@ -297,6 +305,7 @@ paths:
   #
   /user:
     get:
+      tags: [user]
       summary: Gets information about registered users
       description: |
         Gets information about registered users.
@@ -310,6 +319,7 @@ paths:
               $ref: '#/definitions/User'
 
     post:
+      tags: [user]
       summary: Registers a user
       description: ""
       operationId: addUser
@@ -327,6 +337,7 @@ paths:
 
   '/user/{userName}':
     get:
+      tags: [user]
       summary: Gets basic information of a particular user
       parameters:
         - name: userName
@@ -341,6 +352,7 @@ paths:
             $ref: '#/definitions/User'
 
     put:
+      tags: [user]
       summary: Updates information about a registered user
       description: |
         Only the same user and users with administrative privilege can perform this operation.
@@ -363,6 +375,7 @@ paths:
        - basicAuth: []
 
     delete:
+      tags: [user]
       summary: Unregisters a user.
       description: |
         Only users with administrative privilege can perform this operation.
