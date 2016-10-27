@@ -9,12 +9,20 @@ info:
     __Note__:
 
     - We are in the process of writing this API documentation.
-      Please let us know if you have any questions.
+      Please [let us know](https://github.com/mmisw/mmiorr-docs/issues) if you have any
+      questions or suggestions.
+
+    - Besides the documentation itself, this page also allows to directly exercise the API.
 
     - Actual requests from this page are against the endpoint at
       `http://cor.esipfed.org/sparql`. This may change in a future version in
       particular regarding a more general way of exercising the API (regardless
       of concrete endpoint), or by allowing the selection of the particular endpoint.
+
+    - You can use the "Authorize" button above and enter your COR credentials to login
+      in this API interface. In this way you will be able to perform not only the basic
+      `GET` operations, but see expanded responses according to your access priviliges
+      and ontology visibility settings, as well as perform other operations as listed below.
 
   termsOfService: 'https://marinemetadata.org/orr/tou'
   license:
