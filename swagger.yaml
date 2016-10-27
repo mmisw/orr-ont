@@ -5,6 +5,15 @@ info:
   description: >
     The main ORR documentation is located at: http://mmisw.org/orrdoc/
 
+    ```
+    ######################################################
+    # NOTE
+    #   OUT-OF-DATE for the time being.
+    # Currently the swagger spec is maintained in the
+    # https://github.com/mmisw/mmiorr-docs repo, which
+    # is served at http://mmisw.org/orrdoc/api/
+    ######################################################
+    ```
 
     __Note__:
 

@@ -1,5 +1,11 @@
 ## change log ##
 
+* 2016-10-26:  3.1.4
+  - decided to capture the swagger spec in the mmiorr-docs repo:
+    https://github.com/mmisw/mmiorr-docs/blob/master/docs/swagger.yaml
+    This has the advantage that pushes there get automatically reflected
+    at http://mmisw.org/orrdoc/api/ (thanks to the documentation webhook).
+  
 * 2016-10-21:  3.1.4
   - re #24 "generate API documentation", add /api-docs to respond with swagger.yaml,
     edited in http://editor.swagger.io/
