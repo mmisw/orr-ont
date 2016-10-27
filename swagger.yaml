@@ -25,7 +25,6 @@ host: cor.esipfed.org
 basePath: /ont/api/v0
 schemes:
   - http
-  - https
 
 consumes:
   - application/json
@@ -35,7 +34,7 @@ produces:
 securityDefinitions:
   basicAuth:
     type: basic
-    description: HTTP Basic Authentication. Works over `HTTP` and `HTTPS`.
+    description: HTTP Basic Authentication.
 
 paths:
   #
@@ -47,7 +46,15 @@ paths:
       summary: Uploads an ontology file for subsequent registration
       description: |
         This operation allows to upload an ontology file as a preliminary step
-        for subsequent registration.
+        for subsequent registration via a `POST /ont` request.
+
+
+        Before having to provide other required information for registration,
+        this separated step helps not only in determining that the file is a valid ontology,
+        but also in terms of the returned associated information that the user or
+        client application can use for actual registration, for example, regarding possible
+        ontology URIs found in the file.
+
       operationId: uploadOnt
       parameters:
         - in: formData
@@ -57,12 +64,19 @@ paths:
           type: file
         - in: formData
           name: format
-          description: Format of the file.
+          description: |
+            Format of the file. The special value `"guess"` can be given to let the ORR
+            automatically determine the format.
+            (A future version of this API may allow this parameter to be skipped, in such
+            case with the "guess format" behavior implied.)
           required: true
           type: string
       responses:
         '200':
-          description: Information about the uploaded file.
+          description: |
+            Information about the uploaded file. The `userName` and `filename` attributes of
+            this object are to be used in the subsequent registration to property refer to
+            the uploaded file.
           schema:
             $ref: '#/definitions/UploadedFileInfo'
       security:
@@ -140,18 +154,31 @@ paths:
 
     post:
       tags: [ontology]
-      summary: Registers an ontology
+      summary: Registers a brand new ontology
       description: |
         Performs the registration of a brand new ontology in the registry by
-        the URI in the given object in the body.
+        the URI given in the `uri` attribute of the object in the body.
       operationId: addOnt
       parameters:
         - in: body
           name: body
           description: |
             Object with information for the ontology to be registered.
+
+            To provide the contents of the ontology you have two options:
+
+            - Specify a previously uploaded file (via `POST /ont/upload`) by
+              providing the corresponding reported filename (in the `uploadedFilename`
+              field) and format (`uploadedFormat`). There's no need to upload the file
+              itself again.
+            - Embbed the complete contents in the `contents` field, and provide the associated
+              format in `format`.
+
+            See the `PostOnt` object description for more details.
+
           schema:
             $ref: "#/definitions/PostOnt"
+          required: true
       responses:
         "405":
           description: Invalid input
@@ -245,7 +272,7 @@ paths:
   '/org/{orgName}':
     get:
       tags: [organization]
-      summary: Gets basic information of a particular organization.
+      summary: Gets basic information of a particular organization
       parameters:
         - name: orgName
           in: path
@@ -281,7 +308,7 @@ paths:
 
     delete:
       tags: [organization]
-      summary: Unregisters an organization.
+      summary: Unregisters an organization
       description: |
         Only users with administrative privilege can perform this operation.
       operationId: deleteOrg
@@ -376,7 +403,7 @@ paths:
 
     delete:
       tags: [user]
-      summary: Unregisters a user.
+      summary: Unregisters a user
       description: |
         Only users with administrative privilege can perform this operation.
       operationId: deleteUser
@@ -478,6 +505,24 @@ definitions:
         type: string
         description: |
           Registered user making the request.
+
+      uploadedFilename:
+        type: string
+        description: |
+          Name of file previously uploaded via prior `POST /ont/upload` request.
+      uploadedFormat:
+        type: string
+        description: |
+          Format of the file previously uploaded via prior `POST /ont/upload` request.
+
+      contents:
+        type: string
+        description: |
+          Direct contents of the ontology.
+      format:
+        type: string
+        description: |
+          Format of the `contents`.
 
   PutOnt:
     type: object
