@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-10-27:  3.1.4
+  - point to http://mmisw.org/orrdoc/install/ for the installation documentation
+  
 * 2016-10-26:  3.1.4
   - decided to capture the swagger spec in the mmiorr-docs repo:
     https://github.com/mmisw/mmiorr-docs/blob/master/docs/swagger.yaml
