@@ -8,8 +8,7 @@ import org.mmisw.orr.ont.service.{OntService, TripleStoreService}
 import org.mmisw.orr.ont.Setup
 
 /**
-  * Controller to dispatch "self-hosted ontology" requests, mainly for resolution (GET)
-  * and not for updates/deletions.
+  * Controller to dispatch "self-resolvable" ontology/terms requests.
   *
   * Includes mechanism to dispatch the UI (ORR Portal) such that the
   * application context is preserved in the browser's location address.
@@ -93,7 +92,7 @@ class SelfHostedOntController(implicit setup: Setup,
       case None =>
         val uri = request.getRequestURL.toString
         logger.debug(s"self-resolving '$uri' ...")
-        resolveOntOrTermUri(uri, Some(reqFormat))
+        resolveOntOrTermUri(uri, Some(reqFormat), selfResolution = true)
     }
   }
 
@@ -137,6 +136,6 @@ class SelfHostedOntController(implicit setup: Setup,
   private def selfResolve(reqFormat: String) = {
     val uri = request.getRequestURL.toString
     logger.debug(s"self-resolving '$uri' ...")
-    resolveOntOrTermUri(uri, Some(reqFormat))
+    resolveOntOrTermUri(uri, Some(reqFormat), selfResolution = true)
   }
 }

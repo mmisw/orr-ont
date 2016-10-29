@@ -44,10 +44,33 @@ with Logging {
     }
   }
 
-  protected def resolveOntOrTermUri(uri: String, reqFormatOpt: Option[String] = None) = {
+  /**
+    * Some parameters for purposes of the self-resolution mechanism,
+    * in particular for the HTTP/S scheme handling.
+    *
+    * @param uri              URI to be resolved
+    * @param reqFormatOpt     if already captured
+    * @param selfResolution   true to try the HTTP-HTTPS scheme change
+    */
+  protected def resolveOntOrTermUri(uri: String,
+                                    reqFormatOpt: Option[String] = None,
+                                    selfResolution: Boolean = false
+                                   ) = {
     ontService.resolveOntology(uri) match {
       case Some(ont) => completeOntologyUriResolution(ont, reqFormatOpt)
-      case None      => resolveTermUri(uri, reqFormatOpt)
+
+      case None =>
+        if (selfResolution) {
+          replaceHttpScheme(uri) map { uri2 =>
+            ontService.resolveOntology(uri2) match {
+              case Some(ont) => completeOntologyUriResolution(ont, reqFormatOpt)
+
+              case None =>
+                resolveTermUri(uri, reqFormatOpt)
+            }
+          }
+        }
+        else resolveTermUri(uri, reqFormatOpt)
     }
   }
 
@@ -106,4 +129,15 @@ with Logging {
     }
   }
 
+  /**
+    * If uri starts with "http:" or "https:", returns a Some
+    * with the same uri but with the scheme replaced for the other.
+    * Otherwise, None.
+    */
+  // #31 "https == http for purposes of IRI identification"
+  private def replaceHttpScheme(uri: String): Option[String] = {
+    if      (uri.startsWith("http:"))  Some("https:" + uri.substring("http:".length))
+    else if (uri.startsWith("https:")) Some("http:" +  uri.substring("https:".length))
+    else None
+  }
 }

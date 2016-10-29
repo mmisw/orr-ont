@@ -1,6 +1,17 @@
 ## change log ##
 
 * 2016-10-29:  3.1.5
+  - Re #31 "https == http for purposes of IRI identification"
+  	- preparations with ontology request. The special https==http handling only
+  	  to be performed in self-resolution.
+  	- note that HttpServletRequest.getRequestURL may return "http:..." even when
+  	  the actual request was with "https:...". This may happen because of
+  	  intermediate servers involved (eg., load balancer).
+  	- note: if self-resolution request is from a typical browser (ie., with "html"
+  	  as expected response), no need for any special handling as orr-ont dispatches
+  	  the orr-portal in such cases -- eventually the portal will make a direct
+  	  request via the API (not with self-resolution).
+  
   - pass down the obtained getRequestedFormat in self-hosted dispatch
   
 * 2016-10-27:  3.1.4
