@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-10-29:  3.1.5
+  - pass down the obtained getRequestedFormat in self-hosted dispatch
+  
 * 2016-10-27:  3.1.4
   - point to http://mmisw.org/orrdoc/install/ for the installation documentation
   

@@ -93,7 +93,7 @@ class SelfHostedOntController(implicit setup: Setup,
       case None =>
         val uri = request.getRequestURL.toString
         logger.debug(s"self-resolving '$uri' ...")
-        resolveOntOrTermUri(uri)
+        resolveOntOrTermUri(uri, Some(reqFormat))
     }
   }
 
@@ -137,6 +137,6 @@ class SelfHostedOntController(implicit setup: Setup,
   private def selfResolve(reqFormat: String) = {
     val uri = request.getRequestURL.toString
     logger.debug(s"self-resolving '$uri' ...")
-    resolveOntOrTermUri(uri)
+    resolveOntOrTermUri(uri, Some(reqFormat))
   }
 }
