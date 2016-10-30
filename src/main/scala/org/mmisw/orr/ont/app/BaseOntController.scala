@@ -62,6 +62,7 @@ with Logging {
       case None =>
         if (selfResolution) {
           replaceHttpScheme(uri) map { uri2 =>
+            logger.debug(s"self-resolving with http scheme change '$uri2' ...")
             ontService.resolveOntology(uri2) match {
               case Some(ont) => completeOntologyUriResolution(ont, reqFormatOpt)
 
