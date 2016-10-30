@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2016-10-30:  3.1.5
+  - resolve #31 "https == http for purposes of IRI identification"
+    - additional adjustment in BaseOntController.resolveOntOrTermUri
 * 2016-10-29:  3.1.5
   - Re #31 "https == http for purposes of IRI identification"
   	- preparations with ontology request. The special https==http handling only

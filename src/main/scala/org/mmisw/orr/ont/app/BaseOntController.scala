@@ -46,7 +46,7 @@ with Logging {
 
   /**
     * Some parameters for purposes of the self-resolution mechanism,
-    * in particular for the HTTP/S scheme handling.
+    * in particular for the HTTP/S scheme change handling.
     *
     * @param uri              URI to be resolved
     * @param reqFormatOpt     if already captured
@@ -56,22 +56,22 @@ with Logging {
                                     reqFormatOpt: Option[String] = None,
                                     selfResolution: Boolean = false
                                    ) = {
-    ontService.resolveOntology(uri) match {
-      case Some(ont) => completeOntologyUriResolution(ont, reqFormatOpt)
 
-      case None =>
+    // try to resolve ontology, possibly with http scheme change:
+    val ontologyResolvedOpt: Option[Ontology] = {
+      ontService.resolveOntology(uri) orElse {
         if (selfResolution) {
-          replaceHttpScheme(uri) map { uri2 =>
-            logger.debug(s"self-resolving with http scheme change '$uri2' ...")
-            ontService.resolveOntology(uri2) match {
-              case Some(ont) => completeOntologyUriResolution(ont, reqFormatOpt)
-
-              case None =>
-                resolveTermUri(uri, reqFormatOpt)
-            }
+          replaceHttpScheme(uri) flatMap { uri2 =>
+            logger.debug(s"self-resolving '$uri2' (http scheme change)...")
+            ontService.resolveOntology(uri2)
           }
         }
-        else resolveTermUri(uri, reqFormatOpt)
+        else None
+      }
+    }
+    ontologyResolvedOpt match {
+      case Some(ont) => completeOntologyUriResolution(ont, reqFormatOpt)
+      case None => resolveTermUri(uri, reqFormatOpt)
     }
   }
 
@@ -104,6 +104,7 @@ with Logging {
     else {
       val (file, actualFormat) = getOntologyFile(ont.uri, version, reqFormat)
       contentType = formats(actualFormat)
+      logger.debug(s"completeOntologyUriResolution: responding ${file.getAbsolutePath} contentType=$contentType")
       file
     }
   }
