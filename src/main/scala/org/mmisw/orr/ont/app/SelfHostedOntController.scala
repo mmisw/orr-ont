@@ -26,7 +26,11 @@ class SelfHostedOntController(implicit setup: Setup,
     }
 
     val reqFormat = getRequestedFormat
-    logger.debug(s"SelfHostedOntController: reqFormat=$reqFormat request.pathInfo=$pathInfo")
+
+    if (logger.underlying.isDebugEnabled &&
+      !List(".html", ".js", ".css", ".map").exists(pathInfo.endsWith)) {
+      logger.debug(s"SelfHostedOntController: reqFormat=$reqFormat request.pathInfo=$pathInfo")
+    }
 
     if (!portalDispatch(pathInfo, reqFormat)) {
       // skip leading slash if any
@@ -45,7 +49,10 @@ class SelfHostedOntController(implicit setup: Setup,
       case _ => false
     }
 
-    logger.debug(s"portalDispatch: hasIndexHtml=$hasIndexHtml pathInfo=$pathInfo")
+    if (logger.underlying.isDebugEnabled &&
+      !List(".html", ".js", ".css", ".map").exists(pathInfo.endsWith)) {
+      logger.debug(s"portalDispatch: hasIndexHtml=$hasIndexHtml pathInfo=$pathInfo")
+    }
 
     def adjustedRequest(request: HttpServletRequest): HttpServletRequest = {
       if (pathInfo == "/" || pathInfo == "/sparql" || pathInfo == "/sparql/") {
