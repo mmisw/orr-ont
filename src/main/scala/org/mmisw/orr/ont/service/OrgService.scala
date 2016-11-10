@@ -105,7 +105,7 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
              |The following organization has been updated:
              |
              | Short name: $orgName
-             | name: ${update.name}
+             | Name: ${update.name}
              | Members: ${update.members.mkString(", ")}
              | Updated: ${update.updated.getOrElse("(undefined)")}
              | By: ${update.updatedBy.getOrElse("(undefined)")}
