@@ -54,7 +54,7 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
                  | Name: ${org.name}
                  | Members: ${org.members.mkString(", ")}
                  | Registered: ${org.registered}
-                 | By: ${org.registeredBy.getOrElse("undefined")}
+                 | By: ${org.registeredBy.getOrElse("(undefined)")}
               """.stripMargin
             )
             OrgResult(orgName,
@@ -107,7 +107,7 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
              | Short name: $orgName
              | name: ${update.name}
              | Members: ${update.members.mkString(", ")}
-             | Updated: ${update.updated}
+             | Updated: ${update.updated.getOrElse("(undefined)")}
              | By: ${update.updatedBy.getOrElse("(undefined)")}
               """.stripMargin
         )
