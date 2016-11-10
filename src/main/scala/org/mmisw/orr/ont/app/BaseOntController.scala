@@ -45,30 +45,17 @@ with Logging {
   }
 
   /**
-    * Some parameters for purposes of the self-resolution mechanism,
-    * in particular for the HTTP/S scheme change handling.
+    * Parameter reqFormatOpt mainly for purposes of the self-resolution mechanism.
     *
     * @param uri              URI to be resolved
     * @param reqFormatOpt     if already captured
-    * @param selfResolution   true to try the HTTP-HTTPS scheme change
     */
   protected def resolveOntOrTermUri(uri: String,
-                                    reqFormatOpt: Option[String] = None,
-                                    selfResolution: Boolean = false
+                                    reqFormatOpt: Option[String] = None
                                    ) = {
 
     // try to resolve ontology, possibly with http scheme change:
-    val ontologyResolvedOpt: Option[Ontology] = {
-      ontService.resolveOntology(uri) orElse {
-        if (selfResolution) {
-          replaceHttpScheme(uri) flatMap { uri2 =>
-            logger.debug(s"self-resolving '$uri2' (http scheme change)...")
-            ontService.resolveOntology(uri2)
-          }
-        }
-        else None
-      }
-    }
+    val ontologyResolvedOpt = ontService.resolveOntology(uri)
     ontologyResolvedOpt match {
       case Some(ont) => completeOntologyUriResolution(ont, reqFormatOpt)
       case None => resolveTermUri(uri, reqFormatOpt)
@@ -129,17 +116,5 @@ with Logging {
         // properly called because it returns null right away; I even put an immediate
         // 'throw exception' there and it is not triggered at all!
     }
-  }
-
-  /**
-    * If uri starts with "http:" or "https:", returns a Some
-    * with the same uri but with the scheme replaced for the other.
-    * Otherwise, None.
-    */
-  // #31 "https == http for purposes of IRI identification"
-  private def replaceHttpScheme(uri: String): Option[String] = {
-    if      (uri.startsWith("http:"))  Some("https:" + uri.substring("http:".length))
-    else if (uri.startsWith("https:")) Some("http:" +  uri.substring("https:".length))
-    else None
   }
 }

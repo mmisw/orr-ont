@@ -1,5 +1,13 @@
 ## change log ##
 
+* 2016-11-09:  3.1.6
+  - Re #31 "https == http...", actually the scheme change is tried in
+    all ontology requests, not only from self-hosted controller.
+    In particular, the portal may make a request (for example) for 
+    a "https:..." URI, but with actual entry being "http:..."; 
+    this requests goes through the /api/v?/ont/ route, so the scheme
+    change should also be performed there.
+  
 * 2016-10-30:  3.1.5
   - resolve #31 "https == http for purposes of IRI identification"
     - additional adjustment in BaseOntController.resolveOntOrTermUri

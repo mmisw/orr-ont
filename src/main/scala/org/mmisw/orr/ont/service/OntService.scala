@@ -44,13 +44,29 @@ object OntOwner {
   }
 }
 
-/**
- * Ontology service
- */
+
 class OntService(implicit setup: Setup) extends BaseService(setup) with Logging {
 
-  def resolveOntology(uri: String): Option[Ontology] = {
-    ontDAO.findOneById(uri)
+  /**
+    * Try to resolve an ontology, possibly with http scheme (HTTP-HTTPS) change.
+    *
+    * @param uri               Requested ontology URI
+    * @param httpSchemeChange  Try http scheme change? True by default.
+    * @return                  The found ontology is any
+    */
+  def resolveOntology(uri: String,
+                      httpSchemeChange: Boolean = true
+                     ): Option[Ontology] = {
+
+    ontDAO.findOneById(uri) orElse {
+      if (httpSchemeChange) {
+        replaceHttpScheme(uri) flatMap { uri2 =>
+          logger.debug(s"resolving '$uri2' (after http scheme change)")
+          ontDAO.findOneById(uri2)
+        }
+      }
+      else None
+    }
   }
 
   /**
@@ -477,6 +493,18 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   def deleteAll() = ontDAO.remove(MongoDBObject())
 
   ///////////////////////////////////////////////////////////////////////////
+
+  /**
+    * If uri starts with "http:" or "https:", returns a Some
+    * with the same uri but with the scheme replaced for the other.
+    * Otherwise, None.
+    */
+  // #31 "https == http for purposes of IRI identification"
+  private def replaceHttpScheme(uri: String): Option[String] = {
+    if      (uri.startsWith("http:"))  Some("https:" + uri.substring("http:".length))
+    else if (uri.startsWith("https:")) Some("http:" +  uri.substring("https:".length))
+    else None
+  }
 
   /**
     * @return Empty string if uri is self-resolvable; otherwise: "Resolve with: &lt;url?uri=uri>",

@@ -28,7 +28,7 @@ class SelfHostedOntController(implicit setup: Setup,
     val reqFormat = getRequestedFormat
 
     if (logger.underlying.isDebugEnabled &&
-      !List(".html", ".js", ".css", ".map").exists(pathInfo.endsWith)) {
+      !List(".html", ".js", ".css", ".map", "woff2").exists(pathInfo.endsWith)) {
       logger.debug(s"SelfHostedOntController: reqFormat=$reqFormat request.pathInfo=$pathInfo")
     }
 
@@ -50,7 +50,7 @@ class SelfHostedOntController(implicit setup: Setup,
     }
 
     if (logger.underlying.isDebugEnabled &&
-      !List(".html", ".js", ".css", ".map").exists(pathInfo.endsWith)) {
+      !List(".html", ".js", ".css", ".map", "woff2").exists(pathInfo.endsWith)) {
       logger.debug(s"portalDispatch: hasIndexHtml=$hasIndexHtml pathInfo=$pathInfo")
     }
 
@@ -99,7 +99,7 @@ class SelfHostedOntController(implicit setup: Setup,
       case None =>
         val uri = request.getRequestURL.toString
         logger.debug(s"self-resolving '$uri' ...")
-        resolveOntOrTermUri(uri, Some(reqFormat), selfResolution = true)
+        resolveOntOrTermUri(uri, Some(reqFormat))
     }
   }
 
@@ -143,6 +143,6 @@ class SelfHostedOntController(implicit setup: Setup,
   private def selfResolve(reqFormat: String) = {
     val uri = request.getRequestURL.toString
     logger.debug(s"self-resolving '$uri' ...")
-    resolveOntOrTermUri(uri, Some(reqFormat), selfResolution = true)
+    resolveOntOrTermUri(uri, Some(reqFormat))
   }
 }
