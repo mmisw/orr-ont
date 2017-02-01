@@ -57,7 +57,7 @@ class UserController(implicit setup: Setup) extends BaseController
 
     new Thread(new Runnable {
       def run() {
-        val resetRoute = s"$getMyBaseUrl/api/v0/user/auth/reset/"
+        val resetRoute = s"${setup.cfg.deployment.url}/api/v0/user/auth/reset/"
         userService.requestResetPassword(user, resetRoute)
       }
     }).start()
@@ -66,7 +66,7 @@ class UserController(implicit setup: Setup) extends BaseController
       email = Some(user.email),
       message = Some(
         s"""An email with password reset instructions is on its way to: ${user.email}.
-           | If you don't receive it within a few minutes, please try again later.
+           | If you don't receive it within a few minutes, please check your spam folder.
          """.stripMargin)
     )
   }
@@ -85,7 +85,7 @@ class UserController(implicit setup: Setup) extends BaseController
 //    if (pwr.expiration.compareTo(DateTime.now()) > 0)
 //      error(400, "this link has expired.")
 
-    val action = request.getRequestURL.toString
+    val action = s"${setup.cfg.deployment.url}/api/v0/user/auth/reset/$token"
 
     <html>
       <body>
@@ -176,7 +176,7 @@ class UserController(implicit setup: Setup) extends BaseController
         and sign in with your new password.
       </body>
     </html>.toString()
-      .replace("$orrLink", getMyBaseUrl)
+      .replace("$orrLink", setup.cfg.deployment.url)
   }
 
   /*

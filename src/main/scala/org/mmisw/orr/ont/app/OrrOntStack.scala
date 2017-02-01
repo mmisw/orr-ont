@@ -85,16 +85,6 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSuppor
 
   val defaultRequestedFormat = "json"
 
-  protected def getMyBaseUrl(implicit request: HttpServletRequest): String = {
-    val url = request.getRequestURL.toString
-    val uri = request.getRequestURI
-    val prefix = if (url.endsWith(uri)) url.substring(0, url.length - uri.length) else url
-    val contextPath = request.getContextPath
-    val baseUrl = prefix + contextPath
-    //println(s"getMyBaseUrl: url=$url uri=$uri contextPath=$contextPath baseUrl=$baseUrl")
-    baseUrl
-  }
-
   protected def getRequestedFormat(implicit request: HttpServletRequest): String = {
     def getAcceptHeader = {
       val ah = acceptHeader

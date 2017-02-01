@@ -1,5 +1,11 @@
 ## change log ##
 
+* 2017-02-01:  3.1.7
+  - fix #34 "cannot reset password".
+    Instead of using HttpServletRequest methods to "get my base URL" (which are 
+    rather tricky depending on intermediate servers, etc), simply use the 
+    already introduced cfg.deployment.url config setting.
+
 * 2016-11-09:  3.1.6
   - Re #31 "https == http...", actually the scheme change is tried in
     all ontology requests, not only from self-hosted controller.
