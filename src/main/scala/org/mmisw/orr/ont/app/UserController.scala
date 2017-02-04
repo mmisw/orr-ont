@@ -78,7 +78,6 @@ class UserController(implicit setup: Setup) extends BaseController
     val token = require(params, "token")
 
     contentType = formats("html")
-
     val pwr = setup.db.pwrDAO.findOneById(token).getOrElse(
       halt(404, s"invalid or expired token"))
 
@@ -87,37 +86,8 @@ class UserController(implicit setup: Setup) extends BaseController
 
     val action = s"${setup.cfg.deployment.url}/api/v0/user/auth/reset/$token"
 
-    <html>
-      <body>
-        <h3>
-          Set your new password:
-        </h3>
-        <form action="$action" method="post">
-          <div>
-            <label for="username">Username:</label>
-            <input type="text" id="username" name="username"/>
-          </div>
-          <div>
-            <label for="mail">E-mail:</label>
-            <input type="email" id="mail" name="email"/>
-          </div>
-          <div>
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password"/>
-          </div>
-          <div>
-            <label for="password2">Password again:</label>
-            <input type="password" id="password2" name="password2"/>
-          </div>
-          <div>
-            <input type="hidden" value="$token" name="token"/>
-          </div>
-          <div class="button">
-            <button type="submit">Submit</button>
-          </div>
-        </form>
-      </body>
-    </html>.toString()
+    loadResource("/pwset.html")
+      .replace("$orrName", setup.cfg.branding.instanceName)
       .replace("$pwr", pwr.toString)
       .replace("$action", action)
       .replace("$token", token)
@@ -167,15 +137,8 @@ class UserController(implicit setup: Setup) extends BaseController
 
     userService.notifyPasswordHasBeenReset(user)
 
-    <html>
-      <body>
-        <h3>
-          Your password has been reset.
-        </h3>
-        Continue to <a href="$orrLink">$orrLink</a>
-        and sign in with your new password.
-      </body>
-    </html>.toString()
+    loadResource("/pwreset.html")
+      .replace("$orrName", setup.cfg.branding.instanceName)
       .replace("$orrLink", setup.cfg.deployment.url)
   }
 

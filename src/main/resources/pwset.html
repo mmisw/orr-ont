@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>New password</title>
+  <style>
+    body {
+      margin: 40px;
+    }
+  </style>
+</head>
+<body>
+<h3>
+  $orrName
+</h3>
+<h4>
+  Enter the following to set your new password:
+</h4>
+<form action="$action" method="post">
+  <table style="text-align: left">
+    <tbody>
+    <tr>
+      <th>
+        <label for="username">Username:</label>
+      </th>
+      <td>
+        <input type="text" id="username" name="username"/>
+      </td>
+    </tr>
+    <tr>
+      <th>
+        <label for="mail">E-mail:</label>
+      </th>
+      <td>
+        <input type="email" id="mail" name="email"/>
+      </td>
+    </tr>
+    <tr>
+      <th>
+        <label for="password">Password:</label>
+      </th>
+      <td>
+        <input type="password" id="password" name="password"/>
+      </td>
+    </tr>
+    <tr>
+      <th>
+        <label for="password2">Password again:</label>
+      </th>
+      <td>
+        <input type="password" id="password2" name="password2"/>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+  <div>
+    <input type="hidden" value="$token" name="token"/>
+  </div>
+  <div class="button">
+    <button type="submit">Submit</button>
+  </div>
+</form>
+</body>
+</html>

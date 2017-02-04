@@ -173,4 +173,10 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
   }
 
   protected def isAdminOrExtra(u: db.User): Boolean = "admin" == u.userName || extra.contains(u.userName)
+
+  protected def loadResource(name: String): String = {
+    val stream = getClass.getResourceAsStream(name)
+    scala.Predef.require(stream != null, s"$name must be found in the classpath")
+    try io.Source.fromInputStream(stream).mkString finally stream.close()
+  }
 }
