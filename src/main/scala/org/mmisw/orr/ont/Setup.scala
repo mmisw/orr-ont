@@ -21,10 +21,13 @@ class Setup(val cfg: Cfg,
 
   // todo omit/obfuscate any passwords in output logging
   if (logger.underlying.isInfoEnabled()) {
-    logger.info(s"Configuration:\n$cfg")
+    import org.json4s._
+    import org.json4s.native.Serialization
+    implicit val formats = Serialization.formats(NoTypeHints)
+    logger.info(s"Configuration:\n${Serialization.writePretty(cfg)}")
   }
 
-  val mongoConfig = {
+  val mongoConfig: Cfg.Mongo = {
     val mc = cfg.mongo
     testing match {
       case None => mc
@@ -39,7 +42,7 @@ class Setup(val cfg: Cfg,
     }
   }
 
-  val filesConfig = {
+  val filesConfig: Cfg.Files = {
     val fc = cfg.files
     testing match {
       case None => fc
@@ -51,7 +54,7 @@ class Setup(val cfg: Cfg,
 
   val baseDir = new java.io.File(filesConfig.baseDirectory)
 
-  val instanceName = cfg.branding.instanceName
+  val instanceName: String = cfg.branding.instanceName
 
   com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers()
 
@@ -59,11 +62,10 @@ class Setup(val cfg: Cfg,
 
   dbOpt = Some(db)
 
-  val recaptchaPrivateKey = cfg.recaptcha.privateKey
+  val recaptchaPrivateKey: Option[String] = cfg.recaptcha.privateKey
 
   def destroy() {
     logger.debug(s"destroying application setup")
     dbOpt foreach { _.destroy() }
   }
-
 }

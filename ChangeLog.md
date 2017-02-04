@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2017-02-03:  3.1.8
+  - regenerate Cfg with tscfg 0.8.0.  Use json4s to log out the configuration.
+  
 * 2017-02-01:  3.1.7
   - fix #34 "cannot reset password".
     Instead of using HttpServletRequest methods to "get my base URL" (which are 
