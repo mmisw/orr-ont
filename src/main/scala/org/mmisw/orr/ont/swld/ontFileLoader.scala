@@ -5,7 +5,7 @@ import java.io._
 import com.hp.hpl.jena.ontology.OntModel
 import com.hp.hpl.jena.rdf.model.Resource
 import com.hp.hpl.jena.vocabulary._
-import com.typesafe.scalalogging.{StrictLogging => Logging}
+import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import org.mmisw.orr.ont.util.{Util2, XmlBaseExtractor}
 import org.mmisw.orr.ont.vocabulary.Skos
 import org.xml.sax.InputSource
@@ -86,6 +86,15 @@ object ontFileLoader extends AnyRef with Logging {
     var map = Map[String, PossibleOntologyInfo]()
 
     def add(uri: String, explanation: String): Unit = {
+      if (uri == null || uri.trim.isEmpty ) {
+        if (uri == null) {
+          logger.warn(s"orr-portal#76: ignoring uri=null as possible ontology uri (explanation=$explanation)")
+        }
+        else {
+          logger.warn(s"orr-portal#76: ignoring empty uri='$uri' as possible ontology uri (explanation=$explanation)")
+        }
+        return
+      }
       for (resource <- Option(model.getResource(uri))) {
         val newInfo = map.get(uri) match {
           case None =>
@@ -104,6 +113,7 @@ object ontFileLoader extends AnyRef with Logging {
       val it = model.listResourcesWithProperty(RDF.`type`, resource)
       while (it.hasNext) {
         val res = it.nextResource()
+        logger.debug(s"orr-portal#76: res=$res  with getURI=${res.getURI}")
         add(res.getURI, s"Resource of type $resource")
       }
     }

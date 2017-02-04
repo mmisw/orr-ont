@@ -1,5 +1,13 @@
 ## change log ##
 
+* 2017-02-04:  3.1.9
+  - fix orr-portal#76: "iceOfLandOrigin ontology: RDF/XML failing to upload".
+    Two key aspects:
+      - although the `owlapi.xrdf` file does contain an Ontology, such 
+        resource is a _blank node_, so no URI is this case (which gets reported as null).
+      - post("/upload") was returning a UploadedFileInfo directly; now this is done
+        with explicit serialization to JSON.
+  
 * 2017-02-03:  3.1.8
   - improve reset-password and password-reset html pages
   - regenerate Cfg with tscfg 0.8.0.  Use json4s to log out the configuration.

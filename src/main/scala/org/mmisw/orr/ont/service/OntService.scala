@@ -579,8 +579,9 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     val format = ontModelLoadedResult.format
     val ontModel = ontModelLoadedResult.ontModel
 
-    UploadedFileInfo(userName, actualFile.getName, format,
-      ontFileLoader.getPossibleOntologyUris(ontModel, actualFile))
+    logger.debug(s"getting possible ontology uris")
+    val map: Map[String, PossibleOntologyInfo] = ontFileLoader.getPossibleOntologyUris(ontModel, actualFile)
+    UploadedFileInfo(userName, actualFile.getName, format, map)
   }
 
   def getUploadedFile(userName: String, filename: String): File = {

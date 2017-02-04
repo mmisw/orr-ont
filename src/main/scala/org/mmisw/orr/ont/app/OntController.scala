@@ -70,7 +70,8 @@ class OntController(implicit setup: Setup,
     try {
       val ontFileWriter = getOntFileWriterForJustUploadedFile
       val uploadedFileInfo = ontService.saveUploadedOntologyFile(u.userName, ontFileWriter)
-      uploadedFileInfo
+      logger.debug(s"uploadedFileInfo =  $uploadedFileInfo")
+      grater[UploadedFileInfo].toCompactJSON(uploadedFileInfo)
     }
     catch { case e: Throwable =>
       e.printStackTrace()
