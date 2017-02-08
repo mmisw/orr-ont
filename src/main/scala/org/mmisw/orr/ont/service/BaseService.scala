@@ -23,16 +23,17 @@ abstract class BaseService(setup: Setup) {
 
     def doIt(): Unit = {
       setup.cfg.notifications.recipientsFilename foreach { filename =>
-        val body = msg +
-          "\n\n" +
-          s"(you have received this email because your address is included in $filename)"
-
         try {
           val emails = io.Source.fromFile(filename).getLines.map(_.trim).filterNot { line =>
             line.isEmpty || line.startsWith("#")
           }
-          if (emails.nonEmpty)
+          if (emails.nonEmpty) {
+            val body = msg +
+              "\n\n" +
+              s"(You have received this email because your address is included in $filename)"
+
             setup.emailer.sendEmail(emails.mkString(","), subject, body)
+          }
         }
         catch {
           case exc:Exception => exc.printStackTrace()

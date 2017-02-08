@@ -1,5 +1,6 @@
 package org.mmisw.orr.ont.util
 
+import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import org.mmisw.orr.ont.Cfg
 
 
@@ -7,7 +8,7 @@ trait IEmailer {
   def sendEmail(to: String, subject: String, text: String): Unit
 }
 
-class Emailer(emailConfig: Cfg.Email) extends IEmailer {
+class Emailer(emailConfig: Cfg.Email) extends IEmailer with Logging {
   private[this] val username = emailConfig.account.username
   private[this] val password = emailConfig.account.password
 
@@ -22,6 +23,7 @@ class Emailer(emailConfig: Cfg.Email) extends IEmailer {
 
 
   def sendEmail(to: String, subject: String, text: String): Unit = {
+    logger.debug(s"sendMail: to='$to' subject='$subject'")
     MailSender.sendMessage(mailer, mailhost, mailport, prot, username, password, debug,
       from, to, replyTo, subject, text)
   }

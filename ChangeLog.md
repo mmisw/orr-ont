@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2017-02-08:  3.2.0
+  - some logging to debug email sending based on cfg.notifications.recipientsFilename
+  
 * 2017-02-07:  3.2.0
   - POST/PUT /ont: format parameter no longer required, with "_guess" as default value
   
