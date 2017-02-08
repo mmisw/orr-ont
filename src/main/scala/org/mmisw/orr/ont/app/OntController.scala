@@ -413,8 +413,7 @@ class OntController(implicit setup: Setup,
   private def getOntFileWriterForJustUploadedFile: OntFileWriter = {
     val fileItem = fileParams.getOrElse("file", missing("file"))
 
-    // todo make format param optional
-    val format = requireParam("format")
+    val format = getParam("format").getOrElse("_guess")
 
     logger.debug(s"uploaded file=${fileItem.getName} size=${fileItem.getSize} format=$format")
     //val fileContents = new String(fileItem.get(), fileItem.charset.getOrElse("utf8"))
@@ -425,7 +424,7 @@ class OntController(implicit setup: Setup,
 
   private def getOntFileWriterForGivenContents: OntFileWriter = {
     val contents = requireParam("contents")
-    val format   = requireParam("format")
+    val format = getParam("format").getOrElse("_guess")
     logger.debug(s"getOntFileWriterForGivenContents: format=$format contents=`$contents`")
     StringWriter(format, contents)
   }

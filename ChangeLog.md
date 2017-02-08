@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2017-02-07:  3.2.0
+  - POST/PUT /ont: format parameter no longer required, with "_guess" as default value
+  
 * 2017-02-04:  3.1.9
   - fix orr-portal#76: "iceOfLandOrigin ontology: RDF/XML failing to upload".
     Two key aspects:
