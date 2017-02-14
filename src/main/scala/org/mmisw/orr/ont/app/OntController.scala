@@ -6,7 +6,8 @@ import javax.servlet.annotation.MultipartConfig
 import com.mongodb.casbah.Imports._
 import com.novus.salat._
 import com.novus.salat.global._
-import com.typesafe.scalalogging.{StrictLogging => Logging}
+import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
+import org.json4s.JsonAST.{JArray, JValue}
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.mmisw.orr.ont._
@@ -155,6 +156,43 @@ class OntController(implicit setup: Setup,
           nameOpt = getParam("name"),
           userName = userName,
           doVerifyOwner = doVerifyOwner)
+    }
+  }
+
+  /*
+   * Add terms to existing vocabulary
+   * TODO preliminary ...
+   */
+  post("/term") {
+    val vocUri       = requireParam("vocUri")
+    val versionOpt   = getParam("version")
+    val classUriOpt  = getParam("classUri")
+    val termNameOpt  = getParam("termName")
+    val termUriOpt   = getParam("termUri")
+    val map = body()
+    val attributesParam = getArray(map, "attributes")
+
+    if (termNameOpt.isDefined == termUriOpt.isDefined)
+      error(400, s"One of termName and termUri must be given")
+
+    val attributes = attributesParam map { a ⇒
+      if (!a.isInstanceOf[JArray]) error(400, "'attributes' must be an array or arrays")
+      a.asInstanceOf[JArray]
+    }
+    val (ont, ontVersion, version) = resolveOntologyVersion(vocUri, versionOpt)
+
+    verifyOwnerName(ont.ownerName)
+
+    Try(ontService.addTerm(ont, ontVersion, version,
+      classUriOpt, termNameOpt, termUriOpt, attributes)
+    ) match {
+      case Success(result) =>
+        loadOntologyInTripleStore(vocUri, reload = true)
+        Created(result)
+
+      case Failure(exc: NoSuch)   ⇒ error(404, exc.details)
+      case Failure(exc: Invalid)  ⇒ error(409, exc.details)
+      case Failure(exc)           ⇒ error500(exc)
     }
   }
 

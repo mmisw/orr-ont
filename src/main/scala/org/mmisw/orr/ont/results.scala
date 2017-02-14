@@ -1,6 +1,7 @@
 package org.mmisw.orr.ont
 
 import org.joda.time.DateTime
+import org.json4s.JValue
 
 
 case class UserResult(
@@ -66,6 +67,14 @@ case class OntologySummaryResult(
             format:         Option[String] = None,
             visibility:     Option[String] = None
             )
+
+case class TermRegistrationResult(
+            vocUri:    String,
+            classUri:  String,
+            termName:  Option[String],
+            termUri:   Option[String],
+            attributes: List[JValue]
+)
 
 case class OntologySubjectsResult(
             uri:            String,

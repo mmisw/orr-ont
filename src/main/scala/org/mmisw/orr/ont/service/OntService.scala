@@ -4,12 +4,13 @@ import java.io.File
 import java.net.{URI, URISyntaxException}
 
 import com.mongodb.casbah.Imports._
-import com.typesafe.scalalogging.{StrictLogging => Logging}
+import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
-import org.mmisw.orr.ont.swld.{PossibleOntologyInfo, ontFileLoader, ontUtil}
+import org.mmisw.orr.ont.swld._
 import org.mmisw.orr.ont._
 
+import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
 
 
@@ -29,7 +30,7 @@ case class OrgOntOwner(orgName: String) extends OntOwner
 case class UserOntOwner(userName: String) extends OntOwner
 
 object OntOwner {
-  val ownerNamePattern = "(~?)(.*)".r
+  val ownerNamePattern: Regex = "(~?)(.*)".r
 
   def apply(ownerName: String): OntOwner = {
     ownerName match {
@@ -491,6 +492,95 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
    * Deletes the whole ontologies collection
    */
   def deleteAll() = ontDAO.remove(MongoDBObject())
+
+  def addTerm(ont: Ontology,
+              ontVersion: OntologyVersion,
+              version:    String,
+              classUriOpt:  Option[String],
+              termNameOpt:  Option[String],
+              termUriOpt:   Option[String],
+              attributes:   List[org.json4s.JArray]
+             ): TermRegistrationResult = {
+
+    if (termNameOpt.isDefined == termUriOpt.isDefined)
+      throw new IllegalArgumentException(s"only one of termNameOpt and termUriOpt must be defined")
+
+    val vocUri = ont.uri
+    val (file, actualFormat) = getOntologyFile(vocUri, version, ontVersion.format)
+
+    if (actualFormat != "v2r") throw NotAnOrrVocabulary(vocUri, version)
+
+    logger.debug(s"addTerm: loading V2RModel from file=$file")
+    val oldV2r = v2r.loadV2RModel(file)
+
+    // get the affected specific vocabulary:
+    val vocab: Vocab = classUriOpt match {
+      case None ⇒
+        if (oldV2r.vocabs.size == 1) oldV2r.vocabs.head
+        else throw MissingClassUri(vocUri, version)
+
+      case Some(classUri) ⇒
+        oldV2r.vocabs.find(v ⇒ v.`class`.getUri() == classUri).getOrElse(
+          throw NoSuchVocabClassUri(vocUri, version, classUri))
+    }
+
+    val vocNamespace = vocUri + "/"
+
+    val actualClassUri = vocab.`class`.getUri(Some(vocNamespace))
+
+    if (vocab.properties.length != attributes.length)
+      throw TermAttributesError(vocUri, version, actualClassUri, vocab.properties.length, attributes.length)
+
+    val newTerm = Term(
+      name = termNameOpt,
+      uri  = termUriOpt,
+      attributes = attributes
+    )
+
+    val newTermUri = newTerm.getUri(Some(vocNamespace))
+
+    val existingTermUris = vocab.terms.view.map(_.getUri(Some(vocNamespace)))
+
+    if (logger.underlying.isDebugEnabled()) {
+      logger.debug(s"\n terms:")
+      existingTermUris foreach { uri ⇒ logger.debug(s"      uri  = $uri") }
+      logger.debug(s"newTermUri = $newTermUri")
+    }
+
+    if (existingTermUris.contains(newTermUri)) {
+      throw if (termNameOpt.isDefined)
+        TermNameAlreadyRegistered(vocUri, version, actualClassUri, termNameOpt.get)
+      else
+        TermUriAlreadyRegistered(vocUri, version, actualClassUri, termUriOpt.get)
+    }
+
+    val adjustedNewTerm = termUriOpt match {
+      case Some(givenUri) ⇒
+        val (ns, localName) = ontUtil.getNamespaceAndLocalName(givenUri)
+        if (ns == vocNamespace)
+          newTerm.copy(uri = None, name = Some(localName))
+        else newTerm
+
+      case None  ⇒ newTerm
+    }
+
+    val newVocab = vocab.copy(terms = vocab.terms :+ adjustedNewTerm)
+
+    val updatedVocabs: List[Vocab] = oldV2r.vocabs.map { v ⇒
+      if (v.`class`.getUri() == actualClassUri) newVocab
+      else v
+    }
+    val newV2r = oldV2r.copy(vocabs =  updatedVocabs)
+    v2r.saveV2RModel(newV2r, file)
+
+    TermRegistrationResult(
+      vocUri,
+      actualClassUri,
+      termName = termNameOpt,
+      termUri = termUriOpt,
+      attributes
+    )
+  }
 
   ///////////////////////////////////////////////////////////////////////////
 

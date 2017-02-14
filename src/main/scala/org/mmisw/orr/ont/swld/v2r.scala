@@ -18,7 +18,7 @@ case class IdL(name:  Option[String] = None,
                label: Option[String] = None,
                valueClassUri: Option[String] = None
               ) {
-  def getUri(namespaceOpt: Option[String] = None) =
+  def getUri(namespaceOpt: Option[String] = None): String =
     uri.getOrElse(namespaceOpt.getOrElse("") + name.get)
 
   def getLabel: String = label.getOrElse(name.getOrElse {
@@ -32,7 +32,7 @@ case class Term(name:        Option[String] = None,
                 uri:         Option[String] = None,
                 attributes:  List[JValue]
                ) {
-  def getUri(namespaceOpt: Option[String] = None) =
+  def getUri(namespaceOpt: Option[String] = None): String =
     uri.getOrElse(namespaceOpt.getOrElse("") + name.get)
 }
 
@@ -97,7 +97,7 @@ case class V2RModel(uri:       Option[String],
     uriOpt
   }
 
-  implicit val formats = Serialization.formats(NoTypeHints)
+  implicit val formats: Formats = Serialization.formats(NoTypeHints)
 
   def toJson: String = write(this)
 
@@ -125,13 +125,22 @@ object v2r extends AnyRef with Logging {
   def loadOntModel(file: File, uriOpt: Option[String] = None): OntModelLoadedResult = {
     logger.debug(s"v2r.loadOntModel: loading file=$file uriOpt=$uriOpt")
 
-    implicit val formats = DefaultFormats
-    val json = parse(file)
-    val vr   = json.extract[V2RModel]
+    val vr = loadV2RModel(file)
 
     val altUriOpt = uriOpt orElse Some(file.getCanonicalFile.toURI.toString)
     val model = getModel(vr, altUriOpt)
     OntModelLoadedResult(file, "v2r", model)
+  }
+
+  def loadV2RModel(file: File): V2RModel = {
+    implicit val formats = DefaultFormats
+    val json = parse(file)
+    json.extract[V2RModel]
+  }
+
+  def saveV2RModel(vr: V2RModel, file: File): Unit = {
+    java.nio.file.Files.write(file.toPath,
+      vr.toPrettyJson.getBytes(java.nio.charset.StandardCharsets.UTF_8))
   }
 
 }

@@ -1,5 +1,26 @@
 ## change log ##
 
+* 2017-02-14:  3.2.1
+  - \#35: "API operation to insert new terms in vocabulary"
+  	- preliminary `POST /ont/term`.
+  	 Adds a single new term. Parameters:
+  	  
+  	  	- vocUri:    URI of ontology
+  	  	- version:   ontology version (optional)
+  	  	- classUri:  class of specific vocabulary (optional). If not given,
+  	  	             and there's only one class in the ontology, then uses it.
+  	  	             Otherwise, error.
+  	  	- one of termName or termUri to indicate the URI for the new term (required) 
+  	  	- attributes: array of array of strings for the property values (required)
+  	  	
+  	  Example request for a vocabulary with only a class having one property:
+  	  
+  	  ```
+  	  $ http -a username:password post http://localhost:8081/api/v0/ont/term \
+  	         vocUri=http://localhost:9001/src/app/~carueda/vocab1 \
+  	         termName=baz attributes:='[ ["some prop value", "other value for same prop] ]'
+  	  ```
+  
 * 2017-02-08:  3.2.0
   - some logging to debug email sending based on cfg.notifications.recipientsFilename
   

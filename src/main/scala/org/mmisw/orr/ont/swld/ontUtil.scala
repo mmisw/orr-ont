@@ -58,7 +58,7 @@ object ontUtil extends AnyRef with Logging {
   val storedFormats = List("rdf", "owl", "n3", "owx", "jsonld", "v2r", "m2r")
 
   // for the files actually stored
-  def storedFormat(format: String) = format.toLowerCase match {
+  def storedFormat(format: String): String = format.toLowerCase match {
     case "owx"              => "owx"    // https://www.w3.org/TR/owl-xml-serialization/
     case "v2r"              => "v2r"
     case "m2r"              => "m2r"
@@ -481,6 +481,15 @@ object ontUtil extends AnyRef with Logging {
     catch {
       case t: Throwable => Failure(t)
     }
+  }
+
+  /**
+    * @return Splits input at the rightmost '/' or '#'.
+    *         Eg: "foo/bar/baz" -> ("foo/bar/", "baz")
+    */
+  def getNamespaceAndLocalName(uri: String): (String,String) = {
+    val i = math.max(uri.lastIndexOf('#'), uri.lastIndexOf('/'))
+    (uri.substring(0, i + 1), uri.substring(i + 1))
   }
 
 }

@@ -34,6 +34,36 @@ case class InvalidUri(uri: String, error: String)
 case class OntologyAlreadyRegistered(uri: String)
   extends Invalid("uri" -> uri, "error" -> "Ontology URI already registered")
 
+case class NotAnOrrVocabulary(uri: String, version: String)
+  extends NoSuch("uri" -> uri, "version" -> version,
+    "error" -> "Not an ORR vocabulary")
+
+case class MissingClassUri(uri: String, version: String)
+  extends Invalid("uri" -> uri, "version" -> version,
+    "error" -> "Class URI is required because vocabulary contains multiple classes")
+
+case class NoSuchVocabClassUri(uri: String, version: String, classUri: String)
+  extends NoSuch("uri" -> uri, "version" -> version, "classUri" → classUri,
+    "error" -> "No such class in the given vocabulary")
+
+case class TermUriAlreadyRegistered(uri: String, version: String, classUri: String, termUri: String)
+  extends Invalid("uri" -> uri, "version" -> version, "classUri" -> classUri,
+    "termUri" -> termUri,
+    "error" -> "Term URI already registered")
+
+case class TermNameAlreadyRegistered(uri: String, version: String, classUri: String, termName: String)
+  extends Invalid("uri" -> uri, "version" -> version, "classUri" -> classUri,
+    "termName" -> termName,
+    "error" -> "Term name already registered")
+
+case class TermAttributesError(uri: String, version: String, classUri: String,
+                               numProperties: Int,
+                               numAttributes: Int)
+  extends Invalid("uri" -> uri, "version" -> version, "classUri" -> classUri,
+    "attributesExpected" → numProperties.toString,
+    "attributesGiven" → numAttributes.toString,
+    "error" -> "Mismatch in number of given attributes")
+
 case class NotAMember(userName: String, orgName: String)
   extends Invalid("userName" -> userName, "orgName" -> orgName, "error" -> "User is not a member of the organization")
 

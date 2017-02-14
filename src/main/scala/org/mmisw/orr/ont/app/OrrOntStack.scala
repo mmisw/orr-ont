@@ -32,7 +32,7 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSuppor
 
   protected def bug(msg: String): Nothing = error500(s"$msg. Please notify this bug.")
 
-  protected def require(map: Params, paramName: String) = {
+  protected def require(map: Params, paramName: String): String = {
     val value = map.getOrElse(paramName, missing(paramName)).trim
     if (value.length > 0) value else error(400, s"'$paramName' param value missing")
   }
@@ -52,7 +52,7 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSuppor
     if (json != JNothing) Some(json.extract[Map[String, JValue]]) else None
   }
 
-  protected def require(map: Map[String, JValue], paramName: String) = {
+  protected def require(map: Map[String, JValue], paramName: String): String = {
     val value = map.getOrElse(paramName, missing(paramName))
     if (!value.isInstanceOf[JString]) error(400, s"'$paramName' param value is not a string")
     val str = value.asInstanceOf[JString].values.trim
@@ -72,6 +72,12 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSuppor
     val arr = value.asInstanceOf[JArray].arr
     if (!canBeEmpty && arr.isEmpty) error(400, s"'$paramName' array param cannot be empty")
     arr map (_.asInstanceOf[JString].values)
+  }
+
+  protected def getArray(map: Map[String, JValue], paramName: String): List[JValue] = {
+    val value = map.getOrElse(paramName, missing(paramName))
+    if (!value.isInstanceOf[JArray]) error(400, s"'$paramName' param value is not an array")
+    value.asInstanceOf[JArray].arr
   }
 
   protected def getSet(map: Map[String, JValue], paramName: String, canBeEmpty: Boolean = false): Set[String] =
