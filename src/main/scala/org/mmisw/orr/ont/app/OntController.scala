@@ -567,7 +567,16 @@ class OntController(implicit setup: Setup,
       val re = if (reload) "re" else ""
       tsService.loadUriFromLocal(uri, reload) match {
         case Right(content)  => logger.info(s"${re}loaded ontology uri=$uri in triple store $content")
-        case Left(exc)       => logger.warn(s"could not ${re}load ontology in triple store", exc)
+
+        case Left(exc: java.util.concurrent.ExecutionException) ⇒
+          exc.getCause match {
+            case conn: java.net.ConnectException ⇒
+              logger.warn(s"ConnectException trying to ${re}load ontology in triple store: ${conn.getMessage}")
+            case _ ⇒
+              logger.warn(s"ExecutionException trying to ${re}load ontology in triple store", exc)
+          }
+        case Left(exc) ⇒
+          logger.warn(s"Exception trying to ${re}load ontology in triple store", exc)
       }
     }
     else logger.warn("loadOntologyInTripleStore: under testing mode so nothing done here")
