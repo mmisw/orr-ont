@@ -57,7 +57,7 @@ case class M2RModel(uri:        Option[String],
     uriOpt
   }
 
-  implicit val formats = Serialization.formats(NoTypeHints)
+  implicit val formats: Formats = Serialization.formats(NoTypeHints)
 
   def toJson: String = write(this)
 
@@ -86,12 +86,22 @@ object m2r extends AnyRef with Logging {
   def loadOntModel(file: File, uriOpt: Option[String] = None): OntModelLoadedResult = {
     logger.debug(s"m2r.loadOntModel: loading file=$file uriOpt=$uriOpt")
 
-    implicit val formats = DefaultFormats
-    val json = parse(file)
-    val mr   = json.extract[M2RModel]
+    val mr = loadM2RModel(file)
 
     val altUriOpt = uriOpt orElse Some(file.getCanonicalFile.toURI.toString)
     val model = getModel(mr, altUriOpt)
     OntModelLoadedResult(file, "m2r", model)
+  }
+
+  def loadM2RModel(file: File): M2RModel = {
+    implicit val formats = DefaultFormats
+    val json = parse(file)
+    json.extract[M2RModel]
+  }
+
+  def saveM2RModel(mr: M2RModel, file: File): Unit = {
+    logger.debug(s"saveM2RModel: saving file=$file")
+    java.nio.file.Files.write(file.toPath,
+      mr.toPrettyJson.getBytes(java.nio.charset.StandardCharsets.UTF_8))
   }
 }

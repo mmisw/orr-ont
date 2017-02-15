@@ -139,8 +139,8 @@ object v2r extends AnyRef with Logging {
   }
 
   def saveV2RModel(vr: V2RModel, file: File): Unit = {
+    logger.debug(s"saveV2RModel: saving file=$file")
     java.nio.file.Files.write(file.toPath,
       vr.toPrettyJson.getBytes(java.nio.charset.StandardCharsets.UTF_8))
   }
-
 }
