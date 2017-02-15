@@ -114,7 +114,9 @@ object m2r extends AnyRef with Logging {
       model.toPrettyJson.getBytes(java.nio.charset.StandardCharsets.UTF_8))
   }
 
-  // remove duplicates in each mapping group:
+  /**
+    * Removes duplicates in metadata and in each mapping group
+    */
   def simplifyM2RModel(mr: M2RModel): M2RModel = {
     val distinctMappings = mr.mappings map { group ⇒
       group.copy(
@@ -122,6 +124,18 @@ object m2r extends AnyRef with Logging {
         subjects = group.subjects.distinct
       )
     }
-    mr.copy(mappings = distinctMappings)
+    val simplifiedMetadata = mr.metadata map { md ⇒
+      md map { case (uri, value) =>
+        val distinctValueElements: JValue = value match {
+          case JArray(list) ⇒ JArray(list.distinct)
+          case jv ⇒ jv
+        }
+        (uri, distinctValueElements)
+      }
+    }
+    mr.copy(
+      metadata = simplifiedMetadata,
+      mappings = distinctMappings
+    )
   }
 }
