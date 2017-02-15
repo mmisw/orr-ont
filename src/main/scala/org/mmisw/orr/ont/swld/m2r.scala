@@ -99,9 +99,29 @@ object m2r extends AnyRef with Logging {
     json.extract[M2RModel]
   }
 
-  def saveM2RModel(mr: M2RModel, file: File): Unit = {
-    logger.debug(s"saveM2RModel: saving file=$file")
+  def loadM2RModel(contents: String): M2RModel = {
+    implicit val formats = DefaultFormats
+    val json = parse(contents)
+    json.extract[M2RModel]
+  }
+
+  def saveM2RModel(mr: M2RModel, file: File, simplify: Boolean = false): Unit = {
+    logger.debug(s"saveM2RModel: saving file=$file  simplify=$simplify")
+
+    val model = if (simplify) simplifyM2RModel(mr) else mr
+
     java.nio.file.Files.write(file.toPath,
-      mr.toPrettyJson.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+      model.toPrettyJson.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+  }
+
+  // remove duplicates in each mapping group:
+  def simplifyM2RModel(mr: M2RModel): M2RModel = {
+    val distinctMappings = mr.mappings map { group ⇒
+      group.copy(
+        objects = group.objects.distinct,
+        subjects = group.subjects.distinct
+      )
+    }
+    mr.copy(mappings = distinctMappings)
   }
 }

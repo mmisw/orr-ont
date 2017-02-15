@@ -138,6 +138,12 @@ object v2r extends AnyRef with Logging {
     json.extract[V2RModel]
   }
 
+  def loadV2RModel(contents: String): V2RModel = {
+    implicit val formats = DefaultFormats
+    val json = parse(contents)
+    json.extract[V2RModel]
+  }
+
   def saveV2RModel(vr: V2RModel, file: File): Unit = {
     logger.debug(s"saveV2RModel: saving file=$file")
     java.nio.file.Files.write(file.toPath,

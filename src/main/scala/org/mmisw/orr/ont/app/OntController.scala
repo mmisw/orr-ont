@@ -285,8 +285,19 @@ class OntController(implicit setup: Setup,
   // used for embedded contents
   private case class StringWriter(format: String, contents: String) extends AnyRef with OntFileWriter {
     override def write(destFile: File) {
-      java.nio.file.Files.write(destFile.toPath,
-        contents.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+      format match {
+        case "v2r" ⇒
+          val vr = v2r.loadV2RModel(contents)
+          v2r.saveV2RModel(vr, destFile)
+
+        case "m2r" ⇒
+          val mr = m2r.loadM2RModel(contents)
+          m2r.saveM2RModel(mr, destFile, simplify = true)
+
+        case _ ⇒
+          java.nio.file.Files.write(destFile.toPath,
+            contents.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+      }
     }
   }
 
