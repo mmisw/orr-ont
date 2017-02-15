@@ -1,6 +1,8 @@
 ## change log ##
 
 * 2017-02-14:  3.2.1
+  - encode `#` -> `%23` in "Resolve with" email upon ontology registration
+  
   - \#35: "API operation to insert new terms in vocabulary"
   	- preliminary `POST /ont/term`.
   	 Adds a single new term. Parameters:

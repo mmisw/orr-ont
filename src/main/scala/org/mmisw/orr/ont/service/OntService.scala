@@ -601,7 +601,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     */
   private def getResolveWith(uri: String): String = {
     val myUrl = setup.cfg.deployment.url + "/"
-    if (uri.startsWith(myUrl)) "" else s"Resolve with: $myUrl?uri=$uri"
+    if (uri.startsWith(myUrl)) "" else s"Resolve with: $myUrl?uri=${uri.replace("#", "%23")}"
   }
 
   private def doDeleteOntology(ont: Ontology) = {
