@@ -23,8 +23,14 @@ abstract class BaseService(setup: Setup) {
 
     def doIt(): Unit = {
       setup.cfg.notifications.recipientsFilename foreach { filename =>
+        val source = try io.Source.fromFile(filename)
+        catch {
+          case ex: java.io.FileNotFoundException ⇒
+            println(s"WARN: sendNotificationEmail: FileNotFoundException: ${ex.getMessage}")
+            return
+        }
         try {
-          val emails = io.Source.fromFile(filename).getLines.map(_.trim).filterNot { line =>
+          val emails = source.getLines.map(_.trim).filterNot { line =>
             line.isEmpty || line.startsWith("#")
           }
           if (emails.nonEmpty) {
