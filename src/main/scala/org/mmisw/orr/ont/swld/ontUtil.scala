@@ -4,7 +4,7 @@ import com.hp.hpl.jena.ontology.{OntDocumentManager, OntModel, OntModelSpec, Ont
 import com.hp.hpl.jena.rdf.model._
 import java.io.{File, FileInputStream, FileOutputStream}
 
-import com.typesafe.scalalogging.{StrictLogging => Logging}
+import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import com.github.jsonldjava.jena.JenaJSONLD
 import com.hp.hpl.jena.vocabulary.{DCTerms, DC_10, DC_11}
 import com.mongodb.{BasicDBList, BasicDBObject}
@@ -13,6 +13,7 @@ import org.json4s._
 import org.mmisw.orr.ont.vocabulary.{Omv, OmvMmi}
 
 import scala.collection.JavaConversions._
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 
@@ -120,7 +121,8 @@ object ontUtil extends AnyRef with Logging {
   }
 
   def extractAttributes(resource: Resource): Map[String,List[String]] = {
-    var map = Map[String,List[String]]()
+    // no duplicate values
+    var attrs = Map[String,collection.mutable.Set[String]]()
 
     val it = resource.listProperties()
     if ( it != null) {
@@ -131,15 +133,16 @@ object ontUtil extends AnyRef with Logging {
         val node: RDFNode = stmt.getObject
         val nodeString = nodeAsString(node)
         if (nodeString != null) {
-          val newValues = nodeString :: (map.get(propUri) match {
-            case None         => List()
-            case Some(values) => values
-          })
-          map = map.updated(propUri, newValues)
+          attrs.get(propUri) match {
+            case Some(values) ⇒
+              values.add(nodeString)
+            case None ⇒
+              attrs = attrs.updated(propUri, collection.mutable.Set(nodeString))
+          }
         }
       }
     }
-    map
+    attrs mapValues { _.toList }
   }
 
   def toOntMdList(md: Map[String,List[String]]): List[Map[String, AnyRef]] =
@@ -227,7 +230,7 @@ object ontUtil extends AnyRef with Logging {
 
   private def readModel2(uri: String, file: File, lang: String): OntModel = {
     val path = file.getAbsolutePath
-    logger.debug(s"readModel: path='$path' lang='$lang'")
+    logger.debug(s"readModel2: path='$path' lang='$lang'")
     if ("OWX" == lang) {
       owlApiHelper.loadOntModel(file).ontModel
     }
@@ -438,8 +441,26 @@ object ontUtil extends AnyRef with Logging {
   }
 
   def addPropertyValues(model: Model, subject: Resource)(property: Property, jValue: JValue): Unit = {
+
+    // TODO explicit type information!
+    // while explicit type information is captured, this is a temporary mechanism (hack!)
+    // to distinguish between an literal string and a "uri" (resource):
+    def addLiteralOrResourceValue(v: String): Unit = {
+      try {
+        val jUri = new java.net.URI(v)
+        if (jUri.isAbsolute && jUri.getScheme != null)
+          model.add(subject, property, model.createResource(v))
+        else
+          model.add(subject, property, v)
+      }
+      catch {
+        case NonFatal(_) ⇒
+          model.add(subject, property, v)
+      }
+    }
+
     val primitive: PartialFunction[JValue, Unit] = {
-      case JString(v)   => model.add(       subject, property, v)
+      case JString(v)   => addLiteralOrResourceValue(v)
       case JBool(v)     => model.addLiteral(subject, property, v)
       case JInt(v)      => model.add(       subject, property, v.toString())   // BigInteger
       case JDouble(v)   => model.addLiteral(subject, property, v)

@@ -1,5 +1,12 @@
 ## change log ##
 
+* 2017-02-15:  3.2.1
+  - fix #37 "triple duplications in metadata of mapping ontologies"
+    NOTE: Not a complete fix but somewhat acceptable for the time being. Marking issue as "revisit_later."
+    TODO explicit value type information for m2r and v2r models!
+    While explicit type information is captured, implemented a temporary hack
+    to distinguish between an literal string and a "uri" (resource)
+
 * 2017-02-14:  3.2.1
   - m2r.saveM2RModel: remove duplicates in metadata and each mapping group
   - encode `#` -> `%23` in "Resolve with" email upon ontology registration
