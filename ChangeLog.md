@@ -1,6 +1,9 @@
 ## change log ##
 
 * 2017-02-15:  3.2.1
+  - fix #38 "triple duplications in metadata of vocabulary ontologies"
+    Change below also provides an acceptable behavior for this one.
+    Marked "revisit_later" as well.
   - fix #37 "triple duplications in metadata of mapping ontologies"
     NOTE: Not a complete fix but somewhat acceptable for the time being. Marking issue as "revisit_later."
     TODO explicit value type information for m2r and v2r models!
