@@ -86,17 +86,26 @@ object m2r extends AnyRef with Logging {
   def loadOntModel(file: File, uriOpt: Option[String] = None): OntModelLoadedResult = {
     logger.debug(s"m2r.loadOntModel: loading file=$file uriOpt=$uriOpt")
 
-    val mr = loadM2RModel(file)
+    val mr = loadM2RModel(file, simplify = true)
 
     val altUriOpt = uriOpt orElse Some(file.getCanonicalFile.toURI.toString)
-    val model = getModel(mr, altUriOpt)
-    OntModelLoadedResult(file, "m2r", model)
+    val ontModel = getModel(mr, altUriOpt)
+
+    if (false && logger.underlying.isDebugEnabled()) {
+      import org.mmisw.orr.ont.swld.ontUtil.writeModel
+      saveM2RModel(mr,                          new File("TEST.m2r"))
+      writeModel(altUriOpt.get, ontModel, "N3", new File("TEST.n3"))
+    }
+
+    OntModelLoadedResult(file, "m2r", ontModel)
   }
 
-  def loadM2RModel(file: File): M2RModel = {
+  def loadM2RModel(file: File, simplify: Boolean = false): M2RModel = {
+    logger.debug(s"loadM2RModel: file=$file  simplify=$simplify")
     implicit val formats = DefaultFormats
     val json = parse(file)
-    json.extract[M2RModel]
+    val mr = json.extract[M2RModel]
+    if (simplify) simplifyM2RModel(mr) else mr
   }
 
   def loadM2RModel(contents: String): M2RModel = {

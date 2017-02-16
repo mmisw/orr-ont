@@ -352,7 +352,6 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
       ont.latestVersion.flatMap(_.author)
 
     val name = nameOpt.getOrElse(ont.latestVersion.map(_.name).getOrElse(""))
-    logger.debug(s"createOntologyVersion: md=$md  authorOpt=$authorOpt  name=$name")
 
     // TODO remove these special entries in OntologyVersion
     val map = ontUtil.extractSomeProps(md)
@@ -369,7 +368,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     val update = ont.copy(versions = ont.versions ++ Map(version -> ontVersion))
 
-    logger.info(s"update: $update")
+    logger.debug(s"createOntologyVersion: updating ${update.uri} authorOpt=$authorOpt name=$name")
 
     Try(ontDAO.update(MongoDBObject("_id" -> uri), update, upsert = false, multi = false, WriteConcern.Safe)) match {
       case Success(result) =>
