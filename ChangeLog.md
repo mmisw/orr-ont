@@ -1,5 +1,11 @@
 ## change log ##
 
+* 2017-02-16:  3.2.1
+  - BaseController: now, to see if we have an authenticated user, try:
+      1. JWT in authorization header
+      2. JWT in parameter or in body
+      3. basic-auth
+
 * 2017-02-15:  3.2.1
   - fix #38 "triple duplications in metadata of vocabulary ontologies"
     Change below also provides an acceptable behavior for this one.

@@ -1,7 +1,7 @@
 package org.mmisw.orr.ont.app
 
-import org.mmisw.orr.ont.auth.{AuthUser, AuthenticationSupport}
-import org.mmisw.orr.ont.service.{OrgService, JwtUtil, NoSuchUser, UserService}
+import org.mmisw.orr.ont.auth.{AuthUser, AuthenticationSupport, Authenticator}
+import org.mmisw.orr.ont.service.{JwtUtil, NoSuchUser, OrgService, UserService}
 import org.mmisw.orr.ont.{Setup, db}
 import org.scalatra.auth.strategy.BasicAuthStrategy
 
@@ -29,28 +29,39 @@ abstract class BaseController(implicit setup: Setup) extends OrrOntStack
   protected val userService = new UserService
   protected val orgService = new OrgService
 
-  protected val userAuth    = setup.db.authenticator
+  protected val userAuth: Authenticator = setup.db.authenticator
 
   protected val jwtUtil = new JwtUtil(setup.cfg.auth.secret)
 
   ///////////////////////////////////////////////////////////////////////////
 
   before() {
-    // println("---- Authorization = " + request.getHeader("Authorization"))
     authenticatedUser = {
-      // try basic auth, then JWT, to see if we have an authenticated user
-      val baReq = new BasicAuthStrategy.BasicAuthRequest(request)
-      if (baReq.providesAuth && baReq.isBasicAuth) {
-        scentry.authenticate("Basic")
+      // to see if we have an authenticated user, try:
+
+      // 1) JWT in authorization header:
+      val authorization = request.getHeader("Authorization")
+      if (authorization != null && authorization.startsWith("Bearer ")) {
+        val jwt = authorization.substring("Bearer ".length).trim
+        jwtUtil.verifyToken(jwt)
       }
-      else for {
-        jwt <- getFromParamsOrBody("jwt")
-        authUser <- jwtUtil.verifyToken(jwt)
-      } yield authUser
+
+      // 2) JWT in parameter or in body:
+      else getFromParamsOrBody("jwt") match {
+        case Some(jwt) ⇒ jwtUtil.verifyToken(jwt)
+
+        case None ⇒
+          // 3) basic-auth:
+          val baReq = new BasicAuthStrategy.BasicAuthRequest(request)
+          if (baReq.providesAuth && baReq.isBasicAuth) {
+            scentry.authenticate("Basic")
+          }
+          else None
+      }
     }
   }
 
-  protected def requireAuthenticatedUser = authenticatedUser.getOrElse(bug("authenticatedUser should be defined"))
+  protected def requireAuthenticatedUser: AuthUser = authenticatedUser.getOrElse(bug("authenticatedUser should be defined"))
 
   protected def getFromParamsOrBody(name: String): Option[String] = {
     if (params.contains(name)) params.get(name)
