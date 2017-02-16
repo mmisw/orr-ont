@@ -1,10 +1,10 @@
 package org.mmisw.orr.ont.service
 
-import com.typesafe.scalalogging.{StrictLogging => Logging}
+import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import dispatch._
 import org.json4s.{DefaultFormats, Formats}
 import org.json4s.native.JsonParser
-import org.mmisw.orr.ont.Setup
+import org.mmisw.orr.ont.{Setup, TripleStoreResult}
 import org.mmisw.orr.ont.auth.authUtil
 import org.mmisw.orr.ont.swld.ontUtil
 import org.mmisw.orr.ont.util.FileUtils
@@ -71,7 +71,7 @@ with TripleStoreService with Logging {
     }
   }
 
-  def getSize(contextOpt: Option[String] = None): Either[Throwable, String] = {
+  def getSize(contextOpt: Option[String] = None): Either[Throwable, TripleStoreResult] = {
     val prom = Promise[Either[Throwable, String]]()
 
     val sizeReq = (contextOpt match {
@@ -85,7 +85,14 @@ with TripleStoreService with Logging {
     }
     val res = prom.future()
     logger.debug(s"getSize res=$res")
-    res
+    res match {
+      case Left(ex) ⇒ Left(ex)
+      case Right(content) ⇒
+        try Right(TripleStoreResult(uri = contextOpt, size = Some(content.toLong)))
+        catch {
+          case ex: NumberFormatException ⇒ Left(ex)
+        }
+    }
   }
 
   /**
@@ -142,25 +149,25 @@ with TripleStoreService with Logging {
   def reloadUri(uri: String): Either[Throwable, String] =
     loadUriFromLocal(uri, reload = true)
 
-  def reloadUris(uris: Iterator[String]) = {
+  def reloadUris(uris: Iterator[String]): Either[Throwable, TripleStoreResult] = {
     logger.warn(s"reloadUris:")
     uris map reloadUri
-    Right("done")
+    Right(TripleStoreResult(msg = Some(s"Done, ${uris.size} ontologies reloaded")))
   }
 
-  def reloadAll() = {
+  def reloadAll(): Either[Throwable, TripleStoreResult] = {
     logger.warn(s"reloadAll:")
     unloadAll()
     val uris = ontService.getAllOntologyUris.toList
     logger.debug(s"loading: ${uris.size} ontologies...")
     uris map loadUri
-    Right("done")
+    Right(TripleStoreResult(msg = Some(s"Done, ${uris.size} ontologies reloaded")))
   }
 
-  def unloadUri(uri: String): Either[Throwable, String] =
+  def unloadUri(uri: String): Either[Throwable, TripleStoreResult] =
     unload(Some(uri))
 
-  def unloadAll(): Either[Throwable, String] =
+  def unloadAll(): Either[Throwable, TripleStoreResult] =
     unload(None)
 
   /**
@@ -310,9 +317,8 @@ with TripleStoreService with Logging {
   /**
    * Unloads a particular ontology, or the whole triple store.
    */
-  private def unload(uriOpt: Option[String]): Either[Throwable, String] = {
+  private def unload(uriOpt: Option[String]): Either[Throwable, TripleStoreResult] = {
     logger.warn(s"unload: uriOpt=$uriOpt")
-    val prom = Promise[Either[Throwable, String]]()
 
     val baseReq = (svc / "statements")
       .setHeader("Authorization", authUtil.basicCredentials(userName, password))
@@ -326,9 +332,11 @@ with TripleStoreService with Logging {
     logger.debug(s"unload REQ query params=${req.toRequest.getQueryParams}")
     logger.debug(s"unload REQ headers=${req.toRequest.getHeaders}")
 
+    val prom = Promise[Either[Throwable, TripleStoreResult]]()
+
     val complete = dispatch.Http(req.DELETE OK as.String)
     complete onComplete {
-      case Success(content)   => prom.complete(Try(Right(content)))
+      case Success(content)   => prom.complete(Try(Right(TripleStoreResult(msg = Some(content)))))
       case Failure(exception) => prom.complete(Try(Left(exception)))
     }
 

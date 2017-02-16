@@ -1,6 +1,7 @@
 ## change log ##
 
 * 2017-02-16:  3.2.1
+  - adjustments in triplestore operations; introduce generic TripleStoreResult
   - BaseController: now, to see if we have an authenticated user, try:
       1. JWT in authorization header
       2. JWT in parameter or in body

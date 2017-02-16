@@ -1,5 +1,7 @@
 package org.mmisw.orr.ont.service
 
+import org.mmisw.orr.ont.TripleStoreResult
+
 case class TermResponse(contents: String, contentTye: String)
 
 trait TripleStoreService {
@@ -8,7 +10,7 @@ trait TripleStoreService {
 
   def initialize(): Unit
 
-  def getSize(contextOpt: Option[String] = None): Either[Throwable, String]
+  def getSize(contextOpt: Option[String] = None): Either[Throwable, TripleStoreResult]
 
   def loadUriFromLocal(uri: String, reload: Boolean = false): Either[Throwable, String]
 
@@ -26,22 +28,22 @@ trait TripleStoreService {
   /**
    * Reloads the given list of ontologies.
    */
-  def reloadUris(uris: Iterator[String]): Either[Throwable, String]
+  def reloadUris(uris: Iterator[String]): Either[Throwable, TripleStoreResult]
 
   /**
    * Reloads the whole triple store with all registered ontologies.
    */
-  def reloadAll(): Either[Throwable, String]
+  def reloadAll(): Either[Throwable, TripleStoreResult]
 
   /**
    * Unloads the given ontology from the triple store.
    */
-  def unloadUri(uri: String): Either[Throwable, String]
+  def unloadUri(uri: String): Either[Throwable, TripleStoreResult]
 
   /**
    * Clears the triple store.
    */
-  def unloadAll(): Either[Throwable, String]
+  def unloadAll(): Either[Throwable, TripleStoreResult]
 
   /**
     * Resolves a URI via SPARQL query to retrieve associated properties.

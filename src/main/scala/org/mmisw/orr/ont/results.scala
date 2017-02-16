@@ -89,3 +89,9 @@ case class ExternalOntologySubjectsResult(
             subjects:       Map[String, Map[String, AnyRef]],
             metadata:       Option[Map[String, AnyRef]] = None
             )
+
+case class TripleStoreResult(
+            uri:    Option[String] = None,
+            size:   Option[Long] = None,
+            msg:    Option[String] = None
+            )
