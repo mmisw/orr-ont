@@ -5,8 +5,6 @@ import org.mmisw.orr.ont.Setup
 import org.mmisw.orr.ont.service.{OntService, TripleStoreService}
 
 
-/**
-  */
 class TripleStoreController(implicit setup: Setup, ontService: OntService, tsService: TripleStoreService) extends BaseController
 with Logging {
 
@@ -29,7 +27,10 @@ with Logging {
    */
   get("/") {
     logger.debug(s"GET params=$params")
-    tsService.getSize(params.get("uri").orElse(params.get("context")))
+    tsService.getSize(params.get("uri").orElse(params.get("context"))) match {
+      case Right(result) ⇒ result
+      case Left(exc) ⇒ error(400, exc.getMessage)
+    }
   }
 
   /*
@@ -45,7 +46,10 @@ with Logging {
   post("/") {
     logger.debug(s"POST params=$params")
     val uri = require(params, "uri")
-    tsService.loadUri(uri)
+    tsService.loadUri(uri) match {
+      case Right(result) ⇒ result
+      case Left(exc) ⇒ error(400, exc.getMessage)
+    }
   }
 
   /*
@@ -53,9 +57,13 @@ with Logging {
    */
   put("/") {
     logger.debug(s"PUT params=$params")
-    params.get("uri") match {
+    val reloadResult = params.get("uri") match {
       case Some(uri) => tsService.reloadUri(uri)
       case None      => tsService.reloadAll()
+    }
+    reloadResult match {
+      case Right(result) ⇒ result
+      case Left(exc) ⇒ error(400, exc.getMessage)
     }
   }
 
@@ -64,10 +72,13 @@ with Logging {
    */
   delete("/") {
     logger.debug(s"DELETE params=$params")
-    params.get("uri") match {
+    val reloadResult = params.get("uri") match {
       case Some(uri) => tsService.unloadUri(uri)
       case None      => tsService.unloadAll()
     }
+    reloadResult match {
+      case Right(result) ⇒ result
+      case Left(exc) ⇒ error(400, exc.getMessage)
+    }
   }
-
 }
