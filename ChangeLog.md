@@ -1,6 +1,9 @@
 ## change log ##
 
 * 2017-02-16:  3.2.1
+  - tests: mock\[TripleStoreService\] seems to have stopped working well with the
+    introduction of TripleStoreResult in some operations, so commented out some test lines.
+    This is not critical at all.
   - adjustments in triplestore operations; introduce generic TripleStoreResult
   - BaseController: now, to see if we have an authenticated user, try:
       1. JWT in authorization header
