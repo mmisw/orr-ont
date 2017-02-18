@@ -27,9 +27,14 @@ case class PossibleOntologyInfo(explanations: List[String],
   */
 object ontFileLoader extends AnyRef with Logging {
 
+  // preference for Jena handling, so we put "owx" (ie., which uses OWL API) at the end.
+  val fileTypesForRecognition = List("rdf", "n3", "nt", "ttl", "rj", "jsonld", "owx")
+
   def loadOntModel(file: File, fileType: String): OntModelLoadedResult = {
     if (fileType == "_guess") {
-      loadOntModelGuessFormat(file).getOrElse(throw CannotRecognizeOntologyFormat())
+      loadOntModelGuessFormat(file).getOrElse(throw CannotRecognizeOntologyFormat(
+        fileTypesForRecognition.map(ontUtil.format2lang(_).get)
+      ))
     }
     else
       loadOntModelGivenType(file, fileType)
@@ -79,8 +84,7 @@ object ontFileLoader extends AnyRef with Logging {
             rec(rest)
         }
     }
-    rec(List("rdf", "n3", "nt", "ttl", "rj", "jsonld", "owx"))
-    // Note: preference for Jena handling, so we put "owx" (ie., which uses OWL API) at the end.
+    rec(fileTypesForRecognition)
   }
 
   def getPossibleOntologyUris(model: OntModel, file: File): Map[String, PossibleOntologyInfo] = {

@@ -1,6 +1,8 @@
 ## change log ##
 
 * 2017-02-17:  3.2.2
+  - include accept header when "uploading" a remoteUrl; 
+  - report CannotRecognizeOntologyFormat with status=406
   - resolve #39 "Allow to register a remote URL."
     The various submission operations (POST /ont/upload, POST /ont, PUT /ont) 
     now also accept a remoteUrl parameter.

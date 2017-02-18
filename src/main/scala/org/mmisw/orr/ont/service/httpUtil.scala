@@ -7,13 +7,21 @@ import scalaj.http.{Http, HttpResponse}
 
 object httpUtil extends AnyRef with Logging {
 
-  def downloadUrl(remoteUrl: String): Either[Throwable,String] = {
-    logger.debug(s"downloadUrl: $remoteUrl")
+  def downloadUrl(remoteUrl: String, acceptList: List[String] = List.empty)
+  : Either[Throwable,String] = {
+
+    logger.debug(s"downloadUrl: $remoteUrl  acceptList=$acceptList")
 
     try {
-      val response: HttpResponse[String] = Http(remoteUrl)
-        .timeout(connTimeoutMs = 5*1000, readTimeoutMs = 60*1000)
-        .asString
+      val request = {
+        val base = Http(remoteUrl)
+          .timeout(connTimeoutMs = 5*1000, readTimeoutMs = 60*1000)
+
+        if (acceptList.nonEmpty) base.header("Accept", acceptList.mkString(","))
+        else base
+      }
+
+      val response: HttpResponse[String] = request.asString
 
       if (response.code == 200)
         Right(response.body)

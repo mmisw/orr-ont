@@ -76,7 +76,7 @@ class OntController(implicit setup: Setup,
       grater[UploadedFileInfo].toCompactJSON(uploadedFileInfo)
     }
     catch {
-      case e: CannotRecognizeOntologyFormat ⇒ error(400, e.details)
+      case e: CannotRecognizeOntologyFormat ⇒ error(406, e.details)
       case e: Throwable =>
         e.printStackTrace()
         throw e
@@ -476,9 +476,19 @@ class OntController(implicit setup: Setup,
 
   private def getOntFileWriterForRemoteUrl: OntFileWriter = {
     val remoteUrl = requireParam("remoteUrl")
-    val format    = getParam("format").getOrElse("_guess")
-    logger.debug(s"getOntFileWriterForRemoteUrl remoteUrl=$remoteUrl format=format")
-    httpUtil.downloadUrl(remoteUrl) match {
+
+    val (format, acceptList) = getParam("format") match {
+      case Some(s) if s != "_guess" ⇒
+        val mimeType = ontUtil.mimeMappings.getOrElse(s, error(400, s"invalid format=$s"))
+        (s, List(mimeType))
+
+      case _ ⇒
+        val mimeTypes = ontFileLoader.fileTypesForRecognition.map(ontUtil.mimeMappings(_))
+        ("_guess", mimeTypes)
+    }
+
+    logger.debug(s"getOntFileWriterForRemoteUrl remoteUrl=$remoteUrl format=$format")
+    httpUtil.downloadUrl(remoteUrl, acceptList) match {
       case Right(contents) ⇒ StringWriter(format, contents)
       case Left(ex)        ⇒ error(400, ex.getMessage)
     }

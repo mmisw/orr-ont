@@ -131,7 +131,9 @@ object CannotLoadExternalOntology {
     }
 }
 
-case class CannotRecognizeOntologyFormat()
-  extends Problem("error" -> "Cannot recognize ontology format")
+case class CannotRecognizeOntologyFormat(languagesAttempted: List[String])
+  extends Problem(
+    "error" -> "Cannot recognize ontology format",
+    "languagesAttempted" → languagesAttempted.mkString(", "))
 
 case class Bug(msg: String) extends Problem("error" -> msg)
