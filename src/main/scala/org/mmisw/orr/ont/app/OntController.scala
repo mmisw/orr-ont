@@ -75,9 +75,11 @@ class OntController(implicit setup: Setup,
       logger.debug(s"uploadedFileInfo =  $uploadedFileInfo")
       grater[UploadedFileInfo].toCompactJSON(uploadedFileInfo)
     }
-    catch { case e: Throwable =>
-      e.printStackTrace()
-      throw e
+    catch {
+      case e: CannotRecognizeOntologyFormat ⇒ error(400, e.details)
+      case e: Throwable =>
+        e.printStackTrace()
+        throw e
     }
   }
 

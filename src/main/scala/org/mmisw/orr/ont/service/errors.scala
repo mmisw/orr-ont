@@ -130,4 +130,8 @@ object CannotLoadExternalOntology {
             "detail" -> t.getMessage, "exceptionClassName" -> t.getClass.getName)
     }
 }
+
+case class CannotRecognizeOntologyFormat()
+  extends Problem("error" -> "Cannot recognize ontology format")
+
 case class Bug(msg: String) extends Problem("error" -> msg)

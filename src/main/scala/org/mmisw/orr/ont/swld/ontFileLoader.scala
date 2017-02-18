@@ -6,6 +6,7 @@ import com.hp.hpl.jena.ontology.OntModel
 import com.hp.hpl.jena.rdf.model.Resource
 import com.hp.hpl.jena.vocabulary._
 import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
+import org.mmisw.orr.ont.service.CannotRecognizeOntologyFormat
 import org.mmisw.orr.ont.util.{Util2, XmlBaseExtractor}
 import org.mmisw.orr.ont.vocabulary.Skos
 import org.xml.sax.InputSource
@@ -28,7 +29,7 @@ object ontFileLoader extends AnyRef with Logging {
 
   def loadOntModel(file: File, fileType: String): OntModelLoadedResult = {
     if (fileType == "_guess") {
-      loadOntModelGuessFormat(file).getOrElse(throw new RuntimeException("Could not guess fileType"))
+      loadOntModelGuessFormat(file).getOrElse(throw CannotRecognizeOntologyFormat())
     }
     else
       loadOntModelGivenType(file, fileType)
