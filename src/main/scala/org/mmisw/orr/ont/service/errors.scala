@@ -131,6 +131,11 @@ object CannotLoadExternalOntology {
     }
 }
 
+case class DownloadRemoteServerError(remoteUrl: String, status: Int, body: String) extends Problem(
+  "remoteUrl" → remoteUrl,
+  "status"    → status.toString,
+  "body"      → body
+)
 case class CannotRecognizeOntologyFormat(languagesAttempted: List[String])
   extends Problem(
     "error" -> "Cannot recognize ontology format",

@@ -25,8 +25,13 @@ object httpUtil extends AnyRef with Logging {
 
       if (response.code == 200)
         Right(response.body)
-      else
-        Left(new Exception(s"error downloading remoteUrl=$remoteUrl: response=" + response))
+      else {
+        logger.debug(s"downloadUrl: $remoteUrl  status=${response.code}")
+        val maxLen = 4000
+        val body = if(response.body.length < maxLen) response.body
+        else response.body.substring(0, maxLen) + s"\n...(${response.body.length - maxLen} chars skipped)"
+        Left(DownloadRemoteServerError(remoteUrl, response.code, body))
+      }
     }
     catch {
       case NonFatal(ex) ⇒ Left(ex)

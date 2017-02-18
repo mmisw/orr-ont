@@ -72,7 +72,12 @@ class OntController(implicit setup: Setup,
     try {
       val ontFileWriter = getOntFileWriterForUpload
       val uploadedFileInfo = ontService.saveUploadedOntologyFile(u.userName, ontFileWriter)
-      logger.debug(s"uploadedFileInfo =  $uploadedFileInfo")
+      logger.debug(s"uploadedFileInfo:" +
+        s" userName=${uploadedFileInfo.userName}" +
+        s" filename=${uploadedFileInfo.filename}" +
+        s" format=${uploadedFileInfo.format}" +
+        s" possibleOntologyUris=${uploadedFileInfo.possibleOntologyUris.keySet}"
+      )
       grater[UploadedFileInfo].toCompactJSON(uploadedFileInfo)
     }
     catch {
@@ -490,7 +495,10 @@ class OntController(implicit setup: Setup,
     logger.debug(s"getOntFileWriterForRemoteUrl remoteUrl=$remoteUrl format=$format")
     httpUtil.downloadUrl(remoteUrl, acceptList) match {
       case Right(contents) ⇒ StringWriter(format, contents)
-      case Left(ex)        ⇒ error(400, ex.getMessage)
+
+      case Left(ex:DownloadRemoteServerError) ⇒ error(502, ex.details)
+
+      case Left(ex) ⇒ error(400, ex.getMessage)
     }
   }
 

@@ -1,6 +1,8 @@
 ## change log ##
 
-* 2017-02-17:  3.2.2
+* 2017-02-18:  3.2.2
+  - report DownloadRemoteServerError with status=502 (Bad gateway) as
+    indication that the problem was with the remote server.
   - include accept header when "uploading" a remoteUrl; 
   - report CannotRecognizeOntologyFormat with status=406
   - resolve #39 "Allow to register a remote URL."
