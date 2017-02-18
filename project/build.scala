@@ -9,7 +9,7 @@ import scoverage.ScoverageKeys._
 object build extends Build {
   val Organization = "org.mmisw"
   val Name = "orr-ont"
-  val Version = "3.2.1"
+  val Version = "3.2.2"
 
   val ScalaVersion      = "2.11.6"
   val ScalatraVersion   = "2.3.0"
@@ -82,6 +82,7 @@ object build extends Build {
 
         "org.jasypt"                 % "jasypt"               % "1.9.2",
 
+        "org.scalaj"                %% "scalaj-http"          % "2.3.0",
         "net.databinder.dispatch"   %% "dispatch-core"        % "0.11.2",
         "net.databinder.dispatch"    % "dispatch-json4s-native_2.11" % "0.11.2",
 

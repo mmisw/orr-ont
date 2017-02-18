@@ -64,12 +64,13 @@ class OntController(implicit setup: Setup,
   }
 
   /*
-   * Uploads an ontology file.
+   * Uploads an ontology file, given either via embedded file
+   * or via reference to a remoteUrl.
    */
   post("/upload") {
     val u = authenticatedUser.getOrElse(halt(401, s"unauthorized"))
     try {
-      val ontFileWriter = getOntFileWriterForJustUploadedFile
+      val ontFileWriter = getOntFileWriterForUpload
       val uploadedFileInfo = ontService.saveUploadedOntologyFile(u.userName, ontFileWriter)
       logger.debug(s"uploadedFileInfo =  $uploadedFileInfo")
       grater[UploadedFileInfo].toCompactJSON(uploadedFileInfo)
@@ -139,7 +140,7 @@ class OntController(implicit setup: Setup,
       case None =>
         val ontFileWriter = ontFileWriterOpt.getOrElse(
           error(400, "creation of new version requires specification of contents " +
-            "(file upload, embedded contents, or new metadata"))
+            "(file upload, remoteUrl, embedded contents, or new metadata"))
 
         createOntologyVersion(uri, originalUriOpt, userName,
           versionVisibility = versionVisibilityOpt,
@@ -450,6 +451,8 @@ class OntController(implicit setup: Setup,
   private def getOntFileWriterOpt(userName: String): Option[OntFileWriter] = Option(
     if (fileParams.isDefinedAt("file"))
       getOntFileWriterForJustUploadedFile
+    else if (getParam("remoteUrl").isDefined)
+      getOntFileWriterForRemoteUrl
     else if (getParam("contents").isDefined)
       getOntFileWriterForGivenContents
     else if (getParam("uploadedFilename").isDefined && getParam("uploadedFormat").isDefined)
@@ -468,6 +471,24 @@ class OntController(implicit setup: Setup,
 
     FileItemWriter(format, fileItem)
   }
+
+  private def getOntFileWriterForRemoteUrl: OntFileWriter = {
+    val remoteUrl = requireParam("remoteUrl")
+    val format    = getParam("format").getOrElse("_guess")
+    logger.debug(s"getOntFileWriterForRemoteUrl remoteUrl=$remoteUrl format=format")
+    httpUtil.downloadUrl(remoteUrl) match {
+      case Right(contents) ⇒ StringWriter(format, contents)
+      case Left(ex)        ⇒ error(400, ex.getMessage)
+    }
+  }
+
+  private def getOntFileWriterForUpload: OntFileWriter =
+    if (fileParams.isDefinedAt("file"))
+      getOntFileWriterForJustUploadedFile
+    else if (getParam("remoteUrl").isDefined)
+      getOntFileWriterForRemoteUrl
+    else
+      error(400, s"one of 'file' or 'remoteUrl' expected for upload operations")
 
   private def getOntFileWriterForGivenContents: OntFileWriter = {
     val contents = requireParam("contents")

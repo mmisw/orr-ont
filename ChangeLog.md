@@ -1,5 +1,12 @@
 ## change log ##
 
+* 2017-02-17:  3.2.2
+  - resolve #39 "Allow to register a remote URL."
+    The various submission operations (POST /ont/upload, POST /ont, PUT /ont) 
+    now also accept a remoteUrl parameter.
+  - for convenience starting to use scalaj-http for http client requests 
+    (maybe to replace dispatch depending on future orr development plans)
+
 * 2017-02-16:  3.2.1
   - tests: mock\[TripleStoreService\] seems to have stopped working well with the
     introduction of TripleStoreResult in some operations, so commented out some test lines.
