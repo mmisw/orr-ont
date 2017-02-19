@@ -3,7 +3,7 @@ package org.mmisw.orr.ont.service
 import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 
 import scala.util.control.NonFatal
-import scalaj.http.{Http, HttpResponse}
+import scalaj.http.{Http, HttpOptions, HttpResponse}
 
 object httpUtil extends AnyRef with Logging {
 
@@ -16,6 +16,7 @@ object httpUtil extends AnyRef with Logging {
       val request = {
         val base = Http(remoteUrl)
           .timeout(connTimeoutMs = 5*1000, readTimeoutMs = 60*1000)
+          .option(HttpOptions.followRedirects(true))
 
         if (acceptList.nonEmpty) base.header("Accept", acceptList.mkString(","))
         else base
