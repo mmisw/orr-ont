@@ -68,7 +68,7 @@ object AquaImporter extends App with Logging {
   /** creates/updates the given users */
   private def processUsers(users: Map[String,AquaUser]) = {
     println("USERS:")
-    users foreach { case (id,u) =>
+    users.values foreach { u =>
       if (u.username != "admin") {
         println(f"\t${u.username}%-20s - ${u.email}")
         if (userService.existsUser(u.username)) {
@@ -92,7 +92,6 @@ object AquaImporter extends App with Logging {
   }
 
   private def getOrgNames(uris: Iterable[String]): Seq[String] = {
-    val re = """http://mmisw\.org/ont/([^/]+)/.*""".r
     uris.foldLeft(Set[String]()) { case (a, u) => a + getOrgNameFromUri(u) }.toSeq.sorted
   }
 
@@ -130,7 +129,7 @@ object AquaImporter extends App with Logging {
     byUri.keys.toSeq.sorted foreach {uri =>
       val uriOnts = byUri(uri)
       val orgName = getOrgNameFromUri(uri)
-      val members = uriOnts.values.map {o:VAquaOntology => users.get(o.user_id).get.username}.toSet
+      val members = uriOnts.values.map {o:VAquaOntology => users(o.user_id).username}.toSet
       addOrgMembers(orgName, members)
 
       println(s"\t$uri")
@@ -154,7 +153,7 @@ object AquaImporter extends App with Logging {
   }
 
   private def getOntFileWriter(uri: String, version: String, orgName: String, ont: VAquaOntology): Option[OntFileWriter] = {
-    ontFiles.values.find(_.ontology_version_id == ont.id).headOption match {
+    ontFiles.values.find(_.ontology_version_id == ont.id) match {
       case Some(entity) =>
         val filename = entity.filename
         val format = ontUtil.storedFormat(filename.substring(filename.lastIndexOf(".") + 1))
@@ -202,7 +201,7 @@ object AquaImporter extends App with Logging {
           o.uri, None, o.display_label, o.version_number,
           versionVisibility,
           o.version_status,
-          o.date_created, users.get(o.user_id).get.username, orgName,
+          o.date_created, users(o.user_id).username, orgName,
           ontFileWriter,
           contact_name = o.contact_name)
         version_status  = o.version_status
@@ -218,7 +217,7 @@ object AquaImporter extends App with Logging {
         }
         val versionVisibility = Some(OntVisibility.public)
         ontService.createOntologyVersion(
-          o.uri, None, Some(o.display_label), users.get(o.user_id).get.username,
+          o.uri, None, Some(o.display_label), users(o.user_id).username,
           o.version_number, versionVisibility, version_status,
           o.date_created, ontFileWriter,
           contact_name = o.contact_name)
@@ -234,7 +233,7 @@ trait EntityLoader {
   val allFieldNames: List[String]
   def apply(row: Node): EntityType
 
-  def getXml(p: String) = {
+  def getXml(p: String): String = {
     println(s"getXml: p=$p")
     val source = scala.io.Source.fromURL(p, "ISO-8859-1")
     val xml = source.mkString
@@ -256,7 +255,7 @@ trait EntityLoader {
   /** returns the values but without the ones corresponding to dropFieldNames */
   def dropFields(header: Seq[String], values: Seq[String], dropFieldNames: Seq[String]): Seq[String] = {
     val z: Seq[(String,String)] = header zip values
-    z.filterNot { case (h, value) => dropFieldNames.contains(h) } map (_._2)
+    z.filterNot { case (h, _) => dropFieldNames.contains(h) } map (_._2)
   }
 
   /** fix the given dates so they can get parsed to DateTime */
@@ -285,7 +284,7 @@ object AquaUser extends EntityLoader {
   type EntityType = AquaUser
 
   val allFieldNames = List("id", "username", "password", "email", "firstname", "lastname", "phone", "date_created")
-  val fieldNames = allFieldNames
+  val fieldNames: List[String] = allFieldNames
 
   def apply(row: Node): AquaUser = {
     val map: Map[String,String] = {
@@ -303,7 +302,7 @@ object AquaUser extends EntityLoader {
              lastname,
              phone,
              date_created
-    ) = fieldNames.map(map.get(_).get)
+    ) = fieldNames.map(map(_))
 
     AquaUser(
       id,
@@ -413,7 +412,7 @@ object VAquaOntology extends EntityLoader {
     "is_foundry"
   )
 
-  val fieldNames = allFieldNames.filterNot(dropFieldNames.contains)
+  val fieldNames: List[String] = allFieldNames.filterNot(dropFieldNames.contains)
 
   def apply(row: Node): VAquaOntology = {
     val map: Map[String,String] = {
@@ -435,7 +434,7 @@ object VAquaOntology extends EntityLoader {
              display_label,
              contact_name,
              urn
-    ) = fieldNames.map(map.get(_).get)
+    ) = fieldNames.map(map(_))
 
     // remove version_number for the uri:
     val uri = urn.replace(s"/$version_number/", "/")
@@ -460,7 +459,7 @@ object VAquaOntology extends EntityLoader {
     )
   }
 
-  override def getXml(p: String) = {
+  override def getXml(p: String): String = {
     println(s"getXml: p=$p")
     val source = scala.io.Source.fromURL(p, "ISO-8859-1")
     val xml = source.getLines().map(_.replaceAll(" & ", " &amp; ")).mkString
@@ -477,7 +476,7 @@ object AquaOntologyFile extends EntityLoader {
   type EntityType = AquaOntologyFile
 
   val allFieldNames = List("id", "ontology_version_id", "filename")
-  val fieldNames = allFieldNames
+  val fieldNames: List[String] = allFieldNames
 
   def apply(row: Node): AquaOntologyFile = {
     val map: Map[String,String] = {
@@ -487,7 +486,7 @@ object AquaOntologyFile extends EntityLoader {
       Map(fieldNames zip values: _*)
     }
 
-    val List(id, ontology_version_id, filename) = fieldNames.map(map.get(_).get)
+    val List(id, ontology_version_id, filename) = fieldNames.map(map(_))
 
     AquaOntologyFile(id, ontology_version_id, filename)
   }
