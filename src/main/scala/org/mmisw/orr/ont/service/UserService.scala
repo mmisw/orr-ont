@@ -25,7 +25,10 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
 
   def createUser(userName: String, email: String, phoneOpt: Option[String],
                  firstName: String, lastName: String, password: Either[String,String],
-                 ontUri: Option[String], registered: DateTime = DateTime.now()) = {
+                 ontUri: Option[String],
+                 registered: DateTime = DateTime.now(),
+                 updated: Option[DateTime] = None
+                ): UserResult = {
 
     usersDAO.findOneById(userName) match {
       case None =>
@@ -37,7 +40,8 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
           clearPass => userAuth.encryptPassword(clearPass),
           encPass   => encPass
         )
-        val user = User(userName, firstName, lastName, encPassword, email, ontUri, phoneOpt, registered)
+        val user = User(userName, firstName, lastName, encPassword, email, ontUri, phoneOpt,
+                        registered = registered, updated = updated)
 
         Try(usersDAO.insert(user, WriteConcern.Safe)) match {
           case Success(_) =>
@@ -61,7 +65,11 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
     }
   }
 
-  def updateUser(userName: String, map: Map[String,String], updated: Option[DateTime] = None) = {
+  def updateUser(userName: String,
+                 registered: Option[DateTime] = None,
+                 updated: Option[DateTime] = None,
+                 map: Map[String,String] = Map.empty
+                ): UserResult = {
 
     var update = getUser(userName)
 
@@ -90,7 +98,9 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
       update = update.copy(ontUri = map.get("ontUri"))
     }
 
-    updated foreach {u => update = update.copy(updated = Some(u))}
+    registered foreach {u => update = update.copy(registered = u)}
+    updated    foreach {u => update = update.copy(updated = Some(u))}
+
     //logger.debug(s"updating user with: $update")
 
     Try(usersDAO.update(MongoDBObject("_id" -> userName), update, false, false, WriteConcern.Safe)) match {

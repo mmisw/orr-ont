@@ -231,7 +231,10 @@ class UserController(implicit setup: Setup) extends BaseController
     val map = body()
     verifyIsUserOrAdminOrExtra(Set(userName))
 
-    userService.updateUser(userName, toStringMap(map), Some(DateTime.now()))
+    userService.updateUser(userName,
+      updated = Some(DateTime.now()),
+      map = toStringMap(map)
+    )
   }
 
   /*

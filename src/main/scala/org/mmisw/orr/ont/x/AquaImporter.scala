@@ -51,6 +51,11 @@ object AquaImporter extends App with Logging {
   val aquaUploadsDirOpt = Option(if (importConfig.hasPath("aquaUploadsDir")) importConfig.getString("aquaUploadsDir") else null)
   val aquaOnt = importConfig.getString("aquaOnt")
 
+  // capture the oldest submission by this user_id:
+  val userIdFirstSubmissions = users map { case (user_id, aquaUser) ⇒
+    (user_id, scala.collection.mutable.HashSet[DateTime]())
+  }
+
   val byUri = onts.groupBy(_._2.uri)
   val orgNames = getOrgNames(byUri.keys)
   val orgFirstSubmissions = Map(orgNames.map(o => (o, scala.collection.mutable.HashSet[DateTime]())).toArray: _*)
@@ -62,6 +67,7 @@ object AquaImporter extends App with Logging {
   processOrgs(orgNames)
   processOnts(byUri)
   postProcessOrgs()
+  postProcessUsers()
 
   setup.destroy()
 
@@ -77,13 +83,17 @@ object AquaImporter extends App with Logging {
       if (u.username != "admin") {
         println(f"\t${u.username}%-20s - ${u.email}")
         if (userService.existsUser(u.username)) {
-          userService.updateUser(u.username, u.map)  // don't set any 'updated'
+          userService.updateUser(u.username, map = u.map)  // don't set any 'updated'
         }
         else {
+          val aquaDateCreated = DateTime.parse(u.date_created)
+
           userService.createUser(
             u.username, u.email, Some(u.phone), u.firstname, u.lastname,
             Right(u.password), None,
-            registered = DateTime.parse(u.date_created))
+            registered = aquaDateCreated,  // subject to be changes in postprocessUsers
+            updated = Some(aquaDateCreated)
+          )
         }
       }
     }
@@ -115,10 +125,29 @@ object AquaImporter extends App with Logging {
    * ont submission against that org.
    */
   private def postProcessOrgs(): Unit = {
-    orgFirstSubmissions foreach {
-      case (orgName, firstSubmissions) if firstSubmissions.nonEmpty =>
+    orgFirstSubmissions foreach { case (orgName, firstSubmissions) ⇒
+      if (firstSubmissions.nonEmpty) {
         val earliest = firstSubmissions.minBy(dt => dt.getMillis)
         orgService.updateOrg(orgName, registered = Some(earliest))
+      }
+    }
+  }
+
+  /**
+    * Resets the registration date of each user to reflect the earliest ont submission
+    * in case the captured user's date_created is after that ont submission.
+    */
+  private def postProcessUsers(): Unit = {
+    userIdFirstSubmissions foreach { case (user_id, firstSubmissions) ⇒
+      if (firstSubmissions.nonEmpty) {
+        val aquaUser = users(user_id)
+        val username = aquaUser.username
+        val earliestSubmission = firstSubmissions.minBy(dt => dt.getMillis)
+        val userDateCreated = DateTime.parse(aquaUser.date_created)
+        if (userDateCreated.isAfter(earliestSubmission)) {
+          userService.updateUser(username, registered = Some(earliestSubmission))
+        }
+      }
     }
   }
 
@@ -211,6 +240,8 @@ object AquaImporter extends App with Logging {
     val firstOnt     = byVersion(firstVersion)
     val lastOnt      = byVersion(sortedVersions.last)
     val lastUserName = users(lastOnt.user_id).username
+
+    userIdFirstSubmissions(lastOnt.user_id) += DateTime.parse(firstOnt.date_created)
 
     val ownerName = orgNameOpt.getOrElse(s"~$lastUserName")
 

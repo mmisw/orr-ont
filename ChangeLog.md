@@ -4,6 +4,11 @@
   - Revisiting AquaImporter as preparation for migration of MMI ORR to v3.
   	- version visibility set according to explicit status ("stable" or "testing")
   	  if given, or on the traditional logic based on authority abbreviation
+  	- do not create the interim "-" organization. Instead, assign the user as the 
+  	  owner when there's no organization extracted from ontology uri
+  	- user's registered attribute obtained from date_created but adjusted to 
+  	  reflect earliest ontology submission because changes in user account 
+  	  changes the date_created field in the old system.
   
 * 2017-02-18:  3.2.2
   - report DownloadRemoteServerError with status=502 (Bad gateway) as
