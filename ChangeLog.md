@@ -1,5 +1,10 @@
 ## change log ##
 
+* 2017-02-21:  3.2.3
+  - Revisiting AquaImporter as preparation for migration of MMI ORR to v3.
+  	- version visibility set according to explicit status ("stable" or "testing")
+  	  if given, or on the traditional logic based on authority abbreviation
+  
 * 2017-02-18:  3.2.2
   - report DownloadRemoteServerError with status=502 (Bad gateway) as
     indication that the problem was with the remote server.

@@ -21,7 +21,9 @@ import scala.xml.{Node, NodeSeq, XML}
  * Imports data from previous database.
  */
 object AquaImporter extends App with Logging {
-  val config = {  // todo refactor config loading
+  private val TESTING_AUTHORITIES_REGEX = "mmitest|test(ing)?(_.*)?|.*_test(ing)?"
+
+  val config = {
     val configFilename = "/etc/orront.conf"
     logger.info(s"Loading configuration from $configFilename")
     val configFile = new File(configFilename)
@@ -62,6 +64,9 @@ object AquaImporter extends App with Logging {
   postProcessOrgs()
 
   setup.destroy()
+
+  println(s"byUri: ${byUri.size}")
+  byUri.keys.toList.sorted foreach { uri ⇒ println(uri) }
 
   ///////////////////////////////////////////////////////////////////////////
 
@@ -188,22 +193,21 @@ object AquaImporter extends App with Logging {
     // status to propagate to newer versions not having an explicit version_status themselves
     var version_status: Option[String] = None
 
-    // TODO perhaps set visibility from status, but for now just setting it to 'public'
-
     // register entry (first submission)
     sortedVersions.headOption foreach { version =>
       val o = byVersion(version)
       for(ontFileWriter <- getOntFileWriter(uri, version, orgName, o)) {
         val dateCreated = DateTime.parse(o.date_created)
         firstSubmission = Some(dateCreated)
-        val versionVisibility = Some(OntVisibility.public)
+        val versionVisibility = Some(getVersionVisibility(orgName, o))
         ontService.createOntology(
           o.uri, None, o.display_label, o.version_number,
-          versionVisibility,
-          o.version_status,
+          versionVisibility = versionVisibility,
+          versionStatus = o.version_status,
           o.date_created, users(o.user_id).username, orgName,
           ontFileWriter,
           contact_name = o.contact_name)
+
         version_status  = o.version_status
       }
     }
@@ -215,16 +219,30 @@ object AquaImporter extends App with Logging {
         if (o.version_status.isDefined) {
           version_status = o.version_status  // update to use here and propagate
         }
-        val versionVisibility = Some(OntVisibility.public)
+        val versionVisibility = Some(getVersionVisibility(orgName, o))
         ontService.createOntologyVersion(
           o.uri, None, Some(o.display_label), users(o.user_id).username,
-          o.version_number, versionVisibility, version_status,
+          o.version_number,
+          versionVisibility = versionVisibility,
+          versionStatus = version_status,
           o.date_created, ontFileWriter,
           contact_name = o.contact_name)
       }
     }
 
     firstSubmission
+  }
+
+  private def getVersionVisibility(orgName: String, o: VAquaOntology): String = {
+    import OntVisibility._
+    val statusOpt = o.version_status.map(_.toLowerCase.trim)
+    statusOpt match {
+      case Some("stable")  ⇒ public
+      case Some("testing") ⇒ owner
+      case _ ⇒
+        // traditional logic based on authority abbreviation
+        if (orgName.matches(TESTING_AUTHORITIES_REGEX)) owner else public
+    }
   }
 }
 
