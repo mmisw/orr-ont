@@ -82,23 +82,23 @@ object AquaImporter extends App with Logging {
         else {
           userService.createUser(
             u.username, u.email, Some(u.phone), u.firstname, u.lastname,
-            Right(u.password), None, DateTime.parse(u.date_created))
+            Right(u.password), None,
+            registered = DateTime.parse(u.date_created))
         }
       }
     }
   }
 
-  private def getOrgNameFromUri(uri: String): String = {
-    val re = """http://mmisw\.org/ont/([^/]+)/.*""".r
+  private def orgNameFromUri(uri: String): Option[String] = {
+    val re = """https?://mmisw\.org/ont/([^/]+)/.*""".r
     uri match {
-      case re(orgName) => orgName
-      case _ => "-"
+      case re(orgName) => Some(orgName)
+      case _           => None
     }
   }
 
-  private def getOrgNames(uris: Iterable[String]): Seq[String] = {
-    uris.foldLeft(Set[String]()) { case (a, u) => a + getOrgNameFromUri(u) }.toSeq.sorted
-  }
+  private def getOrgNames(uris: Iterable[String]): Seq[String] =
+    uris.flatMap(orgNameFromUri).toSeq.sorted
 
   private def processOrgs(orgNames: Seq[String]) {
     println("ORGS:")
@@ -133,31 +133,47 @@ object AquaImporter extends App with Logging {
     println("ONTS:")
     byUri.keys.toSeq.sorted foreach {uri =>
       val uriOnts = byUri(uri)
-      val orgName = getOrgNameFromUri(uri)
-      val members = uriOnts.values.map {o:VAquaOntology => users(o.user_id).username}.toSet
-      addOrgMembers(orgName, members)
+
+      val orgNameOpt = orgNameFromUri(uri)
+
+      orgNameOpt foreach { orgName ⇒
+        val members: Set[String] = uriOnts.values.map {o:VAquaOntology => users(o.user_id).username}.toSet
+        addOrgMembers(orgName, members)
+      }
 
       println(s"\t$uri")
-      processOntUri(uri, orgName, uriOnts) foreach (firstSubmission => orgFirstSubmissions(orgName) += firstSubmission)
+      val firstSubmissionOpt = processOntUri(uri, orgNameOpt, uriOnts)
+
+      for { orgName         ← orgNameOpt
+            firstSubmission ← firstSubmissionOpt
+      }
+        orgFirstSubmissions(orgName) += firstSubmission
     }
   }
 
-  private case class MyOntFileWriter(format: String, source: Source, version: String, orgName: String) extends OntFileWriter {
+  private case class MyOntFileWriter(format: String, source: Source, version: String,
+                                     orgNameOpt: Option[String]) extends OntFileWriter {
     override def write(destFile: File) {
       println(f"\t\twriting contents to ${destFile.getAbsolutePath}")
       val out = new PrintWriter(destFile)
       source.getLines foreach { line =>
-        // trick to convert contents from "versioned" to "unversioned": remove the
-        // version piece from fragments that look like the versioned URI of the ontology:
-        val stripped = line.replaceAll(s"/ont/$orgName/$version/", s"/ont/$orgName/")
-        out.println(stripped)
+        orgNameOpt match {
+          case Some(orgName) ⇒
+            // trick to convert contents from "versioned" to "unversioned": remove the
+            // version piece from fragments that look like the versioned URI of the ontology:
+            val stripped = line.replaceAll(s"/ont/$orgName/$version/", s"/ont/$orgName/")
+            out.println(stripped)
+
+          case None ⇒
+            out.println(line)
+        }
       }
       out.close()
       source.close()
     }
   }
 
-  private def getOntFileWriter(uri: String, version: String, orgName: String, ont: VAquaOntology): Option[OntFileWriter] = {
+  private def getOntFileWriter(uri: String, version: String, orgNameOpt: Option[String], ont: VAquaOntology): Option[OntFileWriter] = {
     ontFiles.values.find(_.ontology_version_id == ont.id) match {
       case Some(entity) =>
         val filename = entity.filename
@@ -173,20 +189,30 @@ object AquaImporter extends App with Logging {
             println(f"\t\tLoading $uri version $version")
             io.Source.fromURL(s"$aquaOnt?uri=$uri&version=$version&form=$format")
         }
-        Some(MyOntFileWriter(format, source, version, orgName))
+        Some(MyOntFileWriter(format, source, version, orgNameOpt))
 
       case None => None
     }
   }
 
   /**
-   * Creates all submissions of a given ont URI.
-   * Returns the time of the earliest submission
-   */
-  private def processOntUri(uri: String, orgName: String, onts: Map[String,VAquaOntology]): Option[DateTime] = {
+    * Creates all submissions of a given ont URI.
+    * Returns the time of the earliest submission
+    */
+  private def processOntUri(uri: String, orgNameOpt: Option[String], onts: Map[String,VAquaOntology])
+  : Option[DateTime] = {
+
+    if (onts.isEmpty) return None
 
     val byVersion = Map(onts.map{case(_,o) => (o.version_number, o)}.toArray: _*)
     val sortedVersions = byVersion.keys.toSeq.sorted
+
+    val firstVersion = sortedVersions.head
+    val firstOnt     = byVersion(firstVersion)
+    val lastOnt      = byVersion(sortedVersions.last)
+    val lastUserName = users(lastOnt.user_id).username
+
+    val ownerName = orgNameOpt.getOrElse(s"~$lastUserName")
 
     var firstSubmission: Option[DateTime] = None
 
@@ -194,34 +220,36 @@ object AquaImporter extends App with Logging {
     var version_status: Option[String] = None
 
     // register entry (first submission)
-    sortedVersions.headOption foreach { version =>
-      val o = byVersion(version)
-      for(ontFileWriter <- getOntFileWriter(uri, version, orgName, o)) {
-        val dateCreated = DateTime.parse(o.date_created)
-        firstSubmission = Some(dateCreated)
-        val versionVisibility = Some(getVersionVisibility(orgName, o))
-        ontService.createOntology(
-          o.uri, None, o.display_label, o.version_number,
-          versionVisibility = versionVisibility,
-          versionStatus = o.version_status,
-          o.date_created, users(o.user_id).username, orgName,
-          ontFileWriter,
-          contact_name = o.contact_name)
+    for(ontFileWriter <- getOntFileWriter(uri, firstVersion, orgNameOpt, firstOnt)) {
+      val o = firstOnt
+      val dateCreated = DateTime.parse(o.date_created)
+      firstSubmission = Some(dateCreated)
+      val versionVisibility = Some(getVersionVisibility(orgNameOpt, o))
+      ontService.createOntology(
+        o.uri, None, o.display_label, o.version_number,
+        versionVisibility = versionVisibility,
+        versionStatus = o.version_status,
+        o.date_created,
+        userName = users(o.user_id).username,
+        ownerName = ownerName,
+        ontFileWriter,
+        contact_name = o.contact_name)
 
-        version_status  = o.version_status
-      }
+      version_status  = o.version_status
     }
 
     // register the other submissions
     sortedVersions.drop(1) foreach { version =>
       val o = byVersion(version)
-      for (ontFileWriter <- getOntFileWriter(uri, version, orgName, o)) {
+      for (ontFileWriter <- getOntFileWriter(uri, version, orgNameOpt, o)) {
         if (o.version_status.isDefined) {
           version_status = o.version_status  // update to use here and propagate
         }
-        val versionVisibility = Some(getVersionVisibility(orgName, o))
+        val versionVisibility = Some(getVersionVisibility(orgNameOpt, o))
+        val userName = users(o.user_id).username
         ontService.createOntologyVersion(
-          o.uri, None, Some(o.display_label), users(o.user_id).username,
+          o.uri, None, Some(o.display_label),
+          userName = userName,
           o.version_number,
           versionVisibility = versionVisibility,
           versionStatus = version_status,
@@ -233,15 +261,22 @@ object AquaImporter extends App with Logging {
     firstSubmission
   }
 
-  private def getVersionVisibility(orgName: String, o: VAquaOntology): String = {
+  private def getVersionVisibility(orgNameOpt: Option[String], o: VAquaOntology): String = {
     import OntVisibility._
     val statusOpt = o.version_status.map(_.toLowerCase.trim)
     statusOpt match {
       case Some("stable")  ⇒ public
       case Some("testing") ⇒ owner
       case _ ⇒
-        // traditional logic based on authority abbreviation
-        if (orgName.matches(TESTING_AUTHORITIES_REGEX)) owner else public
+        orgNameOpt match {
+          case Some(orgName) ⇒
+            // traditional logic based on authority abbreviation
+            if (orgName.matches(TESTING_AUTHORITIES_REGEX)) owner else public
+
+          case None ⇒
+            // no status, no authority abbreviation:
+            owner
+        }
     }
   }
 }
