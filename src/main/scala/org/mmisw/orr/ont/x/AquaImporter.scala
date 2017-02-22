@@ -52,7 +52,7 @@ object AquaImporter extends App with Logging {
   val aquaOnt = importConfig.getString("aquaOnt")
 
   // capture the oldest submission by this user_id:
-  val userIdFirstSubmissions = users map { case (user_id, aquaUser) ⇒
+  val userIdFirstSubmissions = users map { case (user_id, _) ⇒
     (user_id, scala.collection.mutable.HashSet[DateTime]())
   }
 
@@ -91,7 +91,7 @@ object AquaImporter extends App with Logging {
           userService.createUser(
             u.username, u.email, Some(u.phone), u.firstname, u.lastname,
             Right(u.password), None,
-            registered = aquaDateCreated,  // subject to be changes in postprocessUsers
+            registered = aquaDateCreated,  // subject to be changed in postProcessUsers
             updated = Some(aquaDateCreated)
           )
         }

@@ -9,7 +9,7 @@ case class Ontology(
             ownerName:       String,  // <orgName> | ~<userName>
             versions:        Map[String, OntologyVersion] = Map.empty) {
 
-  lazy val sortedVersionKeys = versions.keys.toList.sorted(Ordering[String].reverse)
+  lazy val sortedVersionKeys: List[String] = versions.keys.toList.sorted(Ordering[String].reverse)
 
   lazy val latestVersion: Option[OntologyVersion] = sortedVersionKeys.headOption.map(latest => versions(latest))
 }
