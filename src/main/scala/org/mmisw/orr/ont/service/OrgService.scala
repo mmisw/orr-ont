@@ -38,7 +38,7 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
     }
   }
 
-  def createOrg(org: Organization) = {
+  def createOrg(org: Organization): OrgResult = {
     val orgName = org.orgName
     orgsDAO.findOneById(orgName) match {
       case None =>
@@ -99,7 +99,7 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
     }
 
     Try(orgsDAO.update(MongoDBObject("_id" -> orgName), update, upsert = false, multi = false, WriteConcern.Safe)) match {
-      case Success(result) =>
+      case Success(_) =>
         sendNotificationEmail("Organization updated",
           s"""
              |The following organization has been updated:
@@ -127,7 +127,7 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
   def deleteOrg(orgName: String): OrgResult = {
     getOrg(orgName)
     Try(orgsDAO.removeById(orgName, WriteConcern.Safe)) match {
-      case Success(result) =>
+      case Success(_) =>
         OrgResult(orgName, removed = Some(DateTime.now())) //TODO
 
       case Failure(exc)  => throw CannotDeleteOrg(orgName, exc.getMessage)
