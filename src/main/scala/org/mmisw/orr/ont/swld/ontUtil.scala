@@ -183,17 +183,14 @@ object ontUtil extends AnyRef with Logging {
       map = map.updated("resourceType", resourceTypeListOpt.get.head)
     }
 
-    val ontologyTypeListOpt = md.get(Omv.usedOntologyEngineeringTool.getURI)
-    if (ontologyTypeListOpt.isDefined) {
-      val usedOntologyEngineeringTool = ontologyTypeListOpt.head.head
-      val ontologyType = if (usedOntologyEngineeringTool == OmvMmi.voc2rdf.getURI)
-        "vocabulary"
-      else if (usedOntologyEngineeringTool == OmvMmi.vine.getURI)
-        "mapping"
-      else ""
-      if (ontologyType.length > 0)
-        map = map.updated("ontologyType", ontologyType)
+    val ontologyType = md.get(Omv.usedOntologyEngineeringTool.getURI) match {
+      case Some(v :: _) ⇒
+          if      (v == OmvMmi.voc2rdf.getURI) "orr-vocabulary"
+          else if (v == OmvMmi.vine.getURI)    "orr-mapping"
+          else "other"
+      case _ ⇒ "other"
     }
+    map = map.updated("ontologyType", ontologyType)
 
     map
   }

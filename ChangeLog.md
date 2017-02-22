@@ -1,6 +1,9 @@
 ## change log ##
 
 * 2017-02-21:  3.2.3
+  - ontUtil.extractSomeProps: specially as it's called from AquaImporter,
+    set ontologyType to "orr-vocabulary", "orr-mapping", or "other"
+    depending on Omv.usedOntologyEngineeringTool
   - Revisiting AquaImporter as preparation for migration of MMI ORR to v3.
   	- version visibility set according to explicit status ("stable" or "testing")
   	  if given, or on the traditional logic based on authority abbreviation
