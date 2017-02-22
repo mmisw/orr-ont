@@ -48,8 +48,14 @@ object AquaImporter extends App with Logging {
   val users    = AquaUser.loadEntities(importConfig.getString("aquaUsers"))
   val onts     = VAquaOntology.loadEntities(importConfig.getString("aquaOnts"))
   val ontFiles = AquaOntologyFile.loadEntities(importConfig.getString("aquaOntFiles"))
-  val aquaUploadsDirOpt = Option(if (importConfig.hasPath("aquaUploadsDir")) importConfig.getString("aquaUploadsDir") else null)
-  val aquaOnt = importConfig.getString("aquaOnt")
+
+  val aquaUploadsDirOpt = if (importConfig.hasPath("aquaUploadsDir"))
+    Some(importConfig.getString("aquaUploadsDir")) else None
+
+  val aquaOntOpt = if (importConfig.hasPath("aquaOnt"))
+    Some(importConfig.getString("aquaOnt")) else None
+
+  require(aquaUploadsDirOpt.isDefined != aquaOntOpt.isDefined)
 
   // capture the oldest submission by this user_id:
   val userIdFirstSubmissions = users map { case (user_id, _) ⇒
@@ -215,6 +221,7 @@ object AquaImporter extends App with Logging {
             io.Source.fromFile(fullPath)
 
           case None =>
+            val aquaOnt = aquaOntOpt.get
             println(f"\t\tLoading $uri version $version")
             io.Source.fromURL(s"$aquaOnt?uri=$uri&version=$version&form=$format")
         }
@@ -255,7 +262,7 @@ object AquaImporter extends App with Logging {
       val o = firstOnt
       val dateCreated = DateTime.parse(o.date_created)
       firstSubmission = Some(dateCreated)
-      val versionVisibility = Some(getVersionVisibility(orgNameOpt, o))
+      val versionVisibility = Some(getVersionVisibility(orgNameOpt, o.version_status))
       ontService.createOntology(
         o.uri, None, o.display_label, o.version_number,
         versionVisibility = versionVisibility,
@@ -276,7 +283,7 @@ object AquaImporter extends App with Logging {
         if (o.version_status.isDefined) {
           version_status = o.version_status  // update to use here and propagate
         }
-        val versionVisibility = Some(getVersionVisibility(orgNameOpt, o))
+        val versionVisibility = Some(getVersionVisibility(orgNameOpt, version_status))
         val userName = users(o.user_id).username
         ontService.createOntologyVersion(
           o.uri, None, Some(o.display_label),
@@ -292,21 +299,23 @@ object AquaImporter extends App with Logging {
     firstSubmission
   }
 
-  private def getVersionVisibility(orgNameOpt: Option[String], o: VAquaOntology): String = {
+  private def getVersionVisibility(orgNameOpt: Option[String], version_status: Option[String]): String = {
     import OntVisibility._
-    val statusOpt = o.version_status.map(_.toLowerCase.trim)
+    val statusOpt = version_status.map(_.toLowerCase.trim)
     statusOpt match {
       case Some("stable")  ⇒ public
       case Some("testing") ⇒ owner
       case _ ⇒
         orgNameOpt match {
+          case Some("mmiorr-internal") ⇒ owner
+
           case Some(orgName) ⇒
             // traditional logic based on authority abbreviation
             if (orgName.matches(TESTING_AUTHORITIES_REGEX)) owner else public
 
           case None ⇒
             // no status, no authority abbreviation:
-            owner
+            public
         }
     }
   }

@@ -1,6 +1,9 @@
 ## change log ##
 
 * 2017-02-21:  3.2.3
+  - AquaImporter.getVersionVisibility: based on propagated version_status as the 
+    version are created (in increasing time order). Also, "public" is the actual 
+    default when visibility cannot be derived from status or authority abbreviation.
   - ontUtil.extractSomeProps: specially as it's called from AquaImporter,
     set ontologyType to "orr-vocabulary", "orr-mapping", or "other"
     depending on Omv.usedOntologyEngineeringTool
