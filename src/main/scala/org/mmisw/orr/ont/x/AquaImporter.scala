@@ -69,6 +69,10 @@ object AquaImporter extends App with Logging {
   println(s"Loaded: users=${users.size} onts=${onts.size}")
   println(s"Extracted ${orgNames.size} orgNames")
 
+  var usersCreated: Int = 0
+  var orgsCreated: Int = 0
+  var ontsCreated: Int = 0
+
   processUsers(users)
   processOrgs(orgNames)
   processOnts(byUri)
@@ -77,8 +81,13 @@ object AquaImporter extends App with Logging {
 
   setup.destroy()
 
-  println(s"byUri: ${byUri.size}")
   byUri.keys.toList.sorted foreach { uri ⇒ println(uri) }
+  println(s"""
+           |  ${onts.size} total ontology versions processed
+           |  $ontsCreated ontologies created
+           |  $usersCreated users created
+           |  $orgsCreated orgs created
+         """.stripMargin)
 
   ///////////////////////////////////////////////////////////////////////////
 
@@ -100,6 +109,7 @@ object AquaImporter extends App with Logging {
             registered = aquaDateCreated,  // subject to be changed in postProcessUsers
             updated = Some(aquaDateCreated)
           )
+          usersCreated += 1
         }
       }
     }
@@ -122,6 +132,7 @@ object AquaImporter extends App with Logging {
       if (!orgService.existsOrg(orgName)) {
         println(s"\t$orgName")
         orgService.createOrg(Organization(orgName, orgName))
+        orgsCreated += 1
       }
     }
   }
@@ -271,7 +282,9 @@ object AquaImporter extends App with Logging {
         userName = users(o.user_id).username,
         ownerName = ownerName,
         ontFileWriter,
-        contact_name = o.contact_name)
+        contact_name = o.contact_name
+      )
+      ontsCreated += 1
 
       version_status  = o.version_status
     }
