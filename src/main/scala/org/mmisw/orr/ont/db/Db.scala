@@ -1,12 +1,12 @@
 package org.mmisw.orr.ont.db
 
-import com.typesafe.scalalogging.{StrictLogging => Logging}
+import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import com.mongodb.casbah.Imports._
 import com.mongodb.ServerAddress
 import com.novus.salat.dao.SalatDAO
 import com.novus.salat.global._
 import org.mmisw.orr.ont.Cfg
-import org.mmisw.orr.ont.auth.userAuth
+import org.mmisw.orr.ont.auth.{Authenticator, userAuth}
 
 
 /**
@@ -18,9 +18,9 @@ class Db(mongoConfig: Cfg.Mongo) extends AnyRef with Logging {
 
   logger.info(s"mongoConfig = $mongoConfig")
 
-  val host = mongoConfig.host
-  val port = mongoConfig.port
-  val db   = mongoConfig.db
+  private[this] val host = mongoConfig.host
+  private[this] val port = mongoConfig.port
+  private[this] val db   = mongoConfig.db
 
   val serverAddress = new ServerAddress(host, port)
 
@@ -48,7 +48,7 @@ class Db(mongoConfig: Cfg.Mongo) extends AnyRef with Logging {
   val pwrDAO      = new SalatDAO[PwReset,      String](pwrColl) {}
   val orgsDAO     = new SalatDAO[Organization, String](orgsColl) {}
 
-  val authenticator = userAuth(usersDAO)
+  val authenticator: Authenticator = userAuth(usersDAO)
 
   mcOpt = Some(mongoClient)
 
