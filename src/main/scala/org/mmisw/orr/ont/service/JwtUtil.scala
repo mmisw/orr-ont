@@ -19,7 +19,9 @@ class JwtUtil(secret: String) extends AnyRef with Logging {
   }
 
   def verifyToken(jwt: String): Option[AuthUser] = {
-    logger.debug(s"JwtUtil.verifyToken: jwt=$jwt")
+    logger.debug("JwtUtil.verifyToken: jwt=" + (
+      if (jwt.length < 20) jwt else jwt.substring(0,5) + "..." + jwt.substring(jwt.length - 5)))
+
     Try(doVerifyToken(jwt)) match {
       case Success(uid) =>
         Some(AuthUser(uid))
