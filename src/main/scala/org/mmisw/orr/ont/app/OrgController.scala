@@ -153,10 +153,6 @@ class OrgController(implicit setup: Setup,
     }
     // using json4s because of the nested Option[List[OntologySummaryResult]]
     // in OrgResult, which is not supported(?) by Salat.
-    import _root_.org.json4s._
-    import _root_.org.json4s.native.Serialization
-    import _root_.org.json4s.native.Serialization.writePretty
-    implicit val formats = Serialization.formats(NoTypeHints)
-    writePretty(res)
+    _root_.org.json4s.native.Serialization.write(res)
   }
 }
