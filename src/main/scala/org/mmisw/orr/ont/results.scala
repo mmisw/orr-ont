@@ -40,7 +40,8 @@ case class OrgResult(
             updated:     Option[DateTime] = None,
             updatedBy:   Option[String] = None,
             removed:     Option[DateTime] = None,
-            removedBy:   Option[String] = None
+            removedBy:   Option[String] = None,
+            onts:        Option[List[OntologySummaryResult]] = None
             )
 
 case class OntologyRegistrationResult(

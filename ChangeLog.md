@@ -1,5 +1,9 @@
 ## change log ##
 
+* 2017-02-24:  3.2.4
+  - GET /org/{orgName} now with optional withOnts=yes to include the list of
+    registered ontologies by the given organization.
+  
 * 2017-02-21:  3.2.3
   - AquaImporter.getVersionVisibility: based on propagated version_status as the 
     version are created (in increasing time order). Also, "public" is the actual 

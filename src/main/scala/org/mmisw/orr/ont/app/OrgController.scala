@@ -1,28 +1,41 @@
 package org.mmisw.orr.ont.app
 
-import com.novus.salat._
-import com.novus.salat.global._
-import com.typesafe.scalalogging.{StrictLogging => Logging}
+import com.mongodb.casbah.Imports._
+import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.db.Organization
 import org.mmisw.orr.ont.service._
-import org.mmisw.orr.ont.{OrgResult, Setup, db}
+import org.mmisw.orr.ont.{OntologySummaryResult, OrgResult, Setup, db}
 import org.scalatra.Created
 
 import scala.util.{Failure, Success, Try}
 
 
-class OrgController(implicit setup: Setup) extends BaseController
+class OrgController(implicit setup: Setup,
+                    ontService: OntService
+                   ) extends BaseController
     with Logging {
 
   get("/") {
-    orgService.getOrgs() map getOrgJson
+    orgService.getOrgs() map (getOrgJson(_))
   }
 
   get("/:orgName") {
     val orgName = require(params, "orgName")
     val org = getOrg(orgName)
-    getOrgJson(org)
+
+    // include summary of registered ontologies if withOnts=yes
+    val onts: Option[List[OntologySummaryResult]] = getParam("withOnts") match {
+      case Some("yes") ⇒
+        val query = MongoDBObject("ownerName" → org.orgName)
+        val privileged = checkIsAdminOrExtra
+        val onts = ontService.getOntologies(query, privileged).toList
+        if (onts.nonEmpty) Some(onts) else None
+
+      case _ ⇒ None
+
+    }
+    getOrgJson(org, onts)
   }
 
   post("/") {
@@ -119,12 +132,15 @@ class OrgController(implicit setup: Setup) extends BaseController
     }
   }
 
-  def getOrgJson(org: Organization) = {
+  def getOrgJson(org: Organization, onts: Option[List[OntologySummaryResult]] = None
+                ): String = {
+
     var res = OrgResult(
       orgName     = org.orgName,
       name        = Some(org.name),
       url         = org.url,
-      ontUri      = org.ontUri
+      ontUri      = org.ontUri,
+      onts        = onts
     )
     if (checkIsUserOrAdminOrExtra(org.members)) {
       res = res.copy(
@@ -135,6 +151,12 @@ class OrgController(implicit setup: Setup) extends BaseController
         members     = Some(org.members)
       )
     }
-    grater[OrgResult].toCompactJSON(res)
+    // using json4s because of the nested Option[List[OntologySummaryResult]]
+    // in OrgResult, which is not supported(?) by Salat.
+    import _root_.org.json4s._
+    import _root_.org.json4s.native.Serialization
+    import _root_.org.json4s.native.Serialization.writePretty
+    implicit val formats = Serialization.formats(NoTypeHints)
+    writePretty(res)
   }
 }
