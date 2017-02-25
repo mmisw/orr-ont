@@ -10,8 +10,11 @@ import org.mmisw.orr.ont.Setup
 /**
   * Controller to dispatch "self-resolvable" ontology/terms requests.
   *
-  * Includes mechanism to dispatch the UI (ORR Portal) such that the
-  * application context is preserved in the browser's location address.
+  * Includes mechanisms for:
+  * - dispatch of organization or user request (with redirection to ORR Portal)
+  * - dispatch of the UI (ORR Portal) such that the
+  *   application context is preserved in the browser's location address.
+  * - actual self-resolution of ontology or term.
   */
 class SelfHostedOntController(implicit setup: Setup,
                               ontService: OntService,
@@ -29,7 +32,13 @@ class SelfHostedOntController(implicit setup: Setup,
 
     if (logger.underlying.isDebugEnabled &&
       !List(".html", ".js", ".css", ".map", "woff2").exists(pathInfo.endsWith)) {
-      logger.debug(s"SelfHostedOntController: reqFormat=$reqFormat request.pathInfo=$pathInfo")
+      logger.debug(s"""SelfHostedOntController:
+           |reqFormat              : $reqFormat
+           |request.pathInfo       : $pathInfo
+           |request.getContextPath : ${request.getContextPath}
+           |request.getRequestURI  : ${request.getRequestURI}
+           |request.getRequestURL  : ${request.getRequestURL}
+         """.stripMargin)
     }
 
     if (!portalDispatch(pathInfo, reqFormat)) {
@@ -60,7 +69,7 @@ class SelfHostedOntController(implicit setup: Setup,
         logger.debug(s"adjustedRequest: for request=$pathInfo adjustedPath=$adjustedPath")
         contentType = formats("html") // make sure html is responded
         new HttpServletRequestWrapper(request) {
-          override def getPathInfo = adjustedPath
+          override def getPathInfo: String = adjustedPath
         }
       }
       else {
@@ -76,42 +85,51 @@ class SelfHostedOntController(implicit setup: Setup,
         servletContext.getNamedDispatcher("default").forward(adjustedRequest(request), response)
         true
       }
-      else if (reqFormat == "html") { // for HTML always dispatch /index.html
-        logger.debug(s"serving '/index.html' for request: $pathInfo")
-        val indexRequest = new HttpServletRequestWrapper(request) {
-          override def getPathInfo = "/index.html"
+      else if (reqFormat == "html") {
+        // first, see if it is a request for organization or user:
+        if (pathInfo.matches(orgOrUserPattern.regex)) {
+          false  // will be dispatched as such next
         }
-        contentType = formats("html") // make sure html is responded
-        servletContext.getNamedDispatcher("default").forward(indexRequest, response)
-        true
+        else {
+          // dispatch /index.html
+          logger.debug(s"serving '/index.html' for request: $pathInfo")
+          val indexRequest = new HttpServletRequestWrapper(request) {
+            override def getPathInfo: String = "/index.html"
+          }
+          contentType = formats("html") // make sure html is responded
+          servletContext.getNamedDispatcher("default").forward(indexRequest, response)
+          true
+        }
       }
       else false
     }
     else false
   }
 
-  private val orgOrUserPattern = "ont/([^/]+)$".r
+  private val orgOrUserPattern = "^/?(~?)([^/]+)$".r
 
   private def resolve(pathInfo: String, reqFormat: String) = {
     logger.debug(s"resolve: pathInfo='$pathInfo'")
-    orgOrUserPattern.findFirstMatchIn(pathInfo).toList.headOption match {
-      case Some(m) => resolveOrgOrUser(m.group(1), reqFormat)
-      case None =>
+    pathInfo match {
+      case orgOrUserPattern("", xyz)  ⇒ resolveOrgOrUser(xyz, reqFormat)
+      case orgOrUserPattern("~", xyz) ⇒ resolveUser(xyz, reqFormat)
+      case _ ⇒
         val uri = request.getRequestURL.toString
         logger.debug(s"self-resolving '$uri' ...")
         resolveOntOrTermUri(uri, Some(reqFormat))
     }
   }
 
-  /*
-   * Dispatches organization OR user ontology request (/ont/xyz).
-   * This intends to emulate behavior in previous Ont service
-   * when xyx corresponds to an existing authority abbreviation
-   * (with generation of list of associated ontologies).
-   * Here this is very preliminary. Also possible dispatch in the case
-   * where xyz corresponds to a userName.
-   * TODO review the whole thing.
-   */
+  /**
+    * Dispatches organization OR user request (/&lt;context>/xyz).
+    * This supports emulating the behavior in previous Ont v2 service where
+    * xyx could correspond to an existing authority abbreviation, in such
+    * case with dispatch of the list of associated ontologies. In this new
+    * implementation we first try xyz as an organization, then as a user,
+    * and then just self-resolution of possible ontology or term.
+    * In the case of organization or user, a redirect is done so the actual
+    * html dispatch relies on the orr-portal.
+    */
   private def resolveOrgOrUser(xyz: String, reqFormat: String) = {
     logger.debug(s"resolve: xyz='$xyz'")
     orgsDAO.findOneById(xyz) match {
@@ -119,24 +137,29 @@ class SelfHostedOntController(implicit setup: Setup,
         org.ontUri match {
           case Some(ontUri) => redirect(ontUri)
           case None =>
-            try selfResolve(reqFormat)
-            catch {
-              case exc: AnyRef =>
-                logger.info(s"EXC in selfResolve: $exc")
-                // TODO dispatch some synthetic response as in previous Ont
-                error500(s"TODO: generate summary for organization '$xyz'")
-            }
+            redirect(setup.cfg.deployment.url + "#org/" +org.orgName)
         }
       case None =>
-        usersDAO.findOneById(xyz) match {
-          case Some(user) =>
-            user.ontUri match {
-              case Some(ontUri) => redirect(ontUri)
-              case None =>
-                error500(s"TODO: generate summary for user '$xyz'")
-            }
-          case None => error(404, s"No organization or user by given name: '$xyz'")
+        if (!resolveUser(xyz, reqFormat)) {
+          logger.debug(s"resolveOrgOrUser: no org not user by xyz=$xyz; delegating to selfResolve")
+          selfResolve(reqFormat)
         }
+    }
+  }
+
+  /**
+    * Tries xyz as a userName
+    */
+  private def resolveUser(xyz: String, reqFormat: String): Boolean = {
+    logger.debug(s"resolveUser: xyz='$xyz'")
+    usersDAO.findOneById(xyz) match {
+      case Some(user) =>
+        user.ontUri match {
+          case Some(ontUri) ⇒ redirect(ontUri)
+          case None         ⇒ redirect(setup.cfg.deployment.url + "#user/" +user.userName)
+        }
+        true
+      case None ⇒ false
     }
   }
 
