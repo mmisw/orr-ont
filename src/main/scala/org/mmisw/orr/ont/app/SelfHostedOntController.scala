@@ -31,7 +31,7 @@ class SelfHostedOntController(implicit setup: Setup,
     val reqFormat = getRequestedFormat
 
     if (logger.underlying.isDebugEnabled &&
-      !List(".html", ".js", ".css", ".map", "woff2").exists(pathInfo.endsWith)) {
+      !looksLikeWebAppResource(pathInfo)) {
       logger.debug(s"""SelfHostedOntController:
            |reqFormat              : $reqFormat
            |request.pathInfo       : $pathInfo
@@ -59,7 +59,7 @@ class SelfHostedOntController(implicit setup: Setup,
     }
 
     if (logger.underlying.isDebugEnabled &&
-      !List(".html", ".js", ".css", ".map", "woff2").exists(pathInfo.endsWith)) {
+      !looksLikeWebAppResource(pathInfo)) {
       logger.debug(s"portalDispatch: hasIndexHtml=$hasIndexHtml pathInfo=$pathInfo")
     }
 
@@ -167,5 +167,9 @@ class SelfHostedOntController(implicit setup: Setup,
     val uri = request.getRequestURL.toString
     logger.debug(s"self-resolving '$uri' ...")
     resolveOntOrTermUri(uri, Some(reqFormat))
+  }
+
+  private def looksLikeWebAppResource(pathInfo: String): Boolean = {
+    List(".html", ".js", ".css", ".map", ".woff2", ".woff").exists(pathInfo.endsWith)
   }
 }
