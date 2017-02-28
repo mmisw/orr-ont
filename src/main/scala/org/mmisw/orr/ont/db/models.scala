@@ -31,6 +31,7 @@ case class OntologyVersion(
             userName:        String, // submitter
             format:          String,
             date:            DateTime,
+            log:             Option[String] = None,
             visibility:      Option[String] = Some(OntVisibility.owner),
             status:          Option[String] = None,
             author:          Option[String] = None,    // content creator

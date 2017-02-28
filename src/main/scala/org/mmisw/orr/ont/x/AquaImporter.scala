@@ -276,6 +276,7 @@ object AquaImporter extends App with Logging {
       val versionVisibility = Some(getVersionVisibility(orgNameOpt, o.version_status))
       ontService.createOntology(
         o.uri, None, o.display_label, o.version_number,
+        logOpt = None,
         versionVisibility = versionVisibility,
         versionStatus = o.version_status,
         o.date_created,
@@ -302,6 +303,7 @@ object AquaImporter extends App with Logging {
           o.uri, None, Some(o.display_label),
           userName = userName,
           o.version_number,
+          logOpt = None,
           versionVisibility = versionVisibility,
           versionStatus = version_status,
           o.date_created, ontFileWriter,

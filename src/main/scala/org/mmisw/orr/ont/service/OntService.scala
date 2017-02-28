@@ -148,6 +148,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
       resourceType = resourceTypeOpt,
       versions     = versionsOpt,
       format       = Option(ontVersion.format),
+      log          = ontVersion.log,
       visibility   = ontVersion.visibility
     )
   }
@@ -265,6 +266,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                      originalUriOpt: Option[String],
                      name:           String,
                      version:        String,
+                     logOpt:         Option[String],
                      versionVisibility: Option[String],
                      versionStatus:  Option[String],
                      date:           String,
@@ -291,6 +293,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     val resourceTypeOpt = map.get("resourceType")
 
     val ontVersion = OntologyVersion(name, userName, ontFileWriter.format, new DateTime(date),
+                                     log = logOpt,
                                      visibility = versionVisibility,
                                      status = versionStatus,
                                      author = authorOpt,
@@ -316,6 +319,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
         )
         OntologyRegistrationResult(uri,
           version = Some(version),
+          log = ontVersion.log,
           visibility = ontVersion.visibility,
           status = ontVersion.status,
           registered = Some(ontVersion.date)
@@ -334,6 +338,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                             nameOpt:         Option[String],
                             userName:        String,
                             version:         String,
+                            logOpt:          Option[String],
                             versionVisibility: Option[String],
                             versionStatus:   Option[String],
                             date:            String,
@@ -359,6 +364,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     val resourceTypeOpt = map.get("resourceType")
 
     val ontVersion = OntologyVersion(name, userName, ontFileWriter.format, new DateTime(date),
+                                     log = logOpt,
                                      visibility = versionVisibility,
                                      status = versionStatus,
                                      author = authorOpt,
@@ -384,6 +390,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
           """.stripMargin
         )
         OntologyRegistrationResult(uri,
+          log = ontVersion.log,
           visibility = ontVersion.visibility,
           status = ontVersion.status,
           version = Some(version),
@@ -400,6 +407,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   def updateOntologyVersion(uri:            String,
                             originalUriOpt: Option[String],
                             version:        String,
+                            logOpt:         Option[String],
                             versionVisibilityOpt: Option[String],
                             versionStatusOpt:     Option[String],
                             nameOpt:        Option[String],
@@ -411,6 +419,10 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     if (doVerifyOwner) verifyOwner(userName, ont)
 
     var ontVersion = ont.versions.getOrElse(version, throw NoSuchOntVersion(uri, version))
+
+    logOpt foreach { _ =>
+      ontVersion = ontVersion.copy(log = logOpt)
+    }
 
     versionVisibilityOpt foreach { _ =>
       ontVersion = ontVersion.copy(visibility = versionVisibilityOpt)
@@ -432,6 +444,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
       case Success(result) =>
         OntologyRegistrationResult(uri,
           version = Some(version),
+          log = ontVersion.log,
           visibility = ontVersion.visibility,
           status = ontVersion.status,
           updated = Some(ontVersion.date)

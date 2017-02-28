@@ -97,6 +97,7 @@ class OntController(implicit setup: Setup,
     val originalUriOpt = getParam("originalUri")  // for fully-hosted mode
     val name           = requireParam("name")
     val orgNameOpt     = getParam("orgName")
+    val logOpt         = getParam("log")
     val versionVisibility = getVisibilityParam
     val versionStatus     = getParam("status")
     val user           = verifyUser(getParam("userName"))
@@ -115,9 +116,20 @@ class OntController(implicit setup: Setup,
 
     val ontFileWriter = getOntFileWriter(userName)
 
-    Created(createOntology(uri, originalUriOpt, name, version,
-      versionVisibility, versionStatus,
-      date, ontFileWriter, ownerName, ownerAsAuthorName = Some(ownerAsAuthorName)))
+    val result = createOntology(
+      uri,
+      originalUriOpt,
+      name,
+      version,
+      versionVisibility,
+      versionStatus,
+      logOpt,
+      date,
+      ontFileWriter,
+      ownerName,
+      ownerAsAuthorName = Some(ownerAsAuthorName)
+    )
+    Created(result)
   }
 
   /*
@@ -128,6 +140,7 @@ class OntController(implicit setup: Setup,
     val uri            = requireParam("uri")
     val originalUriOpt = getParam("originalUri")  // for fully-hosted mode
     val versionOpt     = getParam("version")
+    val logOpt         = getParam("log")
     val versionVisibilityOpt = getVisibilityParam
     val versionStatusOpt  = getParam("status")
     val user           = verifyUser(getParam("userName"))
@@ -150,6 +163,7 @@ class OntController(implicit setup: Setup,
             "(file upload, remoteUrl, embedded contents, or new metadata"))
 
         createOntologyVersion(uri, originalUriOpt, userName,
+          logOpt = logOpt,
           versionVisibility = versionVisibilityOpt,
           versionStatus = versionStatusOpt,
           nameOpt = getParam("name"),
@@ -159,6 +173,7 @@ class OntController(implicit setup: Setup,
         updateOntologyVersion(uri,
           originalUriOpt = originalUriOpt,
           version = version,
+          logOpt = logOpt,
           versionVisibilityOpt = versionVisibilityOpt,
           versionStatusOpt = versionStatusOpt,
           nameOpt = getParam("name"),
@@ -344,6 +359,7 @@ class OntController(implicit setup: Setup,
                              version:         String,
                              versionVisibility: Option[String],
                              versionStatus:   Option[String],
+                             logOpt:          Option[String],
                              date:            String,
                              ontFileWriter:   OntFileWriter,
                              ownerName:       String,
@@ -359,12 +375,14 @@ class OntController(implicit setup: Setup,
          | version:        $version
          | versionVisibility: $versionVisibility
          | versionStatus:  $versionStatus
+         | log:            $logOpt
          | date:           $date
          | ownerName:      $ownerName
          | ontFileWriter.format: ${ontFileWriter.format}
          |""".stripMargin)
 
     Try(ontService.createOntology(uri, originalUriOpt, name, version,
+          logOpt = logOpt,
           versionVisibility = versionVisibility,
           versionStatus = versionStatus,
           date = date,
@@ -549,6 +567,7 @@ class OntController(implicit setup: Setup,
   private def createOntologyVersion(uri:            String,
                                     originalUriOpt: Option[String],
                                     userName:       String,
+                                    logOpt:         Option[String],
                                     versionVisibility: Option[String],
                                     versionStatus:  Option[String],
                                     nameOpt:        Option[String],
@@ -558,7 +577,9 @@ class OntController(implicit setup: Setup,
     val (version, date) = getVersion
 
     Try(ontService.createOntologyVersion(uri, originalUriOpt, nameOpt, userName,
-        version, versionVisibility, versionStatus,
+        version,
+      logOpt = logOpt,
+      versionVisibility, versionStatus,
         date, ontFileWriter, doVerifyOwner)) match {
       case Success(ontologyResult) =>
         loadOntologyInTripleStore(uri, reload = true)
@@ -578,6 +599,7 @@ class OntController(implicit setup: Setup,
   private def updateOntologyVersion(uri:            String,
                                     originalUriOpt: Option[String],
                                     version:        String,
+                                    logOpt:         Option[String],
                                     versionVisibilityOpt: Option[String],
                                     versionStatusOpt:  Option[String],
                                     nameOpt:        Option[String],
@@ -586,6 +608,7 @@ class OntController(implicit setup: Setup,
                                    ) = {
     Try(ontService.updateOntologyVersion(uri, originalUriOpt,
         version,
+        logOpt = logOpt,
         versionVisibilityOpt,
         versionStatusOpt = versionStatusOpt,
         nameOpt,

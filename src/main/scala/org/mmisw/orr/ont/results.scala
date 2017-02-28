@@ -47,11 +47,13 @@ case class OrgResult(
 case class OntologyRegistrationResult(
             uri:         String,
             version:     Option[String] = None,
+            log:         Option[String] = None,
             visibility:  Option[String] = None,
             status:      Option[String] = None,
             registered:  Option[DateTime] = None,
             updated:     Option[DateTime] = None,
-            removed:     Option[DateTime] = None)
+            removed:     Option[DateTime] = None
+            )
 
 case class OntologySummaryResult(
             uri:            String,
@@ -66,6 +68,7 @@ case class OntologySummaryResult(
             resourceType:   Option[String] = None,
             versions:       Option[List[String]] = None,
             format:         Option[String] = None,
+            log:            Option[String] = None,
             visibility:     Option[String] = None
             )
 
