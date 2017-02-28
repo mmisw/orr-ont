@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2017-02-28:  3.2.5
+  - align with orr-portal version
+  
 * 2017-02-24:  3.2.4
   - SelfHostedOntController: adjustments in resolution to dispatch request for 
     organization or user
