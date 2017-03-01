@@ -675,8 +675,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         val res = parse(body).extract[OntologySummaryResult]
         res.uri must_== ont1Uri
         res.versions.isDefined must beTrue
-        val latestVersion = res.versions.head.sorted(Ordering[String].reverse).head
-        latestVersion must_== registeredVersion.get
+        val latestVersion = res.versions.head.head
+        latestVersion.version must_== registeredVersion.get
       }
     }
 
@@ -783,8 +783,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         val res = parse(body).extract[OntologySummaryResult]
         res.uri must_== ont1Uri
         res.versions.isDefined must beTrue
-        val latestVersion = res.versions.head.sorted(Ordering[String].reverse).head
-        latestVersion must_== registeredVersion.get
+        val latestVersion = res.versions.head.head
+        latestVersion.version must_== registeredVersion.get
       }
     }
   }

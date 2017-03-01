@@ -10,6 +10,7 @@ import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import org.json4s.JsonAST.{JArray, JValue}
 import org.json4s._
 import org.json4s.native.JsonMethods._
+import org.json4s.native.Serialization.writePretty
 import org.mmisw.orr.ont._
 import org.mmisw.orr.ont.db.{OntVisibility, Ontology, OntologyVersion}
 import org.mmisw.orr.ont.service._
@@ -437,9 +438,7 @@ class OntController(implicit setup: Setup,
       }
       ontologies filter (visibilityFilter(userOrgNames, _))
     }
-    resultOntologies map { osr =>
-      grater[OntologySummaryResult].asDBObject(osr)//.toCompactJSON
-    }
+    resultOntologies map { writePretty(_) }
   }
 
   private def getSubjects(uri: String) = {

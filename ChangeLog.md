@@ -1,5 +1,11 @@
 ## change log ##
 
+* 2017-02-28:  3.3.0
+  - OntologySummaryResult.versions is now a list of OntologyVersionSummary 
+    and sorted by decreasing version (first in list is the latest).
+    OntologyVersionSummary introduced in particular to expose associated 
+    log message, but other attributes can be added as convenient.
+
 * 2017-02-28:  3.2.5
   - align with orr-portal version
   - resolve #43 "capture log message for ontology version registration"

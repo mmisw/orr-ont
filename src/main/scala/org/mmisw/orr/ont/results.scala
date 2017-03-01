@@ -66,10 +66,17 @@ case class OntologySummaryResult(
             metadata:       Option[Map[String, AnyRef]] = None,
             ontologyType:   Option[String] = None,
             resourceType:   Option[String] = None,
-            versions:       Option[List[String]] = None,
+            versions:       Option[List[OntologyVersionSummary]] = None,
             format:         Option[String] = None,
             log:            Option[String] = None,
             visibility:     Option[String] = None
+            )
+
+case class OntologyVersionSummary(
+            version:         String,
+            log:             Option[String] = None,
+            visibility:      Option[String] = None,
+            status:          Option[String] = None
             )
 
 case class TermRegistrationResult(

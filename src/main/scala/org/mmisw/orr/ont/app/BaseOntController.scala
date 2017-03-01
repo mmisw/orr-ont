@@ -4,8 +4,9 @@ import java.io.File
 
 import com.novus.salat._
 import com.novus.salat.global._
-import com.typesafe.scalalogging.{StrictLogging => Logging}
-import org.mmisw.orr.ont.{OntologySummaryResult, Setup}
+import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
+import org.json4s.native.Serialization.writePretty
+import org.mmisw.orr.ont.{OntologyVersionSummary, Setup}
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.service.{CannotQueryTerm, NoSuchTermFormat, _}
 
@@ -80,13 +81,20 @@ with Logging {
 
     if (reqFormat == "!md") {
       // include 'versions' even when a particular version is requested
-      val versionsOpt = Some(ont.sortedVersionKeys)
+      val versions = ont.sortedVersionKeys map { v ⇒
+        val ontVersion = ont.versions(v)
+        OntologyVersionSummary(v,
+          log          = ontVersion.log,
+          visibility   = ontVersion.visibility,
+          status       = ontVersion.status
+        )
+      }
       val ores = ontService.getOntologySummaryResult(ont, ontVersion, version,
         privileged = checkIsAdminOrExtra,
         includeMetadata = true,
-        versionsOpt
+        Some(versions)
       )
-      grater[OntologySummaryResult].toCompactJSON(ores)
+      writePretty(ores)
     }
     else {
       val (file, actualFormat) = getOntologyFile(ont.uri, version, reqFormat)

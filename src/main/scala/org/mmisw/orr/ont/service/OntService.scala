@@ -131,7 +131,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                                version: String,
                                privileged: Boolean,
                                includeMetadata: Boolean = false,
-                               versionsOpt: Option[List[String]] = None
+                               versionsOpt: Option[List[OntologyVersionSummary]] = None
   ): OntologySummaryResult = {
 
     val resourceTypeOpt = ontVersion.resourceType map ontUtil.simplifyResourceType
