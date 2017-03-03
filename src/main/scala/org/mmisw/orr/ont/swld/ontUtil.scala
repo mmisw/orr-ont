@@ -10,6 +10,7 @@ import com.hp.hpl.jena.vocabulary.{DCTerms, DC_10, DC_11}
 import com.mongodb.{BasicDBList, BasicDBObject}
 import org.json4s.JsonAST.{JArray, JString}
 import org.json4s._
+import org.mmisw.orr.ont.service.httpUtil
 import org.mmisw.orr.ont.vocabulary.{Omv, OmvMmi}
 
 import scala.collection.JavaConversions._
@@ -488,17 +489,25 @@ object ontUtil extends AnyRef with Logging {
   def loadExternalModel(uri: String): Try[OntModel] = {
     logger.debug(s"loadExternalModel: uri=$uri")
 
-    val ontModel = createDefaultOntModel
-    ontModel.setDynamicImports(false)
-    ontModel.getDocumentManager.setProcessImports(false)
-    try {
-      ontModel.read(uri)
-      logger.debug(s"loadExternalModel: uri=$uri: ontModel read complete.")
-      Success(ontModel)
+    val file = File.createTempFile("downloaded_url_", ".tmp")
+    file.deleteOnExit()
+
+    httpUtil.downloadUrl(uri, saveInFile = Some(file)) match {
+      case Right(result) ⇒
+        val ontModelLoadedResult = ontFileLoader.loadOntModel(file)
+        val format = ontModelLoadedResult.format
+        val ontModel = ontModelLoadedResult.ontModel
+
+        logger.debug(s"loadExternalModel uri=$uri:" +
+          s" contentType=${result.contentType}  detected format=$format savedIn=$file"
+          //+ s"\n  |" + result.body.replaceAll("\n", "\n  |")
+        )
+
+        Success(ontModel)
+
+      case Left(ex) ⇒ Failure(ex)
     }
-    catch {
-      case t: Throwable => Failure(t)
-    }
+
   }
 
   /**

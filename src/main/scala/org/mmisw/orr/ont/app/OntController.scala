@@ -511,7 +511,7 @@ class OntController(implicit setup: Setup,
 
     logger.debug(s"getOntFileWriterForRemoteUrl remoteUrl=$remoteUrl format=$format")
     httpUtil.downloadUrl(remoteUrl, acceptList) match {
-      case Right(contents) ⇒ StringWriter(format, contents)
+      case Right(result) ⇒ StringWriter(format, result.body)
 
       case Left(ex:DownloadRemoteServerError) ⇒ error(502, ex.details)
 

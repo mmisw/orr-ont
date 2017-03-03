@@ -30,7 +30,7 @@ object ontFileLoader extends AnyRef with Logging {
   // preference for Jena handling, so we put "owx" (ie., which uses OWL API) at the end.
   val fileTypesForRecognition = List("rdf", "n3", "nt", "ttl", "rj", "jsonld", "owx")
 
-  def loadOntModel(file: File, fileType: String): OntModelLoadedResult = {
+  def loadOntModel(file: File, fileType: String = "_guess"): OntModelLoadedResult = {
     if (fileType == "_guess") {
       loadOntModelGuessFormat(file).getOrElse(throw CannotRecognizeOntologyFormat(
         fileTypesForRecognition.map(ontUtil.format2lang(_).get)

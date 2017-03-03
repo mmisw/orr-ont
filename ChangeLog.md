@@ -1,5 +1,12 @@
 ## change log ##
 
+* 2017-03-03:  3.3.2
+  - ontUtil.loadExternalModel: use a combination of httpUtil.downloadUrl (to make sure
+    followRedirects is in place) and ontFileLoader.loadOntModel to guess the format.
+    TODO: for efficiency, the contentType reported by httpUtil.downloadUrl could be 
+    used to try the specific corresponding format.
+    
+  
 * 2017-03-02:  3.3.1
   - align version with orr-portal
   
