@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2017-03-02:  3.3.1
+  - align version with orr-portal
+  
 * 2017-02-28:  3.3.0
   - OntologySummaryResult.versions is now a list of OntologyVersionSummary 
     and sorted by decreasing version (first in list is the latest).
