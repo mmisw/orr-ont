@@ -2,6 +2,16 @@ Dockerfile
 docker/bochica/
 orr-ont-base-directory-test/
 
+# orr-portal "installed"
+src/main/webapp/css/
+src/main/webapp/img/
+src/main/webapp/index.html
+src/main/webapp/js/
+src/main/webapp/sparql/
+src/main/webapp/vendor/
+
+orr-ont-base-directory/
+
 .DS_Store
 .idea
 .idea_modules
