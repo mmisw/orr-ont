@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2017-03-04:  3.4.0
+  - docker/deployment stuff moved to 'orr' project
+  
 * 2017-03-03:  3.3.2
   - fix #44 "failing to load external ontology for mapping"
   - ontUtil.loadExternalModel: use a combination of httpUtil.downloadUrl (to make sure

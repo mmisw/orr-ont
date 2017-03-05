@@ -16,13 +16,3 @@ and a front-end component, the `orr-portal` web application.
 
 This is the repository for the `orr-ont` component.
 For the front-end component see [orr-portal](https://github.com/mmisw/orr-portal).
-
-
-# Deployment
-
-See [DEPLOYMENT.md](https://github.com/mmisw/orr-ont/blob/master/DEPLOYMENT.md).
-
-
-# Development
-
-See [development.md](https://github.com/mmisw/orr-ont/blob/master/development.md).
