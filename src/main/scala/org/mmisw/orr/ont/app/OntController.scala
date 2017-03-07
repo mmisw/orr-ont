@@ -9,7 +9,6 @@ import com.novus.salat.global._
 import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import org.json4s.JsonAST.{JArray, JValue}
 import org.json4s._
-import org.json4s.native.JsonMethods._
 import org.json4s.native.Serialization.writePretty
 import org.mmisw.orr.ont._
 import org.mmisw.orr.ont.db.{OntVisibility, Ontology, OntologyVersion}
@@ -43,7 +42,11 @@ class OntController(implicit setup: Setup,
       case Some(uri) => resolveOntOrTermUri(uri)
 
       case None => params.get("ouri") match {
-        case Some(uri) => resolveOntUri(uri)
+        case Some(uri) =>
+          getParam("onlyExistence") match {
+            case Some("yes") ⇒ checkOntUriExistence(uri)
+            case _           ⇒ resolveOntUri(uri)
+          }
 
         case None => params.get("turi") match {
           case Some(uri) => resolveTermUri(uri)

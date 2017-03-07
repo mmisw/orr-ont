@@ -2,13 +2,12 @@ package org.mmisw.orr.ont.app
 
 import java.io.File
 
-import com.novus.salat._
-import com.novus.salat.global._
 import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import org.json4s.native.Serialization.writePretty
 import org.mmisw.orr.ont.{OntologyVersionSummary, Setup}
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.service.{CannotQueryTerm, NoSuchTermFormat, _}
+import org.scalatra.Ok
 
 import scala.util.{Failure, Success, Try}
 
@@ -60,6 +59,13 @@ with Logging {
     ontologyResolvedOpt match {
       case Some(ont) => completeOntologyUriResolution(ont, reqFormatOpt)
       case None => resolveTermUri(uri, reqFormatOpt)
+    }
+  }
+
+  protected def checkOntUriExistence(uri: String) = {
+    ontService.resolveOntology(uri) match {
+      case Some(_) ⇒ Ok("")
+      case None    ⇒ error(404, s"'$uri': No such ontology")
     }
   }
 
