@@ -562,7 +562,7 @@ object VAquaOntology extends EntityLoader {
 
       // map for ontService
       Map(
-        "uri" -> uri // more TODO
+        "uri" -> uri
       )
     )
   }

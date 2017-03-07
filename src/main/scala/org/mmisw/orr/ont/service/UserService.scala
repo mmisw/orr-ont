@@ -113,7 +113,6 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
 
   /**
    * Sends email with reminder of username(s).
-   * TODO username-email relationship to be decided
    */
   def sendUsername(email: String): Unit = {
     logger.debug(s"sendUsername: email=$email")

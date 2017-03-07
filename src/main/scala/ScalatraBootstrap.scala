@@ -25,7 +25,7 @@ class ScalatraBootstrap extends LifeCycle with StrictLogging {
       throw new ServiceConfigurationError("Could not retrieve configuration parameter: configFile.  Check application.conf")
     }
 
-    val config = {  // todo refactor config loading
+    val config = {
       logger.info(s"Loading configuration from $configFilename")
       val configFile = new File(configFilename)
       if (!configFile.canRead) {

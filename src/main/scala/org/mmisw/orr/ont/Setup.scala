@@ -47,7 +47,7 @@ class Setup(val cfg: Cfg,
     testing match {
       case None => fc
 
-      case Some(baseName) =>
+      case Some(_) =>
         fc.copy(baseDirectory = s"${fc.baseDirectory}-test")
     }
   }

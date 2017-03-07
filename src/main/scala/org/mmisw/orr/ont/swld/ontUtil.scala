@@ -22,7 +22,6 @@ object ontUtil extends AnyRef with Logging {
 
   JenaJSONLD.init()
 
-  // todo review
   val mimeMappings: Map[String, String] = Map(
       "rdf"     -> "application/rdf+xml"    // https://www.w3.org/TR/REC-rdf-syntax/
     , "owl"     -> "application/rdf+xml"    // https://www.w3.org/TR/REC-rdf-syntax/

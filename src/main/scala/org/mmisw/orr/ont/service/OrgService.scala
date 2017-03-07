@@ -128,7 +128,7 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
     getOrg(orgName)
     Try(orgsDAO.removeById(orgName, WriteConcern.Safe)) match {
       case Success(_) =>
-        OrgResult(orgName, removed = Some(DateTime.now())) //TODO
+        OrgResult(orgName, removed = Some(DateTime.now()))
 
       case Failure(exc)  => throw CannotDeleteOrg(orgName, exc.getMessage)
     }

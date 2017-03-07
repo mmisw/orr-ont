@@ -119,7 +119,6 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
         case None =>
           // This will be case when all versions have been deleted.
-          // TODO perhaps allow ontology entry with no versions?
           logger.warn(s"bug: '${ont.uri}', no versions registered")
           OntologySummaryResult(ont.uri, "version?", "name?")
       }
@@ -479,7 +478,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
       Try(ontDAO.update(MongoDBObject("_id" -> uri), update, upsert = false, multi = false, WriteConcern.Safe)) match {
         case Success(result) =>
           logger.debug(s"deleteOntologyVersion: success: result=$result")
-          OntologyRegistrationResult(uri, version = Some(version), removed = Some(DateTime.now())) //TODO
+          OntologyRegistrationResult(uri, version = Some(version), removed = Some(DateTime.now()))
 
         case Failure(exc)  => throw CannotDeleteOntologyVersion(uri, version, exc.getMessage)
       }
@@ -621,7 +620,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     Try(ontDAO.removeById(ont.uri, WriteConcern.Safe)) match {
       case Success(result) =>
         logger.debug(s"doDeleteOntology: success: result=$result")
-        OntologyRegistrationResult(ont.uri, removed = Some(DateTime.now())) //TODO
+        OntologyRegistrationResult(ont.uri, removed = Some(DateTime.now()))
 
       case Failure(exc)  => throw CannotDeleteOntology(ont.uri, exc.getMessage)
     }

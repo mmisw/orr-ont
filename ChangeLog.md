@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2017-03-06:  3.4.1
+  - minor code clean-up 
+  
 * 2017-03-04:  3.4.0
   - docker/deployment stuff moved to 'orr' project
   

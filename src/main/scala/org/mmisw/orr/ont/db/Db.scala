@@ -52,8 +52,8 @@ class Db(mongoConfig: Cfg.Mongo) extends AnyRef with Logging {
 
   mcOpt = Some(mongoClient)
 
-  def destroy() {
+  def destroy(): Unit  = mcOpt foreach {
     logger.info("Closing MongoClient ...")
-    mcOpt foreach { _.close() }
+    _.close()
   }
 }
