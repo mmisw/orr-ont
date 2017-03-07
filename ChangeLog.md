@@ -1,6 +1,7 @@
 ## change log ##
 
-* 2017-03-06:  3.4.1
+* 2017-03-07:  3.4.1
+  - return OntologySummaryResult for ontology existence check
   - GET /ont?ouri=.. now also accepts onlyExistence=yes to only check for existence
     of the ontology URI in the database. This facilitates orr-portal operations.
   - GET /user/{userName} now with optional withOnts=yes to include the list of

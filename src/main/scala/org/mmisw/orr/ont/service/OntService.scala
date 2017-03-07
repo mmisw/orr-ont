@@ -120,7 +120,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
         case None =>
           // This will be case when all versions have been deleted.
           logger.warn(s"bug: '${ont.uri}', no versions registered")
-          OntologySummaryResult(ont.uri, "version?", "name?")
+          OntologySummaryResult(ont.uri)
       }
     }
   }
@@ -144,8 +144,8 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     val resourceTypeOpt = ontVersion.resourceType map ontUtil.simplifyResourceType
     OntologySummaryResult(
       uri          = ont.uri,
-      version      = version,
-      name         = ontVersion.name,
+      version      = Some(version),
+      name         = Some(ontVersion.name),
       submitter    = if (privileged) Some(ontVersion.userName) else None,
       ownerName    = Some(ont.ownerName),
       author       = ontVersion.author,
@@ -282,7 +282,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                      ontFileWriter:  OntFileWriter,
                      contact_name:   Option[String] = None, // for AquaImporter
                      ownerAsAuthorName: Option[String] = None
-                    ) = {
+                    ): OntologyRegistrationResult = {
 
     if (ontDAO.findOneById(uri).isDefined) throw OntologyAlreadyRegistered(uri)
 
@@ -352,7 +352,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                             ontFileWriter:   OntFileWriter,
                             doVerifyOwner:   Boolean = true,
                             contact_name:    Option[String] = None // for AquaImporter
-                           ) = {
+                           ): OntologyRegistrationResult = {
 
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
 
@@ -419,7 +419,8 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                             versionStatusOpt:     Option[String],
                             nameOpt:        Option[String],
                             userName:       String,
-                            doVerifyOwner:  Boolean = true) = {
+                            doVerifyOwner:  Boolean = true
+                           ): OntologyRegistrationResult = {
 
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
 
@@ -467,7 +468,8 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   def deleteOntologyVersion(uri:            String,
                             version:        String,
                             userName:       String,
-                            doVerifyOwner:  Boolean = true) = {
+                            doVerifyOwner:  Boolean = true
+                           ): OntologyRegistrationResult = {
 
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
 
@@ -498,7 +500,8 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
    */
   def deleteOntology(uri:            String,
                      userName:       String,
-                     doVerifyOwner:  Boolean = true) = {
+                     doVerifyOwner:  Boolean = true
+                    ): OntologyRegistrationResult = {
 
     val ont = ontDAO.findOneById(uri).getOrElse(throw NoSuchOntUri(uri))
 
@@ -623,7 +626,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     if (uri.startsWith(myUrl)) "" else s"Resolve with: $myUrl?uri=${uri.replace("#", "%23")}"
   }
 
-  private def doDeleteOntology(ont: Ontology) = {
+  private def doDeleteOntology(ont: Ontology): OntologyRegistrationResult = {
     logger.debug(s"doDeleteOntology: ont.uri=${ont.uri}")
     Try(ontDAO.removeById(ont.uri, WriteConcern.Safe)) match {
       case Success(result) =>

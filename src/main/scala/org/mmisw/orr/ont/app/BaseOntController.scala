@@ -4,10 +4,9 @@ import java.io.File
 
 import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import org.json4s.native.Serialization.writePretty
-import org.mmisw.orr.ont.{OntologyVersionSummary, Setup}
 import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
 import org.mmisw.orr.ont.service.{CannotQueryTerm, NoSuchTermFormat, _}
-import org.scalatra.Ok
+import org.mmisw.orr.ont.{OntologySummaryResult, OntologyVersionSummary, Setup}
 
 import scala.util.{Failure, Success, Try}
 
@@ -62,9 +61,14 @@ with Logging {
     }
   }
 
-  protected def checkOntUriExistence(uri: String) = {
+  protected def checkOntUriExistence(uri: String): OntologySummaryResult = {
     ontService.resolveOntology(uri) match {
-      case Some(_) ⇒ Ok("")
+      case Some(ont) ⇒
+        OntologySummaryResult(
+          uri          = ont.uri,
+          ownerName    = Some(ont.ownerName)
+        )
+
       case None    ⇒ error(404, s"'$uri': No such ontology")
     }
   }

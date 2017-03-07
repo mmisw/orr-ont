@@ -58,8 +58,8 @@ case class OntologyRegistrationResult(
 
 case class OntologySummaryResult(
             uri:            String,
-            version:        String,
-            name:           String,
+            version:        Option[String] = None,
+            name:           Option[String] = None,
             submitter:      Option[String] = None,
             ownerName:      Option[String] = None,  // | <orgName> | ~<userName>
             author:         Option[String] = None,
