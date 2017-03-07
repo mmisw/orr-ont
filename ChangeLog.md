@@ -1,6 +1,8 @@
 ## change log ##
 
 * 2017-03-06:  3.4.1
+  - GET /user/{userName} now with optional withOnts=yes to include the list of
+    registered ontologies by ~userName as owner (note: not as submitter) 
   - get ontologyType from format if not already an "orr-" one in the db 
   - minor code clean-up 
   

@@ -1,17 +1,18 @@
 package org.mmisw.orr.ont.app
 
 import com.mongodb.casbah.Imports._
-import com.novus.salat._
-import com.novus.salat.global._
-import com.typesafe.scalalogging.{StrictLogging => Logging}
+import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont._
+import org.mmisw.orr.ont.service.OntService
 import org.scalatra.Created
 
 import scala.util.{Failure, Success, Try}
 
 
-class UserController(implicit setup: Setup) extends BaseController
+class UserController(implicit setup: Setup,
+                     ontService: OntService
+                    ) extends BaseController
       with Logging {
 
   createAdminIfMissing()
@@ -20,9 +21,7 @@ class UserController(implicit setup: Setup) extends BaseController
    * Gets all users
    */
   get("/") {
-    userService.getUsers() map { u =>
-      grater[UserResult].toCompactJSON(getUserResult(u))
-    }
+    userService.getUsers() map (getUserResult(_))
   }
 
   /*
@@ -30,7 +29,20 @@ class UserController(implicit setup: Setup) extends BaseController
    */
   get("/:userName") {
     val userName = require(params, "userName")
-    getUserResult(getUser(userName), withOrgs = true)
+    val user = getUser(userName)
+
+    // include summary of registered ontologies if withOnts=yes
+    val onts: Option[List[OntologySummaryResult]] = getParam("withOnts") match {
+      case Some("yes") ⇒
+        val query = MongoDBObject("ownerName" → s"~${user.userName}")
+        val privileged = checkIsAdminOrExtra
+        val onts = ontService.getOntologies(query, privileged).toList
+        if (onts.nonEmpty) Some(onts) else None
+
+      case _ ⇒ None
+    }
+
+    getUserResult(user, withOrgs = true, onts = onts)
   }
 
   // username reminder
@@ -261,12 +273,16 @@ class UserController(implicit setup: Setup) extends BaseController
 
   ///////////////////////////////////////////////////////////////////////////
 
-  def getUserResult(dbUser: db.User, withOrgs: Boolean = false): UserResult = {
+  private def getUserResult(dbUser: db.User,
+                    withOrgs: Boolean = false,
+                    onts: Option[List[OntologySummaryResult]] = None
+                   ): String = {
     var res = UserResult(
       userName   = dbUser.userName,
       firstName  = Some(dbUser.firstName),
       lastName   = Some(dbUser.lastName),
-      ontUri     = dbUser.ontUri
+      ontUri     = dbUser.ontUri,
+      onts       = onts
     )
     if (checkIsUserOrAdminOrExtra(dbUser.userName)) {
       res = res.copy(
@@ -278,7 +294,8 @@ class UserController(implicit setup: Setup) extends BaseController
       )
       if (withOrgs) res = res.copy(organizations = orgService.getUserOrganizations(dbUser.userName))
     }
-    res
+    // using json4s because of the nested Option[List[OntologySummaryResult]]
+    _root_.org.json4s.native.Serialization.write(res)
   }
 
   def createUser(userName: String,

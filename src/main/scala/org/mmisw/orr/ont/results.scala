@@ -15,7 +15,8 @@ case class UserResult(
             updated:     Option[DateTime] = None,
             removed:     Option[DateTime] = None,
             role:        Option[String] = None,  // todo
-            organizations: Option[List[OrgResult]] = None
+            organizations: Option[List[OrgResult]] = None,
+            onts:        Option[List[OntologySummaryResult]] = None
             )
 
 case class AuthToken(token: String)
