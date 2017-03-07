@@ -1,6 +1,7 @@
 ## change log ##
 
 * 2017-03-06:  3.4.1
+  - get ontologyType from format if not already an "orr-" one in the db 
   - minor code clean-up 
   
 * 2017-03-04:  3.4.0

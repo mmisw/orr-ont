@@ -26,6 +26,20 @@ object OntVisibility  {
   }
 }
 
+object OntType  {
+  val vocabulary = "orr-vocabulary"
+  val mapping    = "orr-mapping"
+  val other      = "other"
+
+  def isOrr(ot: String): Boolean = ot.toLowerCase().startsWith("orr-")
+
+  def fromFormat(format: String): String = format match {
+    case "v2r" ⇒ vocabulary
+    case "m2r" ⇒ mapping
+    case _     ⇒ other
+  }
+}
+
 case class OntologyVersion(
             name:            String,
             userName:        String, // submitter

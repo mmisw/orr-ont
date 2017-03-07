@@ -6,7 +6,7 @@ import java.net.{URI, URISyntaxException}
 import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import org.joda.time.DateTime
-import org.mmisw.orr.ont.db.{Ontology, OntologyVersion}
+import org.mmisw.orr.ont.db.{OntType, Ontology, OntologyVersion}
 import org.mmisw.orr.ont.swld._
 import org.mmisw.orr.ont._
 
@@ -115,7 +115,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     ontDAO.find(query) map { ont =>
       getLatestVersion(ont) match {
         case Some((ontVersion, version)) =>
-          getOntologySummaryResult(ont, ontVersion, version, privileged, includeMetadata = false)
+          getOntologySummaryResult(ont, ontVersion, version, privileged)
 
         case None =>
           // This will be case when all versions have been deleted.
@@ -133,6 +133,14 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                                versionsOpt: Option[List[OntologyVersionSummary]] = None
   ): OntologySummaryResult = {
 
+    val ontologyType = ontVersion.ontologyType match {
+      // report assigned value in db if it is already an "orr-" one:
+      case Some(ot) if OntType.isOrr(ot) ⇒ ot
+
+      // else: obtain from format:
+      case _  ⇒ OntType.fromFormat(ontVersion.format)
+    }
+
     val resourceTypeOpt = ontVersion.resourceType map ontUtil.simplifyResourceType
     OntologySummaryResult(
       uri          = ont.uri,
@@ -143,7 +151,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
       author       = ontVersion.author,
       status       = ontVersion.status,
       metadata     = if (includeMetadata) Some(ontUtil.toOntMdMap(ontVersion.metadata)) else None,
-      ontologyType = ontVersion.ontologyType,
+      ontologyType = Some(ontologyType),
       resourceType = resourceTypeOpt,
       versions     = versionsOpt,
       format       = Option(ontVersion.format),

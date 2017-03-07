@@ -10,6 +10,7 @@ import com.hp.hpl.jena.vocabulary.{DCTerms, DC_10, DC_11}
 import com.mongodb.{BasicDBList, BasicDBObject}
 import org.json4s.JsonAST.{JArray, JString}
 import org.json4s._
+import org.mmisw.orr.ont.db.OntType
 import org.mmisw.orr.ont.service.httpUtil
 import org.mmisw.orr.ont.vocabulary.{Omv, OmvMmi}
 
@@ -185,10 +186,10 @@ object ontUtil extends AnyRef with Logging {
 
     val ontologyType = md.get(Omv.usedOntologyEngineeringTool.getURI) match {
       case Some(v :: _) ⇒
-          if      (v == OmvMmi.voc2rdf.getURI) "orr-vocabulary"
-          else if (v == OmvMmi.vine.getURI)    "orr-mapping"
-          else "other"
-      case _ ⇒ "other"
+          if      (v == OmvMmi.voc2rdf.getURI) OntType.vocabulary
+          else if (v == OmvMmi.vine.getURI)    OntType.mapping
+          else OntType.other
+      case _ ⇒ OntType.other
     }
     map = map.updated("ontologyType", ontologyType)
 
