@@ -9,10 +9,23 @@ of its [Semantic Framework](http://marinemetadata.org/semanticframework) vision.
 
 [![](http://marinemetadata.org/files/mmi/semantic_framework.jpg)](http://marinemetadata.org/semanticframework)
 
+Current funding is provided by the U.S. National Science Foundation through the
+[Cross-Domain Observational Metadata for Environmental Sensing (X-DOMES) project](
+https://www.earthcube.org/group/x-domes).
+
 # What's orr-ont?
 
-The ORR system is comprised of two main components: a backend component, the `orr-ont` service;
-and a front-end component, the `orr-portal` web application.
+The ORR system is comprised of:
 
-This is the repository for the `orr-ont` component.
-For the front-end component see [orr-portal](https://github.com/mmisw/orr-portal).
+| component | description |
+|-----------|-------------|
+| [orr-ont](https://github.com/mmisw/orr-ont)       | Backend / REST endpoint |
+| [orr-portal](https://github.com/mmisw/orr-portal) | Front-end |
+
+This is the repository for the **orr-ont** component.
+
+
+# Deployment
+
+Interested in having an ORR instance on your server? See
+[http://mmisw.org/orrdoc/install/](http://mmisw.org/orrdoc/install/).
