@@ -1,12 +1,12 @@
 package org.mmisw.orr.ont.swld
 
-import com.hp.hpl.jena.ontology.{OntDocumentManager, OntModel, OntModelSpec, Ontology}
-import com.hp.hpl.jena.rdf.model._
+import org.apache.jena.ontology.{OntDocumentManager, OntModel, OntModelSpec, Ontology}
+import org.apache.jena.rdf.model._
 import java.io.{File, FileInputStream, FileOutputStream}
 
 import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import com.github.jsonldjava.jena.JenaJSONLD
-import com.hp.hpl.jena.vocabulary.{DCTerms, DC_10, DC_11}
+import org.apache.jena.vocabulary.{DCTerms, DC_10, DC_11}
 import com.mongodb.{BasicDBList, BasicDBObject}
 import org.json4s.JsonAST.{JArray, JString}
 import org.json4s._

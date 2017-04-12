@@ -1,7 +1,7 @@
 package org.mmisw.orr.ont.swld
 
-import com.hp.hpl.jena.rdf.model.Property
-import com.hp.hpl.jena.vocabulary.{OWL, RDF}
+import org.apache.jena.rdf.model.Property
+import org.apache.jena.vocabulary.{OWL, RDF}
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.mmisw.orr.ont.vocabulary.{Omv, Skos}

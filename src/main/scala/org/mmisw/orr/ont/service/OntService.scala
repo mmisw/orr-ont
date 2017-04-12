@@ -260,7 +260,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
       }
     }
     catch {
-      case exc: Exception => // likely com.hp.hpl.jena.shared.NoWriterForLangException
+      case exc: Exception => // likely org.apache.jena.shared.NoWriterForLangException
         val exm = s"${exc.getClass.getName}: ${exc.getMessage}"
         throw CannotCreateFormat(uri, version, reqFormat, exm)
     }
