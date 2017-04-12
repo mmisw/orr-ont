@@ -1,12 +1,12 @@
 package org.mmisw.orr.ont.vocabulary
 
-import com.hp.hpl.jena.rdf.model.Model
-import com.hp.hpl.jena.rdf.model.ModelFactory
-import com.hp.hpl.jena.rdf.model.Resource
-import com.hp.hpl.jena.vocabulary.OWL
-import com.hp.hpl.jena.vocabulary.RDF
-import com.hp.hpl.jena.vocabulary.RDFS
-import com.hp.hpl.jena.vocabulary.XSD
+import org.apache.jena.rdf.model.Model
+import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.rdf.model.Resource
+import org.apache.jena.vocabulary.OWL
+import org.apache.jena.vocabulary.RDF
+import org.apache.jena.vocabulary.RDFS
+import org.apache.jena.vocabulary.XSD
 
 /**
  * SKOS vocabulary elements. Copied from cf2rdf.

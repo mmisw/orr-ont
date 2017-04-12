@@ -16,7 +16,7 @@ object build extends Build {
   val json4Version      = "3.2.10"
   val casbahVersion     = "2.7.1"
   val salatVersion      = "1.9.9"
-  val jenaVersion       = "2.11.1"
+  val jenaVersion       = "3.2.0"
 
   //[S]
   lazy val assemblySettings = Seq(
@@ -70,7 +70,7 @@ object build extends Build {
           .exclude("org.slf4j", "slf4j-log4j12")
         ,
 
-        ("com.github.jsonld-java"     % "jsonld-java-jena"     % "0.3")
+        ("com.github.jsonld-java"     % "jsonld-java-jena"     % "0.4.1")
           .exclude("commons-logging", "commons-logging")
           .exclude("org.slf4j", "slf4j-log4j12")
         ,

@@ -1,6 +1,6 @@
 package org.mmisw.orr.ont.swld
 
-import com.hp.hpl.jena.vocabulary.{DC_11, OWL, RDF, RDFS}
+import org.apache.jena.vocabulary.{DC_11, OWL, RDF, RDFS}
 import org.specs2.mutable.Specification
 import org.json4s._
 import org.json4s.native.JsonMethods._

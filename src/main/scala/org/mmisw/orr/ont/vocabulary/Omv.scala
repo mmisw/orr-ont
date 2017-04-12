@@ -1,12 +1,12 @@
 package org.mmisw.orr.ont.vocabulary
 
-import com.hp.hpl.jena.rdf.model.{Model, ModelFactory}
+import org.apache.jena.rdf.model.{Model, ModelFactory}
 
 /**
  * Vocabulary definitions for Omv following
  * <a href="http://marinemetadata.org/files/mmi/OntologyExampleOMV.owl">this example</a>
  * in a similar way as with
- * <a href="http://jena.sourceforge.net/javadoc/com/hp/hpl/jena/vocabulary/DC_11.html">DC_11 in Jena</a>.
+ * <a href="http://jena.sourceforge.net/javadoc/org.apache.jena/vocabulary/DC_11.html">DC_11 in Jena</a>.
  *
  * @author Carlos Rueda
  */

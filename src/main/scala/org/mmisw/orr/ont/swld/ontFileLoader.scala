@@ -2,9 +2,9 @@ package org.mmisw.orr.ont.swld
 
 import java.io._
 
-import com.hp.hpl.jena.ontology.OntModel
-import com.hp.hpl.jena.rdf.model.Resource
-import com.hp.hpl.jena.vocabulary._
+import org.apache.jena.ontology.OntModel
+import org.apache.jena.rdf.model.Resource
+import org.apache.jena.vocabulary._
 import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import org.mmisw.orr.ont.service.CannotRecognizeOntologyFormat
 import org.mmisw.orr.ont.util.{Util2, XmlBaseExtractor}

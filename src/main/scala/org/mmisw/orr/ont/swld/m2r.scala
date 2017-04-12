@@ -2,9 +2,9 @@ package org.mmisw.orr.ont.swld
 
 import java.io.File
 
-import com.hp.hpl.jena.ontology.OntModel
-import com.hp.hpl.jena.rdf.model.Model
-import com.hp.hpl.jena.vocabulary.OWL
+import org.apache.jena.ontology.OntModel
+import org.apache.jena.rdf.model.Model
+import org.apache.jena.vocabulary.OWL
 import com.typesafe.scalalogging.{StrictLogging => Logging}
 import org.json4s._
 import org.json4s.native.JsonMethods._
