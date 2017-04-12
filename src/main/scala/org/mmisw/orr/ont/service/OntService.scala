@@ -318,6 +318,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
             |
             | URI: $uri
             | ${getResolveWith(uri)}
+            | Name: ${ontVersion.name}
             | Version: $version
             | Registered: ${ontVersion.date}
             | Owner: $ownerName
@@ -391,9 +392,12 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
              |
              | URI: $uri
              | ${getResolveWith(uri)}
+             | Name: ${ontVersion.name}
              | Version: $version
+             | Owner: ${ont.ownerName}
              | Submitter: $userName
              | Updated: ${ontVersion.date}
+             | Log: ${ontVersion.log.getOrElse("(not given)")}
           """.stripMargin
         )
         OntologyRegistrationResult(uri,

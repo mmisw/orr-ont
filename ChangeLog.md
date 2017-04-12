@@ -1,6 +1,7 @@
 ## change log ##
 
-* 2017-03-11:  3.4.2
+* 2017-04-11:  3.4.2
+  - include some additional details in emails for ontology registration 
   - resolve #45: "upgrade Apache Jena to 3.2.0"
     - not anymore dependency on jsonld-java-jena
     - update some tests thanks to support in new jena version

@@ -52,6 +52,7 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
                  | Username: $userName
                  | Name: $firstName $lastName
                  | Email: $email
+                 | Phone: ${phoneOpt.getOrElse("")}
                  | registered: ${user.registered}
               """.stripMargin
             )

@@ -9,7 +9,7 @@ import org.json4s.native.JsonMethods._
 class v2rSpec extends Specification {
   implicit val formats = DefaultFormats
 
-  val vr1 = V2RModel(
+  lazy val vr1 = V2RModel(
     uri = None,
     metadata = Some(Map(
       DC_11.description.getURI -> JString("some description (dc:description)"),
