@@ -9,7 +9,7 @@ import scoverage.ScoverageKeys._
 object build extends Build {
   val Organization = "org.mmisw"
   val Name = "orr-ont"
-  val Version = "3.4.1"
+  val Version = "3.4.2"
 
   val ScalaVersion      = "2.11.6"
   val ScalatraVersion   = "2.3.0"
@@ -68,12 +68,11 @@ object build extends Build {
 
         ("org.apache.jena"            % "jena-core"            % jenaVersion)
           .exclude("org.slf4j", "slf4j-log4j12")
-        ,
 
-        ("com.github.jsonld-java"     % "jsonld-java-jena"     % "0.4.1")
-          .exclude("commons-logging", "commons-logging")
-          .exclude("org.slf4j", "slf4j-log4j12")
-        ,
+        ,"org.apache.jena"       % "jena-tdb"                  % jenaVersion,
+          // Per https://jena.apache.org/download/maven.html:
+          //  "...use of <type>pom</type> ... does not work in all tools.
+          //  An alternative is to depend on jena-tdb, which will pull in the other artifacts."
 
         "net.sourceforge.owlapi"     % "owlapi-distribution"  % "3.4.5",
 

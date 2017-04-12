@@ -5,7 +5,6 @@ import org.apache.jena.rdf.model._
 import java.io.{File, FileInputStream, FileOutputStream}
 
 import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
-import com.github.jsonldjava.jena.JenaJSONLD
 import org.apache.jena.vocabulary.{DCTerms, DC_10, DC_11}
 import com.mongodb.{BasicDBList, BasicDBObject}
 import org.json4s.JsonAST.{JArray, JString}
@@ -20,8 +19,6 @@ import scala.util.{Failure, Success, Try}
 
 
 object ontUtil extends AnyRef with Logging {
-
-  JenaJSONLD.init()
 
   val mimeMappings: Map[String, String] = Map(
       "rdf"     -> "application/rdf+xml"    // https://www.w3.org/TR/REC-rdf-syntax/

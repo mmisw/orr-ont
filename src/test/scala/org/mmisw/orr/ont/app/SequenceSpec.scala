@@ -700,20 +700,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     "return expected file for ttl reqFormat"    in { doGoodFormat("ttl", Some(ontUtil.mimeMappings("n3"))) }
     "return expected file for nt reqFormat"     in { doGoodFormat("nt") }
     "return expected file for rj reqFormat"     in { doGoodFormat("rj") }
-
-    def doBadFormat(reqFormat: String) = {
-      val map = Map("uri" -> ont1Uri, "format" -> reqFormat)
-      get("/ont", map) {
-        val respBody = body
-        //println(s"doBadFormat: reqFormat=$reqFormat  response body=\n  " + respBody.replace("\n", "\n  "))
-        status must_== 406
-        val res = parse(respBody).extract[Map[String,String]]
-        res.get("format") must beSome(reqFormat)
-      }
-    }
-    // TODO move the following to doGoodFormat once jena actually supports these documented supported formats
-    "return expected file for nq reqFormat"     in { doBadFormat("nq") }
-    "return expected file for trig reqFormat"   in { doBadFormat("trig") }
+    "return expected file for nq reqFormat"     in { doGoodFormat("nq") }
+    "return expected file for trig reqFormat"   in { doGoodFormat("trig") }
     // </FORMATS>
   }
 

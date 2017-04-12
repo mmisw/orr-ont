@@ -1,5 +1,10 @@
 ## change log ##
 
+* 2017-03-11:  3.4.2
+  - resolve #45: "upgrade Apache Jena to 3.2.0"
+    - not anymore dependency on jsonld-java-jena
+    - update some tests thanks to support in new jena version
+  
 * 2017-03-07:  3.4.1
   - return OntologySummaryResult for ontology existence check
   - GET /ont?ouri=.. now also accepts onlyExistence=yes to only check for existence
