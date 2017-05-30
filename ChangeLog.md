@@ -1,6 +1,7 @@
 ## change log ##
 
-* 2017-05-29:  3.4.2
+* 2017-05-29:  3.5.0
+  - set version to 3.5.0
   - fix #45 "Upgrade Apache Jena to 3.2.0"  (see issue entry for more details)
   - other adjustments (use jenaVersion = "3.3.0", ScalaVersion = "2.11.7")
 

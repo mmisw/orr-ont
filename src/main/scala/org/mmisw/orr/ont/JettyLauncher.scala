@@ -15,6 +15,7 @@ package org.mmisw.orr.ont
   * Main class for standalone executable.
   */
 object JettyLauncher {
+//  org.apache.jena.system.JenaSystem.init()
 //  import org.eclipse.jetty.server.Server
 //  import org.eclipse.jetty.servlet.DefaultServlet
 //  import org.eclipse.jetty.webapp.WebAppContext
