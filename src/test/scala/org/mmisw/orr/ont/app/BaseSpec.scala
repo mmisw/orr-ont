@@ -1,6 +1,7 @@
 package org.mmisw.orr.ont.app
 
 import com.typesafe.config.ConfigFactory
+import org.apache.jena.system.JenaSystem
 import org.mmisw.orr.ont.{Cfg, Setup}
 import org.mmisw.orr.ont.auth.authUtil
 import org.mmisw.orr.ont.service.JwtUtil
@@ -8,6 +9,7 @@ import org.mmisw.orr.ont.util.IEmailer
 import org.specs2.mock.Mockito
 
 trait BaseSpec extends Mockito {
+  JenaSystem.init()
   implicit val formats = org.json4s.DefaultFormats
 
   val config = ConfigFactory.parseString(

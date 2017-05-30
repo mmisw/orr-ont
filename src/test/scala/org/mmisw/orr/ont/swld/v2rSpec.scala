@@ -1,5 +1,6 @@
 package org.mmisw.orr.ont.swld
 
+import org.apache.jena.system.JenaSystem
 import org.apache.jena.vocabulary.{DC_11, OWL, RDF, RDFS}
 import org.specs2.mutable.Specification
 import org.json4s._
@@ -7,6 +8,7 @@ import org.json4s.native.JsonMethods._
 
 
 class v2rSpec extends Specification {
+  JenaSystem.init()
   implicit val formats = DefaultFormats
 
   lazy val vr1 = V2RModel(

@@ -3,6 +3,7 @@ import java.io.File
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.StrictLogging
 import java.util.ServiceConfigurationError
+
 import org.mmisw.orr.ont._
 import org.mmisw.orr.ont.app._
 import org.mmisw.orr.ont.service.{TripleStoreService, TripleStoreServiceAgRest, OntService}
@@ -10,8 +11,11 @@ import org.mmisw.orr.ont.util.Emailer
 import org.scalatra._
 import javax.servlet.ServletContext
 
+import org.apache.jena.system.JenaSystem
+
 
 class ScalatraBootstrap extends LifeCycle with StrictLogging {
+  JenaSystem.init()
 
   private[this] var setupOpt: Option[Setup] = None
 

@@ -1,6 +1,7 @@
 package org.mmisw.orr.ont.swld
 
 import org.apache.jena.rdf.model.Property
+import org.apache.jena.system.JenaSystem
 import org.apache.jena.vocabulary.{OWL, RDF}
 import org.json4s._
 import org.json4s.native.JsonMethods._
@@ -9,7 +10,7 @@ import org.specs2.mutable.Specification
 
 
 class m2rSpec extends Specification {
-
+  JenaSystem.init()
   implicit val formats = DefaultFormats
 
   val mr1 = M2RModel(
