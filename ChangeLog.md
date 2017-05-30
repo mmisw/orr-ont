@@ -1,5 +1,10 @@
 ## change log ##
 
+* 2017-05-29:  3.4.2
+    - use jenaVersion = "3.3.0" although still investigating issue
+       https://github.com/mmisw/orr-ont/issues/45#issuecomment-304741649
+    - use ScalaVersion = "2.11.7"
+
 * 2017-04-11:  3.4.2
   - include some additional details in emails for ontology registration 
   - resolve #45: "upgrade Apache Jena to 3.2.0"

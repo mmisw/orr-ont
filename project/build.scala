@@ -11,12 +11,12 @@ object build extends Build {
   val Name = "orr-ont"
   val Version = "3.4.2"
 
-  val ScalaVersion      = "2.11.6"
+  val ScalaVersion      = "2.11.7"
   val ScalatraVersion   = "2.3.0"
   val json4Version      = "3.2.10"
   val casbahVersion     = "2.7.1"
   val salatVersion      = "1.9.9"
-  val jenaVersion       = "3.2.0"
+  val jenaVersion       = "3.3.0"
 
   //[S]
   lazy val assemblySettings = Seq(
