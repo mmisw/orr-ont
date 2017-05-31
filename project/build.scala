@@ -9,7 +9,7 @@ import scoverage.ScoverageKeys._
 object build extends Build {
   val Organization = "org.mmisw"
   val Name = "orr-ont"
-  val Version = "3.5.1"
+  val Version = "3.6.0"
 
   val ScalaVersion      = "2.11.7"
   val ScalatraVersion   = "2.3.0"
