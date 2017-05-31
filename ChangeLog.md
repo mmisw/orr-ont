@@ -5,6 +5,9 @@
     - accept "iri" parameter in all http requests accepting the traditional "uri" parameter
       (this included "oiri" and "tiri").  The traditional "uri"-like params continue to be accepted.
       Error about missing the parameter only mentions "iri".
+    - more adjustments re use of "iri" in general and mostly at the externally-visible level
+      (I'm not changing variable names and such, at least for now).
+    - now using Jena's IRIFactory to create and validate IRIs.
   
 * 2017-05-29:  3.5.0
   - set version to 3.5.0

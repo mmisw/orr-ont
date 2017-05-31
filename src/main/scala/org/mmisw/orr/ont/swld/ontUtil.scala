@@ -7,10 +7,11 @@ import java.io.{File, FileInputStream, FileOutputStream}
 import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import org.apache.jena.vocabulary.{DCTerms, DC_10, DC_11}
 import com.mongodb.{BasicDBList, BasicDBObject}
+import org.apache.jena.iri.IRIFactory
 import org.json4s.JsonAST.{JArray, JString}
 import org.json4s._
 import org.mmisw.orr.ont.db.OntType
-import org.mmisw.orr.ont.service.httpUtil
+import org.mmisw.orr.ont.service.{InvalidIri, httpUtil}
 import org.mmisw.orr.ont.vocabulary.{Omv, OmvMmi}
 
 import scala.collection.JavaConversions._
@@ -19,6 +20,21 @@ import scala.util.{Failure, Success, Try}
 
 
 object ontUtil extends AnyRef with Logging {
+  val iriFactory: IRIFactory = IRIFactory.iriImplementation()
+
+  def validateIri(str: String) {
+    try {
+      val iri = iriFactory.create(str)
+      if (iri.hasViolation(true)) {
+        throw InvalidIri(str, iri.violations(true).toList.map(_.getLongMessage).mkString("; "))
+      }
+      if (str.contains("|")) throw InvalidIri(str, "cannot contain the '|' character")
+    }
+    catch {
+      case NonFatal(e) ⇒ throw InvalidIri(str, e.getMessage)
+    }
+  }
+
 
   val mimeMappings: Map[String, String] = Map(
       "rdf"     -> "application/rdf+xml"    // https://www.w3.org/TR/REC-rdf-syntax/
@@ -127,6 +143,7 @@ object ontUtil extends AnyRef with Logging {
       while (it.hasNext) {
         val stmt = it.next()
         val prop: Property = stmt.getPredicate
+        // #32: note, there's no getIRI or similar
         val propUri = prop.getURI
         val node: RDFNode = stmt.getObject
         val nodeString = nodeAsString(node)
@@ -143,11 +160,14 @@ object ontUtil extends AnyRef with Logging {
     attrs mapValues { _.toList }
   }
 
-  def toOntMdList(md: Map[String,List[String]]): List[Map[String, AnyRef]] =
+  def toOntMdList(md: Map[String,List[String]]): List[Map[String, AnyRef]] = {
+    // #32 note: given md comes from extractAttributes(Resource), which relies on Jena's
+    // Property.getURI (and there's no getIRI), so we simply continue to use "uri" below:
     md.map(uv => Map("uri" -> uv._1, "values" -> uv._2)).toList
+  }
 
   /**
-    * Helper to convert from OntologyVersion.database entry type `List[Map[String, AnyRef]]`
+    * Helper to convert from OntologyVersion.metadata entry type `List[Map[String, AnyRef]]`
     * into a standard map for reporting via OntologySummaryResult
     *
     * @param list  List[AnyRef] as we need to deal with BasicDBObject
@@ -157,6 +177,7 @@ object ontUtil extends AnyRef with Logging {
     val map = scala.collection.mutable.HashMap[String, List[String]]()
     list foreach { a =>
       val m = a.asInstanceOf[BasicDBObject]
+      // #32: "uri" is used in the metadata, so expose it as such:
       val uri    = m.get("uri").asInstanceOf[String]
       val dbList = m.get("values").asInstanceOf[BasicDBList]
       val values = (dbList map (_.toString)).toList

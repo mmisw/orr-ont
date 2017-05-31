@@ -124,7 +124,7 @@ with Logging {
       case Left(exc) =>
         exc match {
           case NoSuchTermFormat(_, format) => error(406, s"invalid format=$format")
-          case CannotQueryTerm(_, msg)     => error(400, s"error querying uri=$uri: $msg")
+          case CannotQueryTerm(_, msg)     => error(400, s"error querying iri=$uri: $msg")
           case _                           => error500(exc)
         }
 
