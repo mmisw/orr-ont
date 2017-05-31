@@ -38,17 +38,17 @@ class OntController(implicit setup: Setup,
    * General ontology or term request
    */
   get("/") {
-    params.get("uri") match {
+    getIriOrUri(params) match {
       case Some(uri) => resolveOntOrTermUri(uri)
 
-      case None => params.get("ouri") match {
+      case None => params.get("oiri") orElse params.get("ouri") match {
         case Some(uri) =>
           getParam("onlyExistence") match {
             case Some("yes") ⇒ checkOntUriExistence(uri)
             case _           ⇒ resolveOntUri(uri)
           }
 
-        case None => params.get("turi") match {
+        case None => params.get("tiri") orElse params.get("turi") match {
           case Some(uri) => resolveTermUri(uri)
 
           case None => resolveOnts()
@@ -58,12 +58,12 @@ class OntController(implicit setup: Setup,
   }
 
   get("/sbjs") {
-    val uri = require(params, "uri")
+    val uri = requireIriOrUri(params)
     getSubjects(uri)
   }
 
   get("/sbjs/external") {
-    val uri = require(params, "uri")
+    val uri = requireIriOrUri(params)
     getSubjectsExternal(uri)
   }
 
@@ -97,7 +97,7 @@ class OntController(implicit setup: Setup,
    * visibility will be "owner" by default.
    */
   post("/") {
-    val uri            = requireParam("uri")
+    val uri            = requireIriOrUriParam()
     val originalUriOpt = getParam("originalUri")  // for fully-hosted mode
     val name           = requireParam("name")
     val orgNameOpt     = getParam("orgName")
@@ -141,7 +141,7 @@ class OntController(implicit setup: Setup,
    * visibility will be "owner" by default.
    */
   put("/") {
-    val uri            = requireParam("uri")
+    val uri            = requireIriOrUriParam()
     val originalUriOpt = getParam("originalUri")  // for fully-hosted mode
     val versionOpt     = getParam("version")
     val logOpt         = getParam("log")
@@ -269,7 +269,7 @@ class OntController(implicit setup: Setup,
    * Deletes a particular version or the whole ontology entry.
    */
   delete("/") {
-    val uri = require(params, "uri")
+    val uri = requireIriOrUri(params)
     val versionOpt = params.get("version")
     val user = verifyUser(params.get("userName"))
 

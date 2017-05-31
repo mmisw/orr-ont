@@ -37,6 +37,15 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSuppor
     if (value.length > 0) value else error(400, s"'$paramName' param value missing")
   }
 
+  protected def requireIriOrUri(map: Params): String = {
+    val value = map.get("iri").getOrElse(map.getOrElse("uri", missing("iri"))).trim
+    if (value.length > 0) value else missing("iri")
+  }
+
+  protected def getIriOrUri(map: Params): Option[String] = {
+    (map.get("iri") orElse map.get("uri")).map(_.trim)
+  }
+
   protected def acceptOnly(paramNames: String*) {
     val unrecognized = params.keySet -- Set(paramNames: _*)
     if (unrecognized.nonEmpty) error(400, s"unrecognized parameters: $unrecognized")
@@ -113,6 +122,10 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSuppor
 
   /** Requires a param from the body or from the 'params' */
   protected def requireParam(name: String): String = getParam(name).getOrElse(missing(name))
+
+  protected def getIriOrUriParam: Option[String] = getParam("iri") orElse getParam("uri")
+
+  protected def requireIriOrUriParam(): String = getIriOrUriParam.getOrElse(missing("iri"))
 
   before() {
     contentType = formats("json")
