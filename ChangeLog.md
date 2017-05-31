@@ -1,7 +1,7 @@
 ## change log ##
 
 * 2017-05-31:  3.5.1
-  - re #32 "URIs should be IRIs"
+  - resolve #32 "URIs should be IRIs"
     - accept "iri" parameter in all http requests accepting the traditional "uri" parameter
       (this included "oiri" and "tiri").  The traditional "uri"-like params continue to be accepted.
       Error about missing the parameter only mentions "iri".

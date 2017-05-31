@@ -46,7 +46,7 @@ class OrgController(implicit setup: Setup,
     val orgName = require(map, "orgName")
     val name = require(map, "name")
     val url = getString(map, "url")
-    val ontUri = getString(map, "ontUri")
+    val ontUri = getString(map, "ontIri") orElse getString(map, "ontUri")
     val members = getSeq(map, "members").toSet
 
     val org = Organization(
@@ -70,7 +70,7 @@ class OrgController(implicit setup: Setup,
 
     val nameOpt = getString(map, "name")
     val urlOpt  = getString(map, "url")
-    val ontUriOpt = getString(map, "ontUri")
+    val ontUriOpt = getString(map, "ontIri") orElse getString(map, "ontUri")
 
     val membersOpt = if (map.contains("members")) {
       val members = getSet(map, "members")

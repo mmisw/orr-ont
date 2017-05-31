@@ -239,7 +239,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
       ("orgName"    -> orgName) ~
       ("name"       -> "some organization") ~
       ("url"        -> orgUrl) ~
-      ("ontUri"     -> "org.ontUri") ~
+      ("ontIri"     -> "https://org.example.net") ~
       ("members"    -> orgMembers)
 
   val orgName2 = newOrgName()  // to test DELETE
@@ -276,7 +276,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
       val orgMap =
         ("orgName"    -> orgName2) ~
           ("name"       -> "some organization2") ~
-          ("ontUri"     -> "org.ontUri") ~
+          ("ontIri"     -> "https://org.example.net") ~
           ("members"    -> orgMembers)
       val reqBody = pretty(render(orgMap))
 
@@ -318,24 +318,26 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   "Update an organization (PUT /org/:orgName)" should {
     "fail with no credentials" in {
       val headers = Map("content-type" -> "application/json")
-      put(s"/org/$orgName", body = pretty(render("ontUri" -> "updated.ontUri")),
+      put(s"/org/$orgName", body = pretty(render("ontIri" -> "updated")),
         headers = headers) {
         status must_== 401
       }
     }
 
     "succeed with member credentials" in {
+      val updatedOrgUrl    = "https://updated.url"
+      val updatedOrgOntIri = "http://updated.ontIri"
       val headers = Map("content-type" -> "application/json", "Authorization" -> userCredentials)
-      val map = ("url"     -> "http://updated.url") ~
-                ("ontUri"  -> "updated.ontUri") ~
+      val map = ("url"     -> updatedOrgUrl) ~
+                ("ontIri"  -> updatedOrgOntIri) ~
                 ("members" -> Seq(userName, userName2))
       put(s"/org/$orgName", body = pretty(render(map)), headers = headers) {
         val respBody = body
         //println(s"respBody=\n  " + respBody.replace("\n", "\n  "))
         status must_== 200
         val res = parse(respBody).extract[OrgResult]
-        res.url must beSome("http://updated.url")
-        res.ontUri must beSome("updated.ontUri")
+        res.url must beSome(updatedOrgUrl)
+        res.ontUri must beSome(updatedOrgOntIri)
         res.members must beSome
         res.members.get must haveSize(2)
         res.members.get must contain(userName, userName2)
@@ -359,7 +361,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     "fail with non-member credentials" in {
       val userCredentials = authUtil.basicCredentials(userName2, password2)
       val headers = Map("content-type" -> "application/json", "Authorization" -> userCredentials)
-      put(s"/org/$orgName", body = pretty(render("ontUri" -> "updated.ontUri")),
+      put(s"/org/$orgName", body = pretty(render("ontIri" -> "updated.ontIri")),
         headers = headers) {
         status must_== 403
       }
@@ -367,7 +369,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
 
     "succeed with admin credentials" in {
       val headers = Map("content-type" -> "application/json", "Authorization" -> adminCredentials)
-      put(s"/org/$orgName", body = pretty(render("ontUri" -> "updated.ontUri")),
+      put(s"/org/$orgName", body = pretty(render("ontIri" -> "updated.ontIri")),
         headers = headers) {
         status must_== 200
         val res = parse(body).extract[OrgResult]
@@ -412,7 +414,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
 
   "Get non-existent ont (GET /ont)" should {
     "fail with not found status" in {
-      val map = Map("ouri" -> newOntUri())
+      val map = Map("oiri" -> newOntUri())
       get("/ont", map) {
         status must_== 404
       }
@@ -522,7 +524,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     "succeed with user credentials" in {
       val uploadedOntUri = ont1Uri + "_uploaded"
       val uploadedFileInfo = uploadedFileInfoOpt.get
-      val mapForUploaded = Map("uri" -> uploadedOntUri,
+      val mapForUploaded = Map("iri" -> uploadedOntUri,
         "name" -> "ont with file previously uploaded",
         "orgName" -> orgName,
         "userName" -> userName,
@@ -542,7 +544,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     }
   }
 
-  val map1 = Map("uri" -> ont1Uri,
+  val map1 = Map("iri" -> ont1Uri,
     "name" -> "some ont name",
     "orgName" -> orgName,
     "userName" -> userName,
@@ -577,15 +579,15 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
       }
     }
 
-    "fail with duplicate uri if resubmitted as new" in {
+    "fail with duplicate iri if resubmitted as new" in {
       post("/ont", map1, Map("file" -> ont1File), headers = userHeaders) {
         status must_== 409
       }
     }
 
     "succeed with admin credentials" in {
-      // need a diff uri
-      val map2 = Map("uri" -> newOntUri(),
+      // need a diff iri
+      val map2 = Map("iri" -> newOntUri(),
         "name" -> "some ont name",
         "orgName" -> orgName,
         "userName" -> userName,
@@ -596,7 +598,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
       post("/ont", map2, Map("file" -> ont1File), headers = adminHeaders) {
         status must_== 201
         val res = parse(body).extract[OntologyRegistrationResult]
-        res.uri must_== map2("uri")
+        res.uri must_== map2("iri")
         res.status     must beSome(map2("status"))
         res.visibility must beSome(map2("visibility"))
       }
@@ -612,7 +614,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
           java.nio.charset.StandardCharsets.UTF_8).mkString("")
       }
       val embeddedUri  = "http://embedded-contents"
-      val params = Map("uri" -> embeddedUri,
+      val params = Map("iri" -> embeddedUri,
         "name"     -> "some ont name",
         "orgName"  -> orgName,
         "userName" -> userName,
@@ -631,8 +633,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
 
   "Register a new v2r ont (POST /ont)" should {
     "succeed" in {
-      // need a diff uri
-      val v2rMap = Map("uri" -> newOntUri(),
+      // need a diff iri
+      val v2rMap = Map("iri" -> newOntUri(),
         "name" -> "a v2r ontology",
         "userName" -> userName,
         "format" -> "v2r",
@@ -642,15 +644,15 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
       post("/ont", v2rMap, Map("file" -> v2rFile), headers = adminHeaders) {
         status must_== 201
         val res = parse(body).extract[OntologyRegistrationResult]
-        res.uri must_== v2rMap("uri")
+        res.uri must_== v2rMap("iri")
       }
     }
   }
 
   "Register a new m2r ont (POST /ont)" should {
     "succeed" in {
-      // need a diff uri
-      val m2rMap = Map("uri" -> newOntUri(),
+      // need a diff iri
+      val m2rMap = Map("iri" -> newOntUri(),
         "name" -> "a m2r ontology",
         "userName" -> userName,
         "format" -> "m2r",
@@ -660,14 +662,14 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
       post("/ont", m2rMap, Map("file" -> m2rFile), headers = adminHeaders) {
         status must_== 201
         val res = parse(body).extract[OntologyRegistrationResult]
-        res.uri must_== m2rMap("uri")
+        res.uri must_== m2rMap("iri")
       }
     }
   }
 
-  "Get an ont with given uri (GET /ont)" should {
+  "Get an ont with given iri (GET /ont)" should {
     "return the latest version" in {
-      val map = Map("uri" -> ont1Uri, "format" -> "!md")
+      val map = Map("iri" -> ont1Uri, "format" -> "!md")
       logger.info(s"get: $map")
       get("/ont", map) {
         logger.info(s"get new entry reply: $body")
@@ -682,7 +684,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
 
     // <FORMATS>
     def doGoodFormat(reqFormat: String, expectedMimeOption: Option[String] = None) = {
-      val map = Map("uri" -> ont1Uri, "format" -> reqFormat)
+      val map = Map("iri" -> ont1Uri, "format" -> reqFormat)
       get("/ont", map) {
         val contentType = response.getContentType()
         if (status != 200) {
@@ -761,9 +763,9 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     }
   }
 
-  "Get an ont with given uri (GET /ont)" should {
+  "Get an ont with given iri (GET /ont)" should {
     "return the new latest version" in {
-      val map = Map("uri" -> ont1Uri, "format" -> "!md")
+      val map = Map("iri" -> ont1Uri, "format" -> "!md")
       logger.info(s"get: $map")
       get("/ont", map) {
         logger.info(s"get new entry reply: $body")
@@ -836,19 +838,19 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
 
   "Load an ont in triple store (POST /ts)" should {
     "fail with no credentials" in {
-      post("/ts", Map("uri" -> ont1Uri)) {
+      post("/ts", Map("iri" -> ont1Uri)) {
         status must_== 401
       }
     }
 
     "fail with regular user credentials" in {
-      post("/ts", Map("uri" -> ont1Uri), headers = userHeaders) {
+      post("/ts", Map("iri" -> ont1Uri), headers = userHeaders) {
         status must_== 403
       }
     }
 
     "succeed with admin credentials" in {
-      post("/ts", Map("uri" -> ont1Uri), headers = adminHeaders) {
+      post("/ts", Map("iri" -> ont1Uri), headers = adminHeaders) {
         //status must_== 200
         there was one(tsService).loadUri(ont1Uri)
       }
@@ -857,19 +859,19 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
 
   "Reload an ont in triple store (PUT /ts)" should {
     "fail with no credentials" in {
-      put("/ts", Map("uri" -> ont1Uri)) {
+      put("/ts", Map("iri" -> ont1Uri)) {
         status must_== 401
       }
     }
 
     "fail with regular user credentials" in {
-      put("/ts", Map("uri" -> ont1Uri), headers = userHeaders) {
+      put("/ts", Map("iri" -> ont1Uri), headers = userHeaders) {
         status must_== 403
       }
     }
 
     "succeed with admin credentials" in {
-      put("/ts", Map("uri" -> ont1Uri), headers = adminHeaders) {
+      put("/ts", Map("iri" -> ont1Uri), headers = adminHeaders) {
         //status must_== 200
         there was one(tsService).reloadUri(ont1Uri)
       }
@@ -899,19 +901,19 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
 
   "Unload an ont from triple store (DELETE /ts)" should {
     "fail with no credentials" in {
-      delete("/ts", Map("uri" -> ont1Uri)) {
+      delete("/ts", Map("iri" -> ont1Uri)) {
         status must_== 401
       }
     }
 
     "fail with regular user credentials" in {
-      delete("/ts", Map("uri" -> ont1Uri), headers = userHeaders) {
+      delete("/ts", Map("iri" -> ont1Uri), headers = userHeaders) {
         status must_== 403
       }
     }
 
     "succeed with admin credentials" in {
-      delete("/ts", Map("uri" -> ont1Uri), headers = adminHeaders) {
+      delete("/ts", Map("iri" -> ont1Uri), headers = adminHeaders) {
         //status must_== 200
         there was one(tsService).unloadUri(ont1Uri)
       }
@@ -982,7 +984,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
 
   "Delete an ont version (DELETE /ont)" should {
     "fail with no credentials" in {
-      val map = Map("uri" -> ont1Uri,
+      val map = Map("iri" -> ont1Uri,
         "version" -> registeredVersion.get,
         "userName" -> userName
       )
@@ -992,7 +994,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     }
 
     "fail with non-member of corresponding organization" in {
-      val map = Map("uri" -> ont1Uri,
+      val map = Map("iri" -> ont1Uri,
         "version" -> registeredVersion.get,
         "userName" -> userName2
       )
@@ -1002,7 +1004,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     }
 
     "succeed with member credentials" in {
-      val map = Map("uri" -> ont1Uri,
+      val map = Map("iri" -> ont1Uri,
         "version" -> registeredVersion.get,
         "userName" -> userName
       )
@@ -1016,7 +1018,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
 
   "Delete a whole ont entry (DELETE /ont/)" should {
     "fail with no credentials" in {
-      val map = Map("uri" -> ont1Uri,
+      val map = Map("iri" -> ont1Uri,
         "userName" -> userName
       )
       delete("/ont", map) {
@@ -1025,7 +1027,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     }
 
     "fail with non-member of corresponding organization" in {
-      val map = Map("uri" -> ont1Uri,
+      val map = Map("iri" -> ont1Uri,
         "userName" -> userName2
       )
       delete("/ont", map, headers = user2Headers) {
@@ -1034,7 +1036,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     }
 
     "succeed with member credentials" in {
-      val map = Map("uri" -> ont1Uri,
+      val map = Map("iri" -> ont1Uri,
         "userName" -> userName
       )
       delete("/ont", map, headers = userHeaders) {
