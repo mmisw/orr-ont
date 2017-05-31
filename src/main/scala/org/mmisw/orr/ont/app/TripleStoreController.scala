@@ -27,7 +27,7 @@ with Logging {
    */
   get("/") {
     logger.debug(s"GET params=$params")
-    tsService.getSize(params.get("uri").orElse(params.get("context"))) match {
+    tsService.getSize(params.get("iri").orElse(params.get("uri").orElse(params.get("context")))) match {
       case Right(result) ⇒ result
       case Left(exc) ⇒ error(400, exc.getMessage)
     }
@@ -45,7 +45,7 @@ with Logging {
    */
   post("/") {
     logger.debug(s"POST params=$params")
-    val uri = require(params, "uri")
+    val uri = requireIriOrUri(params)
     tsService.loadUri(uri) match {
       case Right(result) ⇒ result
       case Left(exc) ⇒ error(400, exc.getMessage)
@@ -53,11 +53,11 @@ with Logging {
   }
 
   /*
-   * Reloads an ontology by given uri, or all if not uri parameter given
+   * Reloads an ontology by given iri, or all if not iri parameter given
    */
   put("/") {
     logger.debug(s"PUT params=$params")
-    val reloadResult = params.get("uri") match {
+    val reloadResult = getIriOrUri(params) match {
       case Some(uri) => tsService.reloadUri(uri)
       case None      => tsService.reloadAll()
     }
@@ -72,7 +72,7 @@ with Logging {
    */
   delete("/") {
     logger.debug(s"DELETE params=$params")
-    val reloadResult = params.get("uri") match {
+    val reloadResult = getIriOrUri(params) match {
       case Some(uri) => tsService.unloadUri(uri)
       case None      => tsService.unloadAll()
     }

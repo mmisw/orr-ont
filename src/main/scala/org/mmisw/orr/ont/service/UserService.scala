@@ -95,8 +95,8 @@ class UserService(implicit setup: Setup) extends BaseService(setup) with Logging
       update = update.copy(password = map("encPassword"))
     }
 
-    if (map.contains("ontUri")) {
-      update = update.copy(ontUri = map.get("ontUri"))
+    map.get("ontIri") orElse map.get("ontUri") foreach { x ⇒
+      update = update.copy(ontUri = Some(x))
     }
 
     registered foreach {u => update = update.copy(registered = u)}

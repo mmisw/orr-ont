@@ -286,7 +286,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     if (ontDAO.findOneById(uri).isDefined) throw OntologyAlreadyRegistered(uri)
 
-    validateUri(uri)
+    ontUtil.validateIri(uri)
 
     val md = writeOntologyFile(uri, originalUriOpt, version, ontFileWriter)
 
@@ -316,7 +316,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
           s"""
             |The following ontology has been registered:
             |
-            | URI: $uri
+            | IRI: $uri
             | ${getResolveWith(uri)}
             | Name: ${ontVersion.name}
             | Version: $version
@@ -390,7 +390,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
           s"""
              |A new ontology version has been registered:
              |
-             | URI: $uri
+             | IRI: $uri
              | ${getResolveWith(uri)}
              | Name: ${ontVersion.name}
              | Version: $version
@@ -623,11 +623,13 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   }
 
   /**
-    * @return Empty string if uri is self-resolvable; otherwise: "Resolve with: &lt;url?uri=uri>",
+    * @return Empty string if uri is self-resolvable; otherwise: "Resolve with: myUrl/?iri=iri",
     */
-  private def getResolveWith(uri: String): String = {
+  private def getResolveWith(iri: String): String = {
     val myUrl = setup.cfg.deployment.url + "/"
-    if (uri.startsWith(myUrl)) "" else s"Resolve with: $myUrl?uri=${uri.replace("#", "%23")}"
+    if (iri.startsWith(myUrl)) ""
+    else s"Resolve with: $myUrl?iri=${iri.replace("#", "%23")}"
+    // TODO check https-http scheme change
   }
 
   private def doDeleteOntology(ont: Ontology): OntologyRegistrationResult = {
@@ -665,14 +667,6 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
   private def verifyUserIsOwner(ownerUserName: String, userName: String): Unit = {
     if (ownerUserName != userName) throw NotOntOwner(userName)
-  }
-
-  private def validateUri(uri: String) {
-    try new URI(uri)
-    catch {
-      case e: URISyntaxException => throw InvalidUri(uri, e.getMessage)
-    }
-    if (uri.contains("|")) throw InvalidUri(uri, "cannot contain the '|' character")
   }
 
   def saveUploadedOntologyFile(userName: String, ontFileWriter: OntFileWriter)

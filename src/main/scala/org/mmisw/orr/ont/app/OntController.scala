@@ -98,7 +98,7 @@ class OntController(implicit setup: Setup,
    */
   post("/") {
     val uri            = requireIriOrUriParam()
-    val originalUriOpt = getParam("originalUri")  // for fully-hosted mode
+    val originalUriOpt = getParam("originalIri") orElse getParam("originalUri")  // for fully-hosted mode
     val name           = requireParam("name")
     val orgNameOpt     = getParam("orgName")
     val logOpt         = getParam("log")
@@ -142,7 +142,7 @@ class OntController(implicit setup: Setup,
    */
   put("/") {
     val uri            = requireIriOrUriParam()
-    val originalUriOpt = getParam("originalUri")  // for fully-hosted mode
+    val originalUriOpt = getParam("originalIri") orElse getParam("originalUri")  // for fully-hosted mode
     val versionOpt     = getParam("version")
     val logOpt         = getParam("log")
     val versionVisibilityOpt = getVisibilityParam
@@ -191,16 +191,16 @@ class OntController(implicit setup: Setup,
    * TODO preliminary ...
    */
   post("/term") {
-    val vocUri       = requireParam("vocUri")
+    val vocUri       = getParam("vocIri").getOrElse(getParam("vocUri").getOrElse(missing("vocIri")))
     val versionOpt   = getParam("version")
-    val classUriOpt  = getParam("classUri")
+    val classUriOpt  = getParam("classIri") orElse getParam("classUri")
     val termNameOpt  = getParam("termName")
-    val termUriOpt   = getParam("termUri")
+    val termUriOpt   = getParam("termIri") orElse getParam("termUri")
     val map = body()
     val attributesParam = getArray(map, "attributes")
 
     if (termNameOpt.isDefined == termUriOpt.isDefined)
-      error(400, s"One of termName and termUri must be given")
+      error(400, s"One of termName and termIri must be given")
 
     val attributes = attributesParam map { a ⇒
       if (!a.isInstanceOf[JArray]) error(400, "'attributes' must be an array or arrays")
@@ -399,7 +399,7 @@ class OntController(implicit setup: Setup,
         loadOntologyInTripleStore(uri, reload = false)
         ontologyResult
 
-      case Failure(exc: InvalidUri) => error(400, exc.details)
+      case Failure(exc: InvalidIri) => error(400, exc.details)
       case Failure(exc: OntologyAlreadyRegistered) => error(409, exc.details)
 
       case Failure(exc: Problem) => error500(exc)

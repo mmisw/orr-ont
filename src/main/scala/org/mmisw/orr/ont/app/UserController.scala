@@ -176,7 +176,7 @@ class UserController(implicit setup: Setup,
     val lastName  = require(map, "lastName")
     val password  = require(map, "password")
     val phone     = getString(map, "phone")
-    val ontUri    = getString(map, "ontUri")
+    val ontUri    = getString(map, "ontIri") orElse getString(map, "ontUri")
 
     Created(createUser(userName, email, firstName, lastName, password, phone, ontUri))
   }
