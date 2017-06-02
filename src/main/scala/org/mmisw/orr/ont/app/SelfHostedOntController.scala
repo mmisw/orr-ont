@@ -79,7 +79,7 @@ class SelfHostedOntController(implicit setup: Setup,
     }
 
     if (hasIndexHtml) {
-      val isUiResource = List("/vendor", "/js", "/img", "/css") exists pathInfo.startsWith
+      val isUiResource = List("/vendor", "/js", "/img", "/css", "/fonts") exists pathInfo.startsWith
 
       if (isUiResource || pathInfo == "/sparql" || pathInfo == "/sparql/") {
         servletContext.getNamedDispatcher("default").forward(adjustedRequest(request), response)
@@ -170,6 +170,7 @@ class SelfHostedOntController(implicit setup: Setup,
   }
 
   private def looksLikeWebAppResource(pathInfo: String): Boolean = {
-    List(".html", ".js", ".css", ".map", ".woff2", ".woff").exists(pathInfo.endsWith)
+    List(".html", ".js", ".css", ".map", ".woff2", ".woff").exists(pathInfo.endsWith) ||
+    List(".woff2?", ".woff?").exists(pathInfo.contains)
   }
 }

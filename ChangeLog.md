@@ -1,5 +1,9 @@
 ## change log ##
 
+* 2017-06-01:  3.6.1
+  - adjustment is self-resolution of html page so minified webapp resolves fonts
+    TODO dispatch `indexdev.html`
+  
 * 2017-05-31:  3.6.0
   - resolve #32 "URIs should be IRIs"
     - accept "iri" parameter in all http requests accepting the traditional "uri" parameter
