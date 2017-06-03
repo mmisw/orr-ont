@@ -2,6 +2,9 @@
 
 * 2017-06-02:  3.6.2
   - initial implementation re #50 "term search and other queries"
+    - `containing=string[&in=spo][&limit=7]` `in=s` (subject) by default
+    - `skosMatch=termIri&relation=relatedMatch[&limit=7]`
+    - `sameAs=termIri[&limit=7]`
   - note: tentatively using scalaj-http (somehow to compare with Dispatch)
 
 * 2017-06-01:  3.6.1

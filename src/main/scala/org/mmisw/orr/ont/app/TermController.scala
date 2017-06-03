@@ -18,7 +18,8 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
     }
 
     params.get("containing") match {
-      case Some(containing) ⇒ queryContaining(containing)
+      case Some(containing) ⇒
+        queryContaining(containing, params.get("in").getOrElse("s"))
 
       case None => params.get("skosMatch") match {
         case Some(termIri) ⇒ querySkosRelation(termIri, require(params, "relation"))
@@ -34,17 +35,29 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
 
   ///////////////////////////////////////////////////////////////////////////
 
-  private def queryContaining(containing: String)
+  private def queryContaining(containing: String, in: String)
                              (implicit limitOpt: Option[Int] = None): String = {
-    doQuery(s"""select distinct ?subject ?predicate ?object
+
+    var ors = List()
+    if (ors.contains("s")) {
+      ors :+= s"""(regex(str(?subject), "$containing[^/#]*$$", "i")"""
+    }
+    if (ors.contains("p")) {
+      ors :+= s"""regex(str(?predicate), "$containing", "i")"""
+    }
+    if (ors.contains("o")) {
+      ors :+= s"""regex(str(?object), "$containing", "i")"""
+    }
+    var query = s"""select distinct ?subject ?predicate ?object
                |where {
                | ?subject ?predicate ?object.
-               | filter (regex(str(?subject), "$containing[^/#]*$$", "i")
-               |      || regex(str(?object), "$containing", "i"))
+               | filter (${ors.mkString("||")})
                |}
                |order by ?subject
                |$limitFragment
-      """.stripMargin.trim)
+      """.stripMargin.trim
+
+    doQuery(query)
   }
 
   private def querySkosRelation(termIri: String, relation: String)
@@ -88,7 +101,8 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
                     |""".stripMargin)
 
     if (response.code == 200) response.body
-    else error(response.code, response.statusLine)
+    else error(response.code, Seq(
+      ("error", response.statusLine), ("message", response.body)))
   }
 
   private def limitFragment(implicit limitOpt: Option[Int] = None): String =
