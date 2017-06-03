@@ -18,6 +18,8 @@
             http get 'https://mmisw.org/ont/api/v0/term?predicate=owl:sameAs&subject=http://www.cuahsi.org/watqualsyn%23redoxPotential'
             http get 'https://mmisw.org/ont/api/v0/term?predicate=http://purl.org/dc/terms/description&subject=http://www.w3.org/ns/ssn/'
   
+  - use client's accept header only if one is provided, otherwise, force application/json
+    (multiple accept headers is good indication that request is from typical browser).
   - also discard client accept header related with "html", so the default request is for JSON
     even if client is a typical browser
   - note: tentatively using scalaj-http (somehow to compare with Dispatch)
