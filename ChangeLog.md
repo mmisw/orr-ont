@@ -3,18 +3,19 @@
 * 2017-06-03:  3.6.2
   - resolve #50 "term search and other queries"
     - `containing=string[&in=spo]` in subject, `in=s`, by default
-    - `skosPredicate=relatedMatch&subject=termIri`
-    - `owlPredicate=sameAs&subject=termIri`
-    - `rdfsPredicate=isDefinedBy&subject=termIri`
-    - `rdfPredicate=type&subject=termIri`
-    - `predicate=predicateURI&subject=termIri`
+    - `predicate=skos:relatedMatch&subject=termIri`
+    - `predicate=owl:sameAs&subject=termIri`
+    - `predicate=rdfs:isDefinedBy&subject=termIri`
+    - `predicate=rdf:type&subject=termIri`
+    - `predicate=predicateURI&subject=termIri`  
+      (full predicate URI assumed when not recognized by prefix)
     - all of above can have `&limit=number` (default limit, 10)
   - examples:
  
             http get 'https://mmisw.org/ont/api/v0/term?containing=sensor&in=s&limit=2'
-            http get 'https://mmisw.org/ont/api/v0/term?skosPredicate=exactMatch&subject=http://mmisw.org/ont/mmi/platform/AirAndOuterSpaceBasedPlatform'
-            http get 'https://mmisw.org/ont/api/v0/term?skosPredicate=relatedMatch&subject=http://mmisw.org/ont/ioos/parameter/air_temperature'
-            http get 'https://mmisw.org/ont/api/v0/term?owlPredicate=sameAs&subject=http://www.cuahsi.org/watqualsyn%23redoxPotential'
+            http get 'https://mmisw.org/ont/api/v0/term?predicate=skos:exactMatch&subject=http://mmisw.org/ont/mmi/platform/AirAndOuterSpaceBasedPlatform'
+            http get 'https://mmisw.org/ont/api/v0/term?predicate=skos:relatedMatch&subject=http://mmisw.org/ont/ioos/parameter/air_temperature'
+            http get 'https://mmisw.org/ont/api/v0/term?predicate=owl:sameAs&subject=http://www.cuahsi.org/watqualsyn%23redoxPotential'
             http get 'https://mmisw.org/ont/api/v0/term?predicate=http://purl.org/dc/terms/description&subject=http://www.w3.org/ns/ssn/'
   
   - note: tentatively using scalaj-http (somehow to compare with Dispatch)

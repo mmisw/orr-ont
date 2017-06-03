@@ -23,39 +23,24 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
         queryContaining(containing, params.get("in").getOrElse("s"))
 
       case None ⇒
+        val predicate = params.getOrElse("predicate", error(400, "missing recognized parameter"))
         implicit val subObOpts = (params.get("subject"), params.get("object"))
-
         subObOpts._1 orElse subObOpts._2 orElse error(400, "one of subject or object must be provided")
 
-        params.get("skosPredicate") match {
-          case Some(predicate) ⇒
-            queryPrefixedPredicate("skos", SKOS.uri, predicate)
-
-          case None ⇒
-            params.get("owlPredicate") match {
-              case Some(predicate) ⇒
-                queryPrefixedPredicate("owl", OWL.NS, predicate)
-
-              case None ⇒
-                params.get("rdfsPredicate") match {
-                  case Some(predicate) ⇒
-                    queryPrefixedPredicate("rdfs", RDFS.uri, predicate)
-
-                  case None ⇒
-                    params.get("rdfPredicate") match {
-                      case Some(predicate) ⇒
-                        queryPrefixedPredicate("rdf", RDF.uri, predicate)
-
-                      case None ⇒
-                        params.get("predicate") match {
-                          case Some(predicate) ⇒
-                            queryPredicate(predicate)
-
-                          case None ⇒ error(400, "missing recognized parameter")
-                        }
-                    }
-                }
-            }
+        if (predicate.startsWith("skos:")) {
+          queryPrefixedPredicate("skos", SKOS.uri, predicate)
+        }
+        else if (predicate.startsWith("owl:")) {
+          queryPrefixedPredicate("owl", OWL.NS, predicate)
+        }
+        else if (predicate.startsWith("rdfs:")) {
+          queryPrefixedPredicate("rdfs", RDFS.uri, predicate)
+        }
+        else if (predicate.startsWith("rdf:")) {
+          queryPrefixedPredicate("rdf", RDF.uri, predicate)
+        }
+        else {
+          queryPredicate(predicate)
         }
     }
   }
@@ -101,8 +86,8 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
       s" subjectOpt=$subjectOpt prefixedPredicate=$prefixedPredicate objectOpt=$objectOpt limit=$limit")
 
     val (select, where, order) = subjectOpt match {
-      case Some(subject) ⇒ ("?object",  s"<$subject> $prefix:$prefixedPredicate ?object.",            "?subject")
-      case None          ⇒ ("?subject", s"?subject   $prefix:$prefixedPredicate <${objectOpt.get}>.", "?object")
+      case Some(subject) ⇒ ("?object",  s"<$subject> $prefixedPredicate ?object.",            "?subject")
+      case None          ⇒ ("?subject", s"?subject   $prefixedPredicate <${objectOpt.get}>.", "?object")
     }
     doQuery(s"""prefix $prefix: <$prefixValue>
                |select distinct $select
