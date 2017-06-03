@@ -75,6 +75,13 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
   private def doQuery(query: String): String = {
     val sparqlEndpoint = setup.cfg.agraph.sparqlEndpoint
     val response: HttpResponse[String] = Http(sparqlEndpoint).param("query", query).asString
+    if (logger.underlying.isDebugEnabled()) {
+      logger.debug(s"""doQuery: query=$query
+                      | response:
+                      |   status=${response.code}
+                      |   body=${response.body}
+                         """.stripMargin)
+    }
     if (response.code == 200) response.body
     else error(response.code, response.statusLine)
   }
