@@ -1,7 +1,5 @@
 package org.mmisw.orr.ont.app
 
-import java.util.regex.Pattern
-
 import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import org.mmisw.orr.ont._
 
@@ -38,12 +36,11 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
 
   private def queryContaining(containing: String)
                              (implicit limitOpt: Option[Int] = None): String = {
-    val escaped = escape(containing)
     doQuery(s"""select distinct ?subject ?predicate ?object
                |where {
                | ?subject ?predicate ?object.
-               | filter (regex(str(?subject), "$escaped[^/#]*$$", "i")
-               |      || regex(str(?object), "$escaped", "i"))
+               | filter (regex(str(?subject), "$containing[^/#]*$$", "i")
+               |      || regex(str(?object), "$containing", "i"))
                |}
                |order by ?subject
                |${limitOpt.map(lim ⇒ s"limit " + lim)}
@@ -86,5 +83,4 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
     else error(response.code, response.statusLine)
   }
 
-  private def escape(string: String): String = Pattern.quote(string)
 }
