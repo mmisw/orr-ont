@@ -43,7 +43,7 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
                |      || regex(str(?object), "$containing", "i"))
                |}
                |order by ?subject
-               |${limitOpt.map(lim ⇒ s"limit " + lim)}
+               |$limitFragment
       """.stripMargin.trim)
   }
 
@@ -55,7 +55,7 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
                | ?<$termIri> $relation ?object.
                |}
                |order by ?object
-               |${limitOpt.map(lim ⇒ s"limit " + lim)}
+               |$limitFragment
       """.stripMargin.trim)
 
   private def querySameAs(termIri: String)
@@ -66,7 +66,7 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
                | ?<$termIri> owl:sameAs ?object.
                |}
                |order by ?object
-               |${limitOpt.map(lim ⇒ s"limit " + lim)}
+               |$limitFragment
       """.stripMargin.trim)
 
   private def doQuery(query: String): String = {
@@ -82,5 +82,8 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
     if (response.code == 200) response.body
     else error(response.code, response.statusLine)
   }
+
+  private def limitFragment(implicit limitOpt: Option[Int] = None): String =
+    limitOpt.map(lim ⇒ s"limit " + lim).getOrElse("")
 
 }
