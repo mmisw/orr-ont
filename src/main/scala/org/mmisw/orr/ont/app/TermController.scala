@@ -70,13 +70,15 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
       """.stripMargin.trim)
 
   private def doQuery(query: String): String = {
-    logger.debug(s"doQuery: query:\n\t${query.replaceAll("\n", "\n\t")}")
-
-    val clientAccepts = acceptHeader
+    val clientAccepts = acceptHeader.filterNot(_ == "*/*")
     val requestAccepts = if (clientAccepts.nonEmpty) clientAccepts else List("application/json")
+    val acceptHeaders = requestAccepts.map(a ⇒ ("Accept", a))
+
+    logger.debug(s"doQuery: acceptHeaders=$acceptHeaders query:\n\t${query.replaceAll("\n", "\n\t")}")
+
     val response: HttpResponse[String] = Http(sparqlEndpoint).
       method("GET").
-      headers(requestAccepts.map(a ⇒ ("Accept", a))).
+      headers(acceptHeaders).
       timeout(connTimeoutMs = 2000, readTimeoutMs = 20*1000).
       param("query", query).
       asString
