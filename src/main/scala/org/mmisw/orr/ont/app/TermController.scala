@@ -70,15 +70,18 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
       """.stripMargin.trim)
 
   private def doQuery(query: String): String = {
-    val sparqlEndpoint = setup.cfg.agraph.sparqlEndpoint
-    val response: HttpResponse[String] = Http(sparqlEndpoint).param("query", query).asString
-    if (logger.underlying.isDebugEnabled()) {
-      logger.debug(s"""doQuery: query=$query
-                      | response:
-                      |   status=${response.code}
-                      |   body=${response.body}
-                         """.stripMargin)
-    }
+    logger.debug(s"doQuery: query:\n\t${query.replaceAll("\n", "\n\t")}")
+
+    val response: HttpResponse[String] = Http(sparqlEndpoint).
+      method("GET").
+      timeout(connTimeoutMs = 2000, readTimeoutMs = 10*1000).
+      param("query", query).
+      asString
+
+    logger.debug(s"""response: status=${response.code} body:
+                    |\t${response.body.replaceAll("\n", "\n\t")}
+                    |""".stripMargin)
+
     if (response.code == 200) response.body
     else error(response.code, response.statusLine)
   }
@@ -86,4 +89,5 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
   private def limitFragment(implicit limitOpt: Option[Int] = None): String =
     limitOpt.map(lim ⇒ s"limit " + lim).getOrElse("")
 
+  private val sparqlEndpoint = setup.cfg.agraph.sparqlEndpoint
 }
