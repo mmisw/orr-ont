@@ -38,8 +38,9 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
   private def queryContaining(containing: String, in: String)
                              (implicit limitOpt: Option[Int] = None): String = {
 
-    var ors = List()
+    var ors = List[String]()
     if (ors.contains("s")) {
+      // TODO copied from orr-portal -- why the trailing restriction?
       ors :+= s"""(regex(str(?subject), "$containing[^/#]*$$", "i")"""
     }
     if (ors.contains("p")) {
@@ -48,16 +49,15 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
     if (ors.contains("o")) {
       ors :+= s"""regex(str(?object), "$containing", "i")"""
     }
-    var query = s"""select distinct ?subject ?predicate ?object
+
+    doQuery(s"""select distinct ?subject ?predicate ?object
                |where {
                | ?subject ?predicate ?object.
                | filter (${ors.mkString("||")})
                |}
                |order by ?subject
                |$limitFragment
-      """.stripMargin.trim
-
-    doQuery(query)
+      """.stripMargin.trim)
   }
 
   private def querySkosRelation(termIri: String, relation: String)
