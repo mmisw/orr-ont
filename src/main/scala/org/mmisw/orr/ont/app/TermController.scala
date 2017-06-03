@@ -101,8 +101,8 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
       s" subjectOpt=$subjectOpt prefixedPredicate=$prefixedPredicate objectOpt=$objectOpt limit=$limit")
 
     val (select, where, order) = subjectOpt match {
-      case Some(subject) ⇒ ("?object",  s"<$subject> $prefixedPredicate ?object.",            "?subject")
-      case None          ⇒ ("?subject", s"?subject   $prefixedPredicate <${objectOpt.get}>.", "?object")
+      case Some(subject) ⇒ ("?object",  s"<$subject> $prefix:$prefixedPredicate ?object.",            "?subject")
+      case None          ⇒ ("?subject", s"?subject   $prefix:$prefixedPredicate <${objectOpt.get}>.", "?object")
     }
     doQuery(s"""prefix $prefix: <$prefixValue>
                |select distinct $select
