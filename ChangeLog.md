@@ -1,5 +1,9 @@
 ## change log ##
 
+* 2017-06-02:  3.6.2
+  - initial implementation re #50 "term search and other queries"
+  - note: tentatively using scalaj-http (somehow to compare with Dispatch)
+
 * 2017-06-01:  3.6.1
   - adjustment is self-resolution of html page so minified webapp resolves fonts
     TODO dispatch `indexdev.html`
