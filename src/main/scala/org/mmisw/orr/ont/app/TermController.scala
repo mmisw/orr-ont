@@ -42,7 +42,7 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
     var ors = collection.mutable.ListBuffer[String]()
     if (in.contains("s")) {
       // TODO copied from orr-portal -- what's the restriction about?
-      ors += s"""(regex(str(?subject), "$containing[^/#]*$$", "i")"""
+      ors += s"""regex(str(?subject), "$containing[^/#]*$$", "i")"""
     }
     if (in.contains("p")) {
       ors += s"""regex(str(?predicate), "$containing", "i")"""
