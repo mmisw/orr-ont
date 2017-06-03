@@ -118,7 +118,7 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
   }
 
   private def doQuery(query: String): String = {
-    val clientAccepts = acceptHeader.filterNot(_ == "*/*")
+    val clientAccepts = acceptHeader.filterNot(h ⇒ h == "*/*" || h.contains("html"))
     val requestAccepts = if (clientAccepts.nonEmpty) clientAccepts else List("application/json")
     val acceptHeaders = requestAccepts.map(a ⇒ ("Accept", a))
 
