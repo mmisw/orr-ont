@@ -38,7 +38,7 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
   private def queryContaining(containing: String, in: String)
                              (implicit limit: Int): String = {
 
-    logger.debug(s"queryContaining: $containing  in=$in")
+    logger.debug(s"queryContaining: $containing in=$in limit=$limit")
     var ors = collection.mutable.ListBuffer[String]()
     if (in.contains("s")) {
       // TODO copied from orr-portal -- what's the restriction about?
@@ -65,26 +65,30 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
   }
 
   private def querySkosRelation(termIri: String, relation: String)
-                               (implicit limit: Int): String =
+                               (implicit limit: Int): String = {
+    logger.debug(s"querySkosRelation: termIri=$termIri relation=$relation limit=$limit")
     doQuery(s"""prefix skos: <http://www.w3.org/2004/02/skos/core#>
                |select distinct ?object
                |where {
-               | ?<$termIri> $relation ?object.
+               | <$termIri> skos:$relation ?object.
                |}
                |order by ?object
                |$limitFragment
       """.stripMargin.trim)
+  }
 
   private def querySameAs(termIri: String)
-                         (implicit limit: Int): String =
+                         (implicit limit: Int): String = {
+    logger.debug(s"querySameAs: termIri=$termIri limit=$limit")
     doQuery(s"""prefix owl: <http://www.w3.org/2002/07/owl#>
                |select distinct ?object
                |where {
-               | ?<$termIri> owl:sameAs ?object.
+               | <$termIri> owl:sameAs ?object.
                |}
                |order by ?object
                |$limitFragment
       """.stripMargin.trim)
+  }
 
   private def doQuery(query: String): String = {
     val clientAccepts = acceptHeader.filterNot(_ == "*/*")
