@@ -19,8 +19,6 @@
   
   - use client's accept header only if one is provided, otherwise, force application/json
     (multiple accept headers is good indication that request is from typical browser).
-  - also discard client accept header related with "html", so the default request is for JSON
-    even if client is a typical browser
   - note: tentatively using scalaj-http (somehow to compare with Dispatch)
 
 * 2017-06-01:  3.6.1
