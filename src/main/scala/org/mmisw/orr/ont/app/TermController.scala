@@ -21,15 +21,19 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
       case Some(containing) ⇒
         queryContaining(containing, params.get("in").getOrElse("s"))
 
-      case None => params.get("skosMatch") match {
-        case Some(termIri) ⇒ querySkosRelation(termIri, require(params, "relation"))
-
-        case None ⇒ params.get("sameAs") match {
-          case Some(termIri) ⇒ querySameAs(termIri)
-
-          case None ⇒ error(400, "missing recognized parameter")
+      case None =>
+        val keys = params.keySet
+        val skosPreds = keys.filter(_.startsWith("skos:"))
+        if (skosPreds.nonEmpty) {
+          if (skosPreds.size > 1) error(400, "at most one skos:* parameter expected")
+          val skosPred = skosPreds.head
+          val termIri = params(skosPred)
+          querySkosRelation(termIri, skosPred)
         }
-      }
+        else {
+          val termIri = params.getOrElse("sameAs", error(400, "missing recognized parameter"))
+          querySameAs(termIri)
+        }
     }
   }
 
@@ -64,13 +68,13 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
       """.stripMargin.trim)
   }
 
-  private def querySkosRelation(termIri: String, relation: String)
+  private def querySkosRelation(termIri: String, skosPred: String)
                                (implicit limit: Int): String = {
-    logger.debug(s"querySkosRelation: termIri=$termIri relation=$relation limit=$limit")
+    logger.debug(s"querySkosRelation: termIri=$termIri skosPred=$skosPred limit=$limit")
     doQuery(s"""prefix skos: <http://www.w3.org/2004/02/skos/core#>
                |select distinct ?object
                |where {
-               | <$termIri> skos:$relation ?object.
+               | <$termIri> $skosPred ?object.
                |}
                |order by ?object
                |$limitFragment

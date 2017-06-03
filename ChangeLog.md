@@ -1,15 +1,15 @@
 ## change log ##
 
-* 2017-06-02:  3.6.2
+* 2017-06-03:  3.6.2
   - resolve #50 "term search and other queries"
     - `containing=string[&in=spo][&limit=7]` `in=s` (subject) by default
-    - `skosMatch=termIri&relation=relatedMatch[&limit=7]`
+    - `skos:relatedMatch=termIri[&limit=7]`
     - `sameAs=termIri[&limit=7]`
   - examples:
-    - `http -v get 'https://mmisw.org/ont/api/v0/term?containing=sensor&in=s&limit=2'`
-    - `http -v get 'https://mmisw.org/ont/api/v0/term?skosMatch=http://mmisw.org/ont/mmi/platform/AirAndOuterSpaceBasedPlatform&relation=exactMatch'`
-    - `http -v get 'https://mmisw.org/ont/api/v0/term?skosMatch=http://mmisw.org/ont/ioos/parameter/air_temperature&relation=relatedMatch`
-    - `http -v get 'https://mmisw.org/ont/api/v0/term?sameAs=http://www.cuahsi.org/watqualsyn%23redoxPotential'`
+    - `http get 'https://mmisw.org/ont/api/v0/term?containing=sensor&in=s&limit=2'`
+    - `http get 'https://mmisw.org/ont/api/v0/term?skos:exactMatch=http://mmisw.org/ont/mmi/platform/AirAndOuterSpaceBasedPlatform'`
+    - `http get 'https://mmisw.org/ont/api/v0/term?skos:relatedMatch=http://mmisw.org/ont/ioos/parameter/air_temperature'`
+    - `http get 'https://mmisw.org/ont/api/v0/term?sameAs=http://www.cuahsi.org/watqualsyn%23redoxPotential'`
   - note: tentatively using scalaj-http (somehow to compare with Dispatch)
 
 * 2017-06-01:  3.6.1
