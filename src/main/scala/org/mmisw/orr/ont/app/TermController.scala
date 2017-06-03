@@ -1,6 +1,7 @@
 package org.mmisw.orr.ont.app
 
 import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
+import org.apache.jena.vocabulary.{OWL, RDF, RDFS, SKOS}
 import org.mmisw.orr.ont._
 
 import scalaj.http._
@@ -21,18 +22,40 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
       case Some(containing) ⇒
         queryContaining(containing, params.get("in").getOrElse("s"))
 
-      case None =>
-        val keys = params.keySet
-        val skosPreds = keys.filter(_.startsWith("skos:"))
-        if (skosPreds.nonEmpty) {
-          if (skosPreds.size > 1) error(400, "at most one skos:* parameter expected")
-          val skosPred = skosPreds.head
-          val termIri = params(skosPred)
-          querySkosRelation(termIri, skosPred)
-        }
-        else {
-          val termIri = params.getOrElse("sameAs", error(400, "missing recognized parameter"))
-          querySameAs(termIri)
+      case None ⇒
+        implicit val subObOpts = (params.get("subject"), params.get("object"))
+
+        subObOpts._1 orElse subObOpts._2 orElse error(400, "one of subject or object must be provided")
+
+        params.get("skosPredicate") match {
+          case Some(predicate) ⇒
+            queryPrefixedPredicate("skos", SKOS.uri, predicate)
+
+          case None ⇒
+            params.get("owlPredicate") match {
+              case Some(predicate) ⇒
+                queryPrefixedPredicate("owl", OWL.NS, predicate)
+
+              case None ⇒
+                params.get("rdfsPredicate") match {
+                  case Some(predicate) ⇒
+                    queryPrefixedPredicate("rdfs", RDFS.uri, predicate)
+
+                  case None ⇒
+                    params.get("rdfPredicate") match {
+                      case Some(predicate) ⇒
+                        queryPrefixedPredicate("rdf", RDF.uri, predicate)
+
+                      case None ⇒
+                        params.get("predicate") match {
+                          case Some(predicate) ⇒
+                            queryPredicate(predicate)
+
+                          case None ⇒ error(400, "missing recognized parameter")
+                        }
+                    }
+                }
+            }
         }
     }
   }
@@ -68,28 +91,43 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
       """.stripMargin.trim)
   }
 
-  private def querySkosRelation(termIri: String, skosPred: String)
-                               (implicit limit: Int): String = {
-    logger.debug(s"querySkosRelation: termIri=$termIri skosPred=$skosPred limit=$limit")
-    doQuery(s"""prefix skos: <http://www.w3.org/2004/02/skos/core#>
-               |select distinct ?object
-               |where {
-               | <$termIri> $skosPred ?object.
-               |}
-               |order by ?object
+  private def queryPrefixedPredicate(prefix: String, prefixValue: String, prefixedPredicate: String)
+                                    (implicit subObOpts: (Option[String], Option[String]),
+                                     limit: Int): String = {
+
+    val subjectOpt = subObOpts._1
+    val objectOpt = subObOpts._2
+    logger.debug(s"queryPrefixedPredicate: prefix=$prefix prefixValue=$prefixValue" +
+      s" subjectOpt=$subjectOpt prefixedPredicate=$prefixedPredicate objectOpt=$objectOpt limit=$limit")
+
+    val (select, where, order) = subjectOpt match {
+      case Some(subject) ⇒ ("?object",  s"<$subject> $prefixedPredicate ?object.",            "?subject")
+      case None          ⇒ ("?subject", s"?subject   $prefixedPredicate <${objectOpt.get}>.", "?object")
+    }
+    doQuery(s"""prefix $prefix: <$prefixValue>
+               |select distinct $select
+               |where { $where }
+               |order by $order
                |$limitFragment
       """.stripMargin.trim)
   }
 
-  private def querySameAs(termIri: String)
-                         (implicit limit: Int): String = {
-    logger.debug(s"querySameAs: termIri=$termIri limit=$limit")
-    doQuery(s"""prefix owl: <http://www.w3.org/2002/07/owl#>
-               |select distinct ?object
-               |where {
-               | <$termIri> owl:sameAs ?object.
-               |}
-               |order by ?object
+  private def queryPredicate(predicate: String)
+                            (implicit subObOpts: (Option[String], Option[String]),
+                             limit: Int): String = {
+
+    val subjectOpt = subObOpts._1
+    val objectOpt = subObOpts._2
+    logger.debug(s"queryPredicate:" +
+      s" subjectOpt=$subjectOpt predicate=$predicate objectOpt=$objectOpt limit=$limit")
+
+    val (select, where, order) = subjectOpt match {
+      case Some(subject) ⇒ ("?object",  s"<$subject> <$predicate> ?object.",            "?subject")
+      case None          ⇒ ("?subject", s"?subject   <$predicate> <${objectOpt.get}>.", "?object")
+    }
+    doQuery(s"""select distinct $select
+               |where { $where }
+               |order by $order
                |$limitFragment
       """.stripMargin.trim)
   }
