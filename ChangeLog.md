@@ -11,12 +11,11 @@
       (full predicate URI assumed when not recognized by prefix)
     - all of above can have `&limit=number` (default limit, 10)
   - examples:
- 
-            http get 'https://mmisw.org/ont/api/v0/term?containing=sensor&in=s&limit=2'
-            http get 'https://mmisw.org/ont/api/v0/term?predicate=skos:exactMatch&subject=http://mmisw.org/ont/mmi/platform/AirAndOuterSpaceBasedPlatform'
-            http get 'https://mmisw.org/ont/api/v0/term?predicate=skos:relatedMatch&subject=http://mmisw.org/ont/ioos/parameter/air_temperature'
-            http get 'https://mmisw.org/ont/api/v0/term?predicate=owl:sameAs&subject=http://www.cuahsi.org/watqualsyn%23redoxPotential'
-            http get 'https://mmisw.org/ont/api/v0/term?predicate=http://purl.org/dc/terms/description&subject=http://www.w3.org/ns/ssn/'
+    - https://mmisw.org/ont/api/v0/term?containing=sensor&in=s&limit=2
+    - https://mmisw.org/ont/api/v0/term?predicate=skos:exactMatch&subject=http://mmisw.org/ont/mmi/platform/AirAndOuterSpaceBasedPlatform
+    - https://mmisw.org/ont/api/v0/term?predicate=skos:relatedMatch&subject=http://mmisw.org/ont/ioos/parameter/air_temperature
+    - https://mmisw.org/ont/api/v0/term?predicate=owl:sameAs&subject=http://www.cuahsi.org/watqualsyn%23redoxPotential
+    - https://mmisw.org/ont/api/v0/term?predicate=http://purl.org/dc/terms/description&subject=http://www.w3.org/ns/ssn/
   
   - use client's accept header only if one is provided, otherwise, force application/json
     (multiple accept headers is good indication that request is from typical browser).
