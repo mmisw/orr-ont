@@ -38,15 +38,16 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
   private def queryContaining(containing: String, in: String)
                              (implicit limitOpt: Option[Int] = None): String = {
 
+    logger.debug(s"queryContaining: $containing  in=$in")
     var ors = collection.mutable.ListBuffer[String]()
-    if (ors.contains("s")) {
+    if (in.contains("s")) {
       // TODO copied from orr-portal -- what's the restriction about?
       ors += s"""(regex(str(?subject), "$containing[^/#]*$$", "i")"""
     }
-    if (ors.contains("p")) {
+    if (in.contains("p")) {
       ors += s"""regex(str(?predicate), "$containing", "i")"""
     }
-    if (ors.contains("o")) {
+    if (in.contains("o")) {
       ors += s"""regex(str(?object), "$containing", "i")"""
     }
     if (ors.isEmpty) {
