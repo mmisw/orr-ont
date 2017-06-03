@@ -10,8 +10,8 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
    * Term search "shortcuts"
    */
   get("/") {
-    implicit val limitOpt: Option[Int] = {
-      try params.get("limit").map(_.toInt)
+    implicit val limit: Int = {
+      try params.get("limit").getOrElse("10").toInt
       catch {
         case e: NumberFormatException ⇒ error(400, e.getMessage)
       }
@@ -36,7 +36,7 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
   ///////////////////////////////////////////////////////////////////////////
 
   private def queryContaining(containing: String, in: String)
-                             (implicit limitOpt: Option[Int] = None): String = {
+                             (implicit limit: Int): String = {
 
     logger.debug(s"queryContaining: $containing  in=$in")
     var ors = collection.mutable.ListBuffer[String]()
@@ -65,7 +65,7 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
   }
 
   private def querySkosRelation(termIri: String, relation: String)
-                               (implicit limitOpt: Option[Int] = None): String =
+                               (implicit limit: Int): String =
     doQuery(s"""prefix skos: <http://www.w3.org/2004/02/skos/core#>
                |select distinct ?object
                |where {
@@ -76,7 +76,7 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
       """.stripMargin.trim)
 
   private def querySameAs(termIri: String)
-                         (implicit limitOpt: Option[Int] = None): String =
+                         (implicit limit: Int): String =
     doQuery(s"""prefix owl: <http://www.w3.org/2002/07/owl#>
                |select distinct ?object
                |where {
@@ -109,8 +109,7 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
       ("error", response.statusLine), ("message", response.body)))
   }
 
-  private def limitFragment(implicit limitOpt: Option[Int] = None): String =
-    limitOpt.map(lim ⇒ s"limit " + lim).getOrElse("")
+  private def limitFragment(implicit limit: Int): String = s"limit " + limit
 
   private val sparqlEndpoint = setup.cfg.agraph.sparqlEndpoint
 }
