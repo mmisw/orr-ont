@@ -11,11 +11,13 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
    * Term search "shortcuts"
    */
   get("/") {
-    implicit val limit: Int = {
-      try params.get("limit").getOrElse("10").toInt
-      catch {
-        case e: NumberFormatException ⇒ error(400, e.getMessage)
-      }
+    implicit val offsetLimit: (Int, Int) = try {
+      val offset = params.get("offset").getOrElse("-1").toInt
+      val limit  = params.get("limit").getOrElse("30").toInt
+      (offset, limit)
+    }
+    catch {
+      case e: NumberFormatException ⇒ error(400, e.getMessage)
     }
 
     params.get("containing") match {
@@ -48,9 +50,11 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
   ///////////////////////////////////////////////////////////////////////////
 
   private def queryContaining(containing: String, in: String)
-                             (implicit limit: Int): String = {
+                             (implicit offsetLimit: (Int, Int)): String = {
 
-    logger.debug(s"queryContaining: $containing in=$in limit=$limit")
+    val (offset, limit) = offsetLimit
+    logger.debug(s"queryContaining: $containing in=$in offset=$offset limit=$limit")
+
     var ors = collection.mutable.ListBuffer[String]()
     if (in.contains("s")) {
       // TODO copied from orr-portal -- what's the restriction about?
@@ -72,18 +76,20 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
                | filter (${ors.mkString("||")})
                |}
                |order by ?subject
-               |$limitFragment
+               |$offsetLimitFragment
       """.stripMargin.trim)
   }
 
   private def queryPrefixedPredicate(prefix: String, prefixValue: String, prefixedPredicate: String)
                                     (implicit subObOpts: (Option[String], Option[String]),
-                                     limit: Int): String = {
+                                     offsetLimit: (Int, Int)): String = {
 
-    val subjectOpt = subObOpts._1
-    val objectOpt = subObOpts._2
+    val (subjectOpt, objectOpt) = subObOpts
+    val (offset, limit) = offsetLimit
+
     logger.debug(s"queryPrefixedPredicate: prefix=$prefix prefixValue=$prefixValue" +
-      s" subjectOpt=$subjectOpt prefixedPredicate=$prefixedPredicate objectOpt=$objectOpt limit=$limit")
+      s" subjectOpt=$subjectOpt prefixedPredicate=$prefixedPredicate objectOpt=$objectOpt" +
+      s" offset=$offset limit=$limit")
 
     val (select, where, order) = subjectOpt match {
       case Some(subject) ⇒ ("?object",  s"<$subject> $prefixedPredicate ?object.",            "?subject")
@@ -93,18 +99,19 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
                |select distinct $select
                |where { $where }
                |order by $order
-               |$limitFragment
+               |$offsetLimitFragment
       """.stripMargin.trim)
   }
 
   private def queryPredicate(predicate: String)
                             (implicit subObOpts: (Option[String], Option[String]),
-                             limit: Int): String = {
+                             offsetLimit: (Int, Int)): String = {
 
-    val subjectOpt = subObOpts._1
-    val objectOpt = subObOpts._2
+    val (subjectOpt, objectOpt) = subObOpts
+    val (offset, limit) = offsetLimit
+
     logger.debug(s"queryPredicate:" +
-      s" subjectOpt=$subjectOpt predicate=$predicate objectOpt=$objectOpt limit=$limit")
+      s" subjectOpt=$subjectOpt predicate=$predicate objectOpt=$objectOpt offset=$offset limit=$limit")
 
     val (select, where, order) = subjectOpt match {
       case Some(subject) ⇒ ("?object",  s"<$subject> <$predicate> ?object.",            "?subject")
@@ -113,7 +120,7 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
     doQuery(s"""select distinct $select
                |where { $where }
                |order by $order
-               |$limitFragment
+               |$offsetLimitFragment
       """.stripMargin.trim)
   }
 
@@ -139,7 +146,12 @@ class TermController(implicit setup: Setup) extends BaseController with Logging 
       ("error", response.statusLine), ("message", response.body)))
   }
 
-  private def limitFragment(implicit limit: Int): String = s"limit " + limit
+  private def offsetLimitFragment(implicit offsetLimit: (Int, Int)): String = {
+    val (offset, limit) = offsetLimit
+    s"""${if (offset > 0) s"offset " + offset else ""}
+       |${if (limit > 0)  s"limit " + limit else ""}
+       |""".stripMargin.trim
+  }
 
   private val sparqlEndpoint = setup.cfg.agraph.sparqlEndpoint
 }

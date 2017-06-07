@@ -1,5 +1,10 @@
 ## change log ##
 
+* 2017-06-06:  3.6.3
+  - `GET /term` 
+    - also accept and process `offset` parameter
+    - a bit bigger default value (30) for `limit` parameter
+
 * 2017-06-03:  3.6.2
   - resolve #50 "term search and other queries"
     - `containing=string[&in=spo]` in subject, `in=s`, by default
