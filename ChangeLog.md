@@ -1,5 +1,10 @@
 ## change log ##
 
+* 2017-07-21:  3.6.4
+  - fix #52 "ontology self-resolution handled as term request".
+    SelfHostedOntController.resolve was using `request.getRequestURL.toString`
+    for the uri instead of `setup.cfg.deployment.url + pathInfo` 
+
 * 2017-06-06:  3.6.3
   - `GET /term` 
     - also accept and process `offset` parameter
