@@ -28,12 +28,12 @@ class SelfHostedOntController(implicit setup: Setup,
       pass()
     }
 
-    val reqFormat = getRequestedFormat
+    val reqFormatOpt = getRequestedFormat
 
     if (logger.underlying.isDebugEnabled &&
       !looksLikeWebAppResource(pathInfo)) {
       logger.debug(s"""SelfHostedOntController:
-           |reqFormat              : $reqFormat
+           |reqFormatOpt           : $reqFormatOpt
            |request.pathInfo       : $pathInfo
            |request.getContextPath : ${request.getContextPath}
            |request.getRequestURI  : ${request.getRequestURI}
@@ -41,17 +41,32 @@ class SelfHostedOntController(implicit setup: Setup,
          """.stripMargin)
     }
 
-    if (!portalDispatch(pathInfo, reqFormat)) {
-      // skip leading slash if any
-      val noSlash = if (pathInfo.length() > 1) pathInfo.substring(1) else pathInfo
-      resolve(noSlash, reqFormat)
+    if (!portalDispatch(pathInfo, reqFormatOpt)) {
+      resolve(pathInfo, reqFormatOpt)
     }
+  }
+
+  private def getRequestedFormat: Option[String] = {
+    def getAcceptHeader = {
+      val ah = acceptHeader
+      if (logger.underlying.isDebugEnabled) {
+        logger.debug(s"raw Accept: ${request.headers.get("Accept")}")
+        logger.debug(s"acceptHeader: $acceptHeader")
+      }
+      ah
+    }
+    params.get("format") orElse (getAcceptHeader match {
+      case Nil | List("*/*")                      ⇒ None
+      case list if list contains "text/html"      ⇒ Some("html")
+      case list if mimeTypes.contains(list.head)  ⇒ Some(mimeTypes(list.head))
+      case _ ⇒ None
+    })
   }
 
   ///////////////////////////////////////////////////////////////////////////
 
   /** returns true only if the dispatch is completed here */
-  private def portalDispatch(pathInfo: String, reqFormat: String): Boolean = {
+  private def portalDispatch(pathInfo: String, reqFormatOpt: Option[String]): Boolean = {
     // do the special HTML dispatch below only if the "/index.html" exists under my context:
     val hasIndexHtml = Option(request.getServletContext.getRealPath("/index.html")) match {
       case Some(realPath) => new File(realPath).isFile
@@ -85,7 +100,7 @@ class SelfHostedOntController(implicit setup: Setup,
         servletContext.getNamedDispatcher("default").forward(adjustedRequest(request), response)
         true
       }
-      else if (reqFormat == "html") {
+      else if (reqFormatOpt contains "html") {
         // first, see if it is a request for organization or user:
         if (pathInfo.matches(orgOrUserPattern.regex)) {
           false  // will be dispatched as such next
@@ -106,17 +121,17 @@ class SelfHostedOntController(implicit setup: Setup,
     else false
   }
 
-  private val orgOrUserPattern = "^/?(~?)([^/]+)$".r
+  private val orgOrUserPattern = "^/+(~?)([^/]+)$".r
 
-  private def resolve(pathInfo: String, reqFormat: String) = {
-    logger.debug(s"resolve: pathInfo='$pathInfo'")
+  private def resolve(pathInfo: String, reqFormatOpt: Option[String]) = {
+    logger.debug(s"resolve: pathInfo='$pathInfo' reqFormatOpt=$reqFormatOpt")
     pathInfo match {
-      case orgOrUserPattern("", xyz)  ⇒ resolveOrgOrUser(xyz, reqFormat)
-      case orgOrUserPattern("~", xyz) ⇒ resolveUser(xyz, reqFormat)
+      case orgOrUserPattern("", xyz)  ⇒ resolveOrgOrUser(xyz, reqFormatOpt)
+      case orgOrUserPattern("~", xyz) ⇒ resolveUser(xyz)
       case _ ⇒
-        val uri = request.getRequestURL.toString
-        logger.debug(s"self-resolving '$uri' ...")
-        resolveOntOrTermUri(uri, Some(reqFormat))
+        val uri = selfUri(pathInfo)
+        logger.debug(s"resolve: self-resolving uri='$uri' ...")
+        resolveOntOrTermUri(uri, reqFormatOpt)
     }
   }
 
@@ -130,7 +145,7 @@ class SelfHostedOntController(implicit setup: Setup,
     * In the case of organization or user, a redirect is done so the actual
     * html dispatch relies on the orr-portal.
     */
-  private def resolveOrgOrUser(xyz: String, reqFormat: String) = {
+  private def resolveOrgOrUser(xyz: String, reqFormatOpt: Option[String]) = {
     logger.debug(s"resolve: xyz='$xyz'")
     orgsDAO.findOneById(xyz) match {
       case Some(org) =>
@@ -140,9 +155,9 @@ class SelfHostedOntController(implicit setup: Setup,
             redirect(setup.cfg.deployment.url + "#org/" +org.orgName)
         }
       case None =>
-        if (!resolveUser(xyz, reqFormat)) {
+        if (!resolveUser(xyz)) {
           logger.debug(s"resolveOrgOrUser: no org not user by xyz=$xyz; delegating to selfResolve")
-          selfResolve(reqFormat)
+          selfResolve(reqFormatOpt)
         }
     }
   }
@@ -150,7 +165,7 @@ class SelfHostedOntController(implicit setup: Setup,
   /**
     * Tries xyz as a userName
     */
-  private def resolveUser(xyz: String, reqFormat: String): Boolean = {
+  private def resolveUser(xyz: String): Boolean = {
     logger.debug(s"resolveUser: xyz='$xyz'")
     usersDAO.findOneById(xyz) match {
       case Some(user) =>
@@ -163,11 +178,14 @@ class SelfHostedOntController(implicit setup: Setup,
     }
   }
 
-  private def selfResolve(reqFormat: String) = {
-    val uri = request.getRequestURL.toString
-    logger.debug(s"self-resolving '$uri' ...")
-    resolveOntOrTermUri(uri, Some(reqFormat))
+  private def selfResolve(reqFormatOpt: Option[String]) = {
+    val uri = selfUri(request.pathInfo)
+    logger.debug(s"selfResolve: uri='$uri' ...")
+    resolveOntOrTermUri(uri, reqFormatOpt)
   }
+
+  private def selfUri(pathInfo: String): String =
+    setup.cfg.deployment.url + "/" + pathInfo.replaceFirst("^/+", "")
 
   private def looksLikeWebAppResource(pathInfo: String): Boolean = {
     List(".html", ".js", ".css", ".map", ".woff2", ".woff").exists(pathInfo.endsWith) ||
