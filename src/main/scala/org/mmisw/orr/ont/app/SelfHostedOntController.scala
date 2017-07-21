@@ -49,7 +49,10 @@ class SelfHostedOntController(implicit setup: Setup,
   private def getRequestedFormat: Option[String] = {
     def getAcceptHeader = {
       val ah = acceptHeader
-      if (logger.underlying.isDebugEnabled) logger.debug(s"acceptHeader: $acceptHeader")
+      if (logger.underlying.isDebugEnabled) {
+        logger.debug(s"raw Accept: ${request.headers.get("Accept")}")
+        logger.debug(s"acceptHeader: $acceptHeader")
+      }
       ah
     }
     params.get("format") orElse (getAcceptHeader match {
