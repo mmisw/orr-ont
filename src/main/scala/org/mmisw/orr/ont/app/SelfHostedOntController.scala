@@ -42,9 +42,7 @@ class SelfHostedOntController(implicit setup: Setup,
     }
 
     if (!portalDispatch(pathInfo, reqFormatOpt)) {
-      // skip leading slash if any
-      val noSlash = if (pathInfo.length() > 1) pathInfo.substring(1) else pathInfo
-      resolve(noSlash, reqFormatOpt)
+      resolve(pathInfo, reqFormatOpt)
     }
   }
 
@@ -55,9 +53,9 @@ class SelfHostedOntController(implicit setup: Setup,
       ah
     }
     params.get("format") orElse (getAcceptHeader match {
-      case Nil ⇒ None
-      case list if list contains "text/html" ⇒ Some("html")
-      case list if mimeTypes.contains(list.head) ⇒ Some(mimeTypes(list.head))
+      case Nil | List("*/*")                      ⇒ None
+      case list if list contains "text/html"      ⇒ Some("html")
+      case list if mimeTypes.contains(list.head)  ⇒ Some(mimeTypes(list.head))
       case _ ⇒ None
     })
   }
@@ -120,7 +118,7 @@ class SelfHostedOntController(implicit setup: Setup,
     else false
   }
 
-  private val orgOrUserPattern = "^/?(~?)([^/]+)$".r
+  private val orgOrUserPattern = "^/+(~?)([^/]+)$".r
 
   private def resolve(pathInfo: String, reqFormatOpt: Option[String]) = {
     logger.debug(s"resolve: pathInfo='$pathInfo' reqFormatOpt=$reqFormatOpt")
@@ -128,7 +126,7 @@ class SelfHostedOntController(implicit setup: Setup,
       case orgOrUserPattern("", xyz)  ⇒ resolveOrgOrUser(xyz, reqFormatOpt)
       case orgOrUserPattern("~", xyz) ⇒ resolveUser(xyz)
       case _ ⇒
-        val uri = setup.cfg.deployment.url + pathInfo
+        val uri = selfUri(pathInfo)
         logger.debug(s"resolve: self-resolving uri='$uri' ...")
         resolveOntOrTermUri(uri, reqFormatOpt)
     }
@@ -178,11 +176,13 @@ class SelfHostedOntController(implicit setup: Setup,
   }
 
   private def selfResolve(reqFormatOpt: Option[String]) = {
-    val pathInfo = request.pathInfo
-    val uri = setup.cfg.deployment.url + pathInfo
+    val uri = selfUri(request.pathInfo)
     logger.debug(s"selfResolve: uri='$uri' ...")
     resolveOntOrTermUri(uri, reqFormatOpt)
   }
+
+  private def selfUri(pathInfo: String): String =
+    setup.cfg.deployment.url + "/" + pathInfo.replaceFirst("^/+", "")
 
   private def looksLikeWebAppResource(pathInfo: String): Boolean = {
     List(".html", ".js", ".css", ".map", ".woff2", ".woff").exists(pathInfo.endsWith) ||
