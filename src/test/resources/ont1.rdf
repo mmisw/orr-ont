@@ -43,4 +43,12 @@
         <definition>Definition of parB</definition>
     </Parameter>
 
+    <rdf:Description rdf:about="http://something">
+        <owner>
+            <rdf:Description name="foo">
+                <homePage rdf:resource="http://foo"/>
+            </rdf:Description>
+        </owner>
+    </rdf:Description>
+
 </rdf:RDF>

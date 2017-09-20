@@ -1,5 +1,10 @@
 ## change log ##
 
+* 2017-09-20:  3.6.5
+  - fix #54 "enable "ttl" as a stored format"
+  - `test/rtesources/ont1.rdf`: add some blank node, mainly to inspect
+    that nesting is used in ttl and trig (per jena capabilities)
+
 * 2017-07-21:  3.6.4
   - fix #52 "ontology self-resolution handled as term request".
     SelfHostedOntController.resolve was using `request.getRequestURL.toString`

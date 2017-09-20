@@ -69,8 +69,7 @@ object ontUtil extends AnyRef with Logging {
     } yield doIt(fromLang, toLang)
   }
 
-  // TODO review along with mapping in storedFormat method
-  val storedFormats = List("rdf", "owl", "n3", "owx", "jsonld", "v2r", "m2r")
+  val storedFormats = List("rdf", "owl", "n3", "ttl", "owx", "jsonld", "v2r", "m2r")
 
   // for the files actually stored
   def storedFormat(format: String): String = format.toLowerCase match {
@@ -79,7 +78,8 @@ object ontUtil extends AnyRef with Logging {
     case "m2r"              => "m2r"
     case "owl"  | "rdf"     => "rdf"
     case "json" | "jsonld"  => "jsonld"
-    case "ttl"  | "n3"      => "n3"
+    case "n3"               => "n3"
+    case "ttl"              => "ttl"
     case f => f   // TODO explicitly include other formats we are providing, "rj",
   }
 
