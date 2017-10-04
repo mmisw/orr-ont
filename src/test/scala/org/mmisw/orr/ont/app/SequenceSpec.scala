@@ -490,8 +490,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   }
 
   "Upload file with '_guess' format (POST /ont/upload)" should {
-    "succeed for N3 contents and return expected info" in {
-      val file = new File("src/test/resources/core_variable.n3")
+    "succeed for Turtle contents and return expected info" in {
+      val file = new File("src/test/resources/core_variable.ttl")
       post("/ont/upload", Map("format" -> "_guess", "visibility" -> "public"),
         Map("file" -> file), headers = userHeaders
       ) {
@@ -501,7 +501,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         val uploadedFileInfo = parse(b).extract[UploadedFileInfo]
         println(s"uploadedFileInfo=$uploadedFileInfo")
         uploadedFileInfo.userName must_== userName
-        uploadedFileInfo.format must_== "n3"
+        uploadedFileInfo.format must_== "ttl"
       }
     }
     "succeed for RDF contents and return expected info" in {
