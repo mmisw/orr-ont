@@ -28,7 +28,7 @@ case class PossibleOntologyInfo(explanations: List[String],
 object ontFileLoader extends AnyRef with Logging {
 
   // preference for Jena handling, so we put "owx" (ie., which uses OWL API) at the end.
-  val fileTypesForRecognition = List("rdf", "n3", "nt", "ttl", "rj", "jsonld", "owx")
+  val fileTypesForRecognition = List("rdf", "ttl", "n3", "nt", "rj", "jsonld", "owx")
 
   def loadOntModel(file: File, fileType: String = "_guess"): OntModelLoadedResult = {
     if (fileType == "_guess") {

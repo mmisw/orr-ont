@@ -1,5 +1,8 @@
 ## change log ##
 
+* 2017-10-04:  3.6.6
+  - preference for "ttl" over "n3" in fileTypesForRecognition
+
 * 2017-09-20:  3.6.5
   - fix #54 "enable "ttl" as a stored format"
   - `test/rtesources/ont1.rdf`: add some blank node, mainly to inspect
