@@ -1,6 +1,9 @@
 ## change log ##
 
 * 2017-10-04:  3.6.6
+  - use 'construct' query for term request with 'ttl' as desired format.
+    This is, 'text/turtle' as accept header against triple store 
+    (not application/sparql-results+ttl)
   - preference for "ttl" over "n3" in fileTypesForRecognition
 
 * 2017-09-20:  3.6.5
