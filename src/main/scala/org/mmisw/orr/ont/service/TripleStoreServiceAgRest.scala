@@ -449,6 +449,7 @@ with TripleStoreService with Logging {
           "application/rdf+xml",
           "text/x-nquads",
           "application/trix",
+          "text/turtle",
           "text/rdf+n3",
           "application/x-quints+json",
           "text/integer"

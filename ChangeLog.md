@@ -1,6 +1,7 @@
 ## change log ##
 
 * 2017-10-04:  3.6.6
+  - for ttl term request, also handle explicit accept header "text/turtle"
   - use 'construct' query for term request with 'ttl' as desired format.
     This is, 'text/turtle' as accept header against triple store 
     (not application/sparql-results+ttl)
