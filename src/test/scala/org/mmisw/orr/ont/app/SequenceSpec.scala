@@ -422,7 +422,8 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   }
 
   val ont1File = new File("src/test/resources/ont1.rdf")
-  val ont1Uri  = "http://example.org/ont1"
+  val ont1Uri      = "http://example.org/ont1"
+  val ont1UriHttps = "https://example.org/ont1"
   val format = "rdf"
   val map0 = Map("format" -> format, "visibility" -> "public")
   var uploadedFileInfoOpt: Option[UploadedFileInfo] = None
@@ -765,6 +766,22 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   "Get an ont with given iri (GET /ont)" should {
     "return the new latest version" in {
       val map = Map("iri" -> ont1Uri, "format" -> "!md")
+      logger.info(s"get: $map")
+      get("/ont", map) {
+        logger.info(s"get new entry reply: $body")
+        status must_== 200
+        val res = parse(body).extract[OntologySummaryResult]
+        res.uri must_== ont1Uri
+        res.versions.isDefined must beTrue
+        val latestVersion = res.versions.head.head
+        latestVersion.version must_== registeredVersion.get
+      }
+    }
+  }
+
+  "Get an ont with changed http scheme in iri (GET /ont)" should {
+    "succeed" in {
+      val map = Map("iri" -> ont1UriHttps, "format" -> "!md")
       logger.info(s"get: $map")
       get("/ont", map) {
         logger.info(s"get new entry reply: $body")
