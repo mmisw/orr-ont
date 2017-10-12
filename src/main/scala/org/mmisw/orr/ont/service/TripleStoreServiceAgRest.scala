@@ -6,7 +6,7 @@ import org.json4s.{DefaultFormats, Formats}
 import org.json4s.native.JsonParser
 import org.mmisw.orr.ont.{Setup, TripleStoreResult}
 import org.mmisw.orr.ont.auth.authUtil
-import org.mmisw.orr.ont.swld.ontUtil
+import org.mmisw.orr.ont.swld.{FileExt, ontUtil}
 import org.mmisw.orr.ont.util.FileUtils
 
 import scala.concurrent.Promise
@@ -369,17 +369,31 @@ with TripleStoreService with Logging {
                       ): Either[Error, TermResponse] = {
 
       formatOpt match {
-        case Some(format) =>
+        // 1. highest precedence for 'format' parameter:
+        case Some(format) ⇒
           format2accept(format) match {
-            case Some((accept, isSelect)) =>
+            case Some((accept, isSelect)) ⇒
               doRequest(uri, accept, isSelect)
-            case None =>
+            case None ⇒
               Left(NoSuchTermFormat(uri, format))
           }
 
-        case None =>
-          val (accept, isSelect) = accept2AcceptAndSelect(acceptHeader)
-          doRequest(uri, accept, isSelect)
+        case None ⇒
+          ontUtil.recognizedFileExtension(uri) match {
+            // 2. then, "file extension" if any:
+            case Some((uri2, FileExt(fileExt))) ⇒
+              format2accept(fileExt) match {
+                case Some((accept, isSelect)) ⇒
+                  doRequest(uri2, accept, isSelect)
+                case None ⇒
+                  Left(NoSuchTermFormat(uri, fileExt))
+              }
+
+            // 3. Accept header:
+            case _ ⇒
+              val (accept, isSelect) = accept2AcceptAndSelect(acceptHeader)
+              doRequest(uri, accept, isSelect)
+          }
       }
     }
 
