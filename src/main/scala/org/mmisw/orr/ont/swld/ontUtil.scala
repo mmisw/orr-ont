@@ -18,6 +18,8 @@ import scala.collection.JavaConversions._
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
+case class FileExt(fileExt: String) extends AnyVal
+
 
 object ontUtil extends AnyRef with Logging {
   val iriFactory: IRIFactory = IRIFactory.iriImplementation()
@@ -50,6 +52,18 @@ object ontUtil extends AnyRef with Logging {
     , "trig"    -> "application/trig"       // http://www.w3.org/TR/2013/WD-trig-20130409/
     , "rj"      -> "application/rdf+json"   // https://dvcs.w3.org/hg/rdf/raw-file/default/rdf-json/index.html
   )
+
+  /**
+    * If iri ends with some recognized "file type extension," eg., "http://example.net/foo.ttl"),
+    * returns Some("http://example.net/foo", FileExt("ttl")); otherwise, None.
+    */
+  def recognizedFileExtension(iri: String): Option[(String, FileExt)] = iri match {
+    case iriWithFileExt(adjustedIri, x) if mimeMappings.get(x).isDefined ⇒ Some(adjustedIri, FileExt(x))
+    case _ ⇒ None
+  }
+
+  private val iriWithFileExt = """(.+)\.([A-Za-z0-9]+)""".r
+
 
   // preliminary
   def convert(uri: String, fromFile: File, fromFormat: String, toFile: File, toFormat: String) : Option[File] = {

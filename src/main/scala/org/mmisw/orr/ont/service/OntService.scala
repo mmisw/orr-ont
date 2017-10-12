@@ -1,7 +1,6 @@
 package org.mmisw.orr.ont.service
 
 import java.io.File
-import java.net.{URI, URISyntaxException}
 
 import com.mongodb.casbah.Imports._
 import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
@@ -45,8 +44,6 @@ object OntOwner {
   }
 }
 
-case class FileExt(fileExt: String) extends AnyVal
-
 class OntService(implicit setup: Setup) extends BaseService(setup) with Logging {
 
   /**
@@ -79,7 +76,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                                                       ): Option[(Ontology, Option[FileExt])] = {
     ontDAO.findOneById(uri).map((_, None)) orElse {
       if (tryFileExtension) {
-        recognizedFileExtension(uri) flatMap { case (uri2, fileExt) =>
+        ontUtil.recognizedFileExtension(uri) flatMap { case (uri2, fileExt) =>
           logger.debug(s"resolving '$uri2' (after removing file extension .'$fileExt')")
           ontDAO.findOneById(uri2).map((_, Some(fileExt)))
         }
@@ -627,17 +624,6 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   }
 
   ///////////////////////////////////////////////////////////////////////////
-
-  /**
-    * If uri ends with some recognized "file type extension", returns
-    * Some(adjustedUri, FileExt); otherwise, None.
-    */
-  private def recognizedFileExtension(uri: String): Option[(String, FileExt)] = uri match {
-    case withFileExt(adjustedUri, extension) if
-            ontUtil.mimeMappings.get(extension).isDefined ⇒ Some(adjustedUri, FileExt(extension))
-    case _ ⇒ None
-  }
-  private val withFileExt = """(.*)\.([A-Za-z0-9]+)""".r
 
   /**
     * If uri starts with "http:" or "https:", returns a Some
