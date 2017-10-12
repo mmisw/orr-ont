@@ -56,14 +56,16 @@ with Logging {
     // try to resolve ontology, possibly with http scheme change:
     val ontologyResolvedOpt = ontService.resolveOntology(uri)
     ontologyResolvedOpt match {
-      case Some(ont) => completeOntologyUriResolution(ont, reqFormatOpt)
-      case None => resolveTermUri(uri, reqFormatOpt)
+      case Some((ont, fileExtOpt)) ⇒
+        completeOntologyUriResolution(ont, reqFormatOpt orElse fileExtOpt.map(_.fileExt))
+
+      case None ⇒ resolveTermUri(uri, reqFormatOpt)
     }
   }
 
   protected def checkOntUriExistence(uri: String): OntologySummaryResult = {
     ontService.resolveOntology(uri) match {
-      case Some(ont) ⇒
+      case Some((ont, _)) ⇒
         OntologySummaryResult(
           uri          = ont.uri,
           ownerName    = Some(ont.ownerName)
@@ -75,17 +77,22 @@ with Logging {
 
   protected def resolveOntUri(uri: String) = {
     ontService.resolveOntology(uri) match {
-      case Some(ont) => completeOntologyUriResolution(ont)
-      case None      => error(404, s"'$uri': No such ontology")
+      case Some((ont, fileExtOpt)) ⇒
+        completeOntologyUriResolution(ont, fileExtOpt.map(_.fileExt))
+
+      case None ⇒ error(404, s"'$uri': No such ontology")
     }
   }
+
+  protected def getFormatParameter: Option[String] =
+    params.get("format") orElse params.get("_format")
 
   protected def completeOntologyUriResolution(ont: Ontology, reqFormatOpt: Option[String] = None) = {
     val versionOpt: Option[String] = params.get("version")
     val (ontVersion, version) = resolveOntologyVersion(ont, versionOpt)
 
-    // format is the one given if any, or the one in the db:
-    val reqFormat = reqFormatOpt.getOrElse(params.get("format").getOrElse(ontVersion.format))
+    // format is the one given or else the 'format' parameter or else the one in the db:
+    val reqFormat = reqFormatOpt.getOrElse(getFormatParameter.getOrElse(ontVersion.format))
 
     // format=!md is our mechanism to request for metadata
 
@@ -115,7 +122,7 @@ with Logging {
   }
 
   protected def resolveTermUri(uri: String, reqFormatOpt: Option[String] = None): String = {
-    val formatOpt = reqFormatOpt orElse params.get("format")
+    val formatOpt = reqFormatOpt orElse getFormatParameter
     tsService.resolveTermUri(uri, formatOpt, acceptHeader) match {
       case Right(TermResponse(result, resultContentType)) =>
         contentType = resultContentType

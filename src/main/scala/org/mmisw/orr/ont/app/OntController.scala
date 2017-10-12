@@ -490,7 +490,7 @@ class OntController(implicit setup: Setup,
   private def getOntFileWriterForJustUploadedFile: OntFileWriter = {
     val fileItem = fileParams.getOrElse("file", missing("file"))
 
-    val format = getParam("format").getOrElse("_guess")
+    val format = getFormatParam.getOrElse("_guess")
 
     logger.debug(s"uploaded file=${fileItem.getName} size=${fileItem.getSize} format=$format")
     //val fileContents = new String(fileItem.get(), fileItem.charset.getOrElse("utf8"))
@@ -502,7 +502,7 @@ class OntController(implicit setup: Setup,
   private def getOntFileWriterForRemoteUrl: OntFileWriter = {
     val remoteUrl = requireParam("remoteUrl")
 
-    val (format, acceptList) = getParam("format") match {
+    val (format, acceptList) = getFormatParam match {
       case Some(s) if s != "_guess" ⇒
         val mimeType = ontUtil.mimeMappings.getOrElse(s, error(400, s"invalid format=$s"))
         (s, List(mimeType))
@@ -532,7 +532,7 @@ class OntController(implicit setup: Setup,
 
   private def getOntFileWriterForGivenContents: OntFileWriter = {
     val contents = requireParam("contents")
-    val format = getParam("format").getOrElse("_guess")
+    val format = getFormatParam.getOrElse("_guess")
     logger.debug(s"getOntFileWriterForGivenContents: format=$format contents=`$contents`")
     StringWriter(format, contents)
   }

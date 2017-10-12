@@ -102,6 +102,10 @@ trait OrrOntStack extends ScalatraServlet with NativeJsonSupport with CorsSuppor
     fromBody.orElse(params.get(name))
   }
 
+  /** Gets 'format' (or '_format') param from the body or from the 'params' */
+  protected def getFormatParam: Option[String] =
+    getParam("format") orElse getParam("_format")
+
   /** Requires a param from the body or from the 'params' */
   protected def requireParam(name: String): String = getParam(name).getOrElse(missing(name))
 

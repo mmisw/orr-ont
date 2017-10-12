@@ -1,5 +1,21 @@
 ## change log ##
 
+* 2017-10-11:  3.6.7
+  - as synonym of `format` parameter also accept `_format`  
+  - resolve #55 "any additional mechanisms for format/serialization resolution?"
+    - implement "file type extension" for ontology request
+    - implement "file type extension" for term request.
+      Order of precedence to determine desired format:
+        1. 'format' parameter
+        2. "file extension"
+        3. Accept header
+      Note: in contrast to the *ontology request* case, here we immediately try 
+      resolution of the uri excluding the file extension in the case of absent 
+      'format' parameter' and uri with file extension.
+      Part of the reason is that it's a bit tricky to determine whether the 
+      resolution with the file extension is actually successful or not in the sense
+      of the term actually having triples associated or simply being non existing.
+
 * 2017-10-04:  3.6.6
   - for ttl term request, also handle explicit accept header "text/turtle"
   - use 'construct' query for term request with 'ttl' as desired format.

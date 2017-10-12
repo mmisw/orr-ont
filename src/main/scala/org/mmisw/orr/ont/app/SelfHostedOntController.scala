@@ -55,7 +55,7 @@ class SelfHostedOntController(implicit setup: Setup,
       }
       ah
     }
-    params.get("format") orElse (getAcceptHeader match {
+    getFormatParameter orElse (getAcceptHeader match {
       case Nil | List("*/*")                      ⇒ None
       case list if list contains "text/html"      ⇒ Some("html")
       case list if mimeTypes.contains(list.head)  ⇒ Some(mimeTypes(list.head))
