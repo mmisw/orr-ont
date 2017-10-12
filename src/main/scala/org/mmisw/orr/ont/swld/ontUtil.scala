@@ -57,12 +57,12 @@ object ontUtil extends AnyRef with Logging {
     * If iri ends with some recognized "file type extension," eg., "http://example.net/foo.ttl"),
     * returns Some("http://example.net/foo", FileExt("ttl")); otherwise, None.
     */
-  def recognizedFileExtension(iri: String): Option[(String, FileExt)] = iri match {
+  def recognizedFileExtensionForOntology(iri: String): Option[(String, FileExt)] = iri match {
     case iriWithFileExt(adjustedIri, x) if mimeMappings.get(x).isDefined ⇒ Some(adjustedIri, FileExt(x))
     case _ ⇒ None
   }
 
-  private val iriWithFileExt = """(.+)\.([A-Za-z0-9]+)""".r
+  val iriWithFileExt = """(.+)\.([A-Za-z0-9]+)""".r
 
 
   // preliminary

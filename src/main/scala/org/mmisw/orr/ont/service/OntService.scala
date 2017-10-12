@@ -76,7 +76,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
                                                       ): Option[(Ontology, Option[FileExt])] = {
     ontDAO.findOneById(uri).map((_, None)) orElse {
       if (tryFileExtension) {
-        ontUtil.recognizedFileExtension(uri) flatMap { case (uri2, fileExt) =>
+        ontUtil.recognizedFileExtensionForOntology(uri) flatMap { case (uri2, fileExt) =>
           logger.debug(s"resolving '$uri2' (after removing file extension .'$fileExt')")
           ontDAO.findOneById(uri2).map((_, Some(fileExt)))
         }

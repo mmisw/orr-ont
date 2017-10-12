@@ -379,7 +379,7 @@ with TripleStoreService with Logging {
           }
 
         case None ⇒
-          ontUtil.recognizedFileExtension(uri) match {
+          recognizedFileExtensionForTerm(uri) match {
             // 2. then, "file extension" if any:
             case Some((uri2, FileExt(fileExt))) ⇒
               format2accept(fileExt) match {
@@ -453,6 +453,12 @@ with TripleStoreService with Logging {
         case _                     => None
       }
     }
+
+    private def recognizedFileExtensionForTerm(iri: String): Option[(String, FileExt)] = iri match {
+      case ontUtil.iriWithFileExt(adjustedIri, x) if format2accept(x).isDefined ⇒ Some(adjustedIri, FileExt(x))
+      case _ ⇒ None
+    }
+
 
     private def accept2AcceptAndSelect(acceptHeader: List[String]): AcceptAndSelect = {
       if (acceptHeader.isEmpty || acceptHeader == List("*/*")) {
