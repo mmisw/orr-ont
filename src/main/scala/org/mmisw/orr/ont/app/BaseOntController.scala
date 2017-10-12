@@ -84,12 +84,15 @@ with Logging {
     }
   }
 
+  protected def getFormatParameter: Option[String] =
+    params.get("format") orElse params.get("_format")
+
   protected def completeOntologyUriResolution(ont: Ontology, reqFormatOpt: Option[String] = None) = {
     val versionOpt: Option[String] = params.get("version")
     val (ontVersion, version) = resolveOntologyVersion(ont, versionOpt)
 
     // format is the one given or else the 'format' parameter or else the one in the db:
-    val reqFormat = reqFormatOpt.getOrElse(params.get("format").getOrElse(ontVersion.format))
+    val reqFormat = reqFormatOpt.getOrElse(getFormatParameter.getOrElse(ontVersion.format))
 
     // format=!md is our mechanism to request for metadata
 
@@ -119,7 +122,7 @@ with Logging {
   }
 
   protected def resolveTermUri(uri: String, reqFormatOpt: Option[String] = None): String = {
-    val formatOpt = reqFormatOpt orElse params.get("format")
+    val formatOpt = reqFormatOpt orElse getFormatParameter
     tsService.resolveTermUri(uri, formatOpt, acceptHeader) match {
       case Right(TermResponse(result, resultContentType)) =>
         contentType = resultContentType

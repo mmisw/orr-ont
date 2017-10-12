@@ -1,6 +1,7 @@
 ## change log ##
 
 * 2017-10-11:  3.6.7
+  - as synonym of `format` parameter also accept `_format`  
   - resolve #55 "any additional mechanisms for format/serialization resolution?"
     - implement "file type extension" for ontology request
     - implement "file type extension" for term request.
