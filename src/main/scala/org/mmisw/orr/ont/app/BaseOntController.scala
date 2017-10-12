@@ -56,14 +56,16 @@ with Logging {
     // try to resolve ontology, possibly with http scheme change:
     val ontologyResolvedOpt = ontService.resolveOntology(uri)
     ontologyResolvedOpt match {
-      case Some(ont) => completeOntologyUriResolution(ont, reqFormatOpt)
-      case None => resolveTermUri(uri, reqFormatOpt)
+      case Some((ont, fileExtOpt)) ⇒
+        completeOntologyUriResolution(ont, reqFormatOpt orElse fileExtOpt.map(_.fileExt))
+
+      case None ⇒ resolveTermUri(uri, reqFormatOpt)
     }
   }
 
   protected def checkOntUriExistence(uri: String): OntologySummaryResult = {
     ontService.resolveOntology(uri) match {
-      case Some(ont) ⇒
+      case Some((ont, _)) ⇒
         OntologySummaryResult(
           uri          = ont.uri,
           ownerName    = Some(ont.ownerName)
@@ -75,8 +77,10 @@ with Logging {
 
   protected def resolveOntUri(uri: String) = {
     ontService.resolveOntology(uri) match {
-      case Some(ont) => completeOntologyUriResolution(ont)
-      case None      => error(404, s"'$uri': No such ontology")
+      case Some((ont, fileExtOpt)) ⇒
+        completeOntologyUriResolution(ont, fileExtOpt.map(_.fileExt))
+
+      case None ⇒ error(404, s"'$uri': No such ontology")
     }
   }
 
@@ -84,7 +88,7 @@ with Logging {
     val versionOpt: Option[String] = params.get("version")
     val (ontVersion, version) = resolveOntologyVersion(ont, versionOpt)
 
-    // format is the one given if any, or the one in the db:
+    // format is the one given or else the 'format' parameter or else the one in the db:
     val reqFormat = reqFormatOpt.getOrElse(params.get("format").getOrElse(ontVersion.format))
 
     // format=!md is our mechanism to request for metadata

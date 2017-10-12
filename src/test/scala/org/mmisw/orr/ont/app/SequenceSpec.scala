@@ -683,28 +683,51 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
       }
     }
 
-    // <FORMATS>
-    def doGoodFormat(reqFormat: String, expectedMimeOption: Option[String] = None) = {
+    // <FORMATS via 'format' parameter>
+    def checkFormatViaParameter(reqFormat: String, expectedMimeOption: Option[String] = None) = {
       val map = Map("iri" -> ont1Uri, "format" -> reqFormat)
       get("/ont", map) {
         val contentType = response.getContentType()
         if (status != 200) {
-          println(s"doGoodFormat: reqFormat=$reqFormat -> status=$status contentType=$contentType  reason=${response.getReason()}")
+          println(s"checkFormatViaParameter: reqFormat=$reqFormat -> status=$status contentType=$contentType  reason=${response.getReason()}")
         }
         status must_== 200
         val expectedMime = expectedMimeOption.getOrElse(ontUtil.mimeMappings(reqFormat))
         contentType must contain(expectedMime)
       }
     }
-    "return expected file for rdf reqFormat"    in { doGoodFormat("rdf") }
-    "return expected file for jsonld reqFormat" in { doGoodFormat("jsonld") }
-    "return expected file for n3 reqFormat"     in { doGoodFormat("n3") }
-    "return expected file for ttl reqFormat"    in { doGoodFormat("ttl") }
-    "return expected file for nt reqFormat"     in { doGoodFormat("nt") }
-    "return expected file for rj reqFormat"     in { doGoodFormat("rj") }
-    "return expected file for nq reqFormat"     in { doGoodFormat("nq") }
-    "return expected file for trig reqFormat"   in { doGoodFormat("trig") }
-    // </FORMATS>
+    "return expected file for rdf reqFormat"    in { checkFormatViaParameter("rdf") }
+    "return expected file for jsonld reqFormat" in { checkFormatViaParameter("jsonld") }
+    "return expected file for n3 reqFormat"     in { checkFormatViaParameter("n3") }
+    "return expected file for ttl reqFormat"    in { checkFormatViaParameter("ttl") }
+    "return expected file for nt reqFormat"     in { checkFormatViaParameter("nt") }
+    "return expected file for rj reqFormat"     in { checkFormatViaParameter("rj") }
+    "return expected file for nq reqFormat"     in { checkFormatViaParameter("nq") }
+    "return expected file for trig reqFormat"   in { checkFormatViaParameter("trig") }
+    // </FORMATS via 'format' parameter>
+
+    // <FORMATS via file extension>
+    def checkFormatViaFileExt(reqFormat: String, expectedMimeOption: Option[String] = None) = {
+      val map = Map("iri" -> s"$ont1Uri.$reqFormat")
+      get("/ont", map) {
+        val contentType = response.getContentType()
+        if (status != 200) {
+          println(s"checkFormatViaFileExt: reqFormat=$reqFormat -> status=$status contentType=$contentType  reason=${response.getReason()}")
+        }
+        status must_== 200
+        val expectedMime = expectedMimeOption.getOrElse(ontUtil.mimeMappings(reqFormat))
+        contentType must contain(expectedMime)
+      }
+    }
+    "return expected file for rdf fileExt"    in { checkFormatViaFileExt("rdf") }
+    "return expected file for jsonld fileExt" in { checkFormatViaFileExt("jsonld") }
+    "return expected file for n3 fileExt"     in { checkFormatViaFileExt("n3") }
+    "return expected file for ttl fileExt"    in { checkFormatViaFileExt("ttl") }
+    "return expected file for nt fileExt"     in { checkFormatViaFileExt("nt") }
+    "return expected file for rj fileExt"     in { checkFormatViaFileExt("rj") }
+    "return expected file for nq fileExt"     in { checkFormatViaFileExt("nq") }
+    "return expected file for trig fileExt"   in { checkFormatViaFileExt("trig") }
+    // </FORMATS via 'format' parameter>
   }
 
   "Get ontologies with some filter parameters (GET /ont?ownerName=nn)" should {

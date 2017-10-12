@@ -45,6 +45,7 @@ object OntOwner {
   }
 }
 
+case class FileExt(fileExt: String) extends AnyVal
 
 class OntService(implicit setup: Setup) extends BaseService(setup) with Logging {
 
@@ -53,17 +54,34 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
     *
     * @param uri               Requested ontology URI
     * @param httpSchemeChange  Try http scheme change? True by default.
-    * @return                  The found ontology is any
+    * @param tryFileExtension  Try file extension? True by default.
+    * @return                  The found ontology if any, and file extension (if any given in
+    *                          requested IRI, and the ontology was found without such extension)
     */
   def resolveOntology(uri: String,
-                      httpSchemeChange: Boolean = true
-                     ): Option[Ontology] = {
+                      httpSchemeChange: Boolean = true,
+                      tryFileExtension: Boolean = true
+                     ): Option[(Ontology, Option[FileExt])] = {
 
-    ontDAO.findOneById(uri) orElse {
+    resolveOntologyPossiblyWithFileExtension(uri) orElse {
       if (httpSchemeChange) {
         replaceHttpScheme(uri) flatMap { uri2 =>
           logger.debug(s"resolving '$uri2' (after http scheme change)")
-          ontDAO.findOneById(uri2)
+          resolveOntologyPossiblyWithFileExtension(uri2)
+        }
+      }
+      else None
+    }
+  }
+
+  private def resolveOntologyPossiblyWithFileExtension(uri: String,
+                                                       tryFileExtension: Boolean = true
+                                                      ): Option[(Ontology, Option[FileExt])] = {
+    ontDAO.findOneById(uri).map((_, None)) orElse {
+      if (tryFileExtension) {
+        recognizedFileExtension(uri) flatMap { case (uri2, fileExt) =>
+          logger.debug(s"resolving '$uri2' (after removing file extension .'$fileExt')")
+          ontDAO.findOneById(uri2).map((_, Some(fileExt)))
         }
       }
       else None
@@ -609,6 +627,17 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
   }
 
   ///////////////////////////////////////////////////////////////////////////
+
+  /**
+    * If uri ends with some recognized "file type extension", returns
+    * Some(adjustedUri, FileExt); otherwise, None.
+    */
+  private def recognizedFileExtension(uri: String): Option[(String, FileExt)] = uri match {
+    case withFileExt(adjustedUri, extension) if
+            ontUtil.mimeMappings.get(extension).isDefined ⇒ Some(adjustedUri, FileExt(extension))
+    case _ ⇒ None
+  }
+  private val withFileExt = """(.*)\.([A-Za-z0-9]+)""".r
 
   /**
     * If uri starts with "http:" or "https:", returns a Some

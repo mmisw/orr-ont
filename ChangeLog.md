@@ -1,5 +1,10 @@
 ## change log ##
 
+* 2017-10-11:  3.6.7
+  - toward #55 "any additional mechanisms for format/serialization resolution?"
+    - implement "file type extension" for ontology request
+    - TODO implement "file type extension" for term request
+
 * 2017-10-04:  3.6.6
   - for ttl term request, also handle explicit accept header "text/turtle"
   - use 'construct' query for term request with 'ttl' as desired format.
