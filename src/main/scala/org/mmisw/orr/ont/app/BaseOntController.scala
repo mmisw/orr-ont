@@ -53,9 +53,7 @@ with Logging {
                                     reqFormatOpt: Option[String] = None
                                    ) = {
 
-    // try to resolve ontology, possibly with http scheme change:
-    val ontologyResolvedOpt = ontService.resolveOntology(uri)
-    ontologyResolvedOpt match {
+    ontService.resolveOntology(uri) match {
       case Some((ont, fileExtOpt)) ⇒
         completeOntologyUriResolution(ont, reqFormatOpt orElse fileExtOpt.map(_.fileExt))
 

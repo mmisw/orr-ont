@@ -1,6 +1,7 @@
 ## change log ##
 
 * 2017-10-12:  3.6.7
+  - handle self-resolution to complete #55
   - for recognized file extension need to differentiate between ontology and term requests 
   
 * 2017-10-11:  3.6.7

@@ -3,9 +3,10 @@ package org.mmisw.orr.ont.app
 import java.io.File
 import javax.servlet.http.{HttpServletRequest, HttpServletRequestWrapper}
 
-import com.typesafe.scalalogging.{StrictLogging => Logging}
+import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import org.mmisw.orr.ont.service.{OntService, TripleStoreService}
 import org.mmisw.orr.ont.Setup
+import org.mmisw.orr.ont.swld.ontUtil
 
 /**
   * Controller to dispatch "self-resolvable" ontology/terms requests.
@@ -41,8 +42,18 @@ class SelfHostedOntController(implicit setup: Setup,
          """.stripMargin)
     }
 
-    if (!portalDispatch(pathInfo, reqFormatOpt)) {
-      resolve(pathInfo, reqFormatOpt)
+    val uri = selfUri(pathInfo)
+    val recognizedFileExt = ontUtil.recognizedFileExtensionForOntology(uri) orElse
+      ontUtil.recognizedFileExtensionForTerm(uri)
+
+    recognizedFileExt match {
+      case Some(_) ⇒
+        resolveOntOrTermUri(uri)
+
+      case None ⇒
+        if (!portalDispatch(pathInfo, reqFormatOpt)) {
+          resolve(pathInfo, reqFormatOpt)
+        }
     }
   }
 

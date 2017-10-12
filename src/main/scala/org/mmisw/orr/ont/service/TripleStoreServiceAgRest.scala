@@ -6,6 +6,7 @@ import org.json4s.{DefaultFormats, Formats}
 import org.json4s.native.JsonParser
 import org.mmisw.orr.ont.{Setup, TripleStoreResult}
 import org.mmisw.orr.ont.auth.authUtil
+import org.mmisw.orr.ont.swld.ontUtil.AcceptAndSelectForTerm
 import org.mmisw.orr.ont.swld.{FileExt, ontUtil}
 import org.mmisw.orr.ont.util.FileUtils
 
@@ -368,10 +369,12 @@ with TripleStoreService with Logging {
                        acceptHeader: List[String]
                       ): Either[Error, TermResponse] = {
 
+      logger.debug(s"resolveTermUri: uri=$uri, formatOpt=$formatOpt, acceptHeader=$acceptHeader")
+
       formatOpt match {
         // 1. highest precedence for 'format' parameter:
         case Some(format) ⇒
-          format2accept(format) match {
+          ontUtil.format2acceptForTerm(format) match {
             case Some((accept, isSelect)) ⇒
               doRequest(uri, accept, isSelect)
             case None ⇒
@@ -379,10 +382,10 @@ with TripleStoreService with Logging {
           }
 
         case None ⇒
-          recognizedFileExtensionForTerm(uri) match {
+          ontUtil.recognizedFileExtensionForTerm(uri) match {
             // 2. then, "file extension" if any:
             case Some((uri2, FileExt(fileExt))) ⇒
-              format2accept(fileExt) match {
+              ontUtil.format2acceptForTerm(fileExt) match {
                 case Some((accept, isSelect)) ⇒
                   doRequest(uri2, accept, isSelect)
                 case None ⇒
@@ -427,40 +430,7 @@ with TripleStoreService with Logging {
       prom.future()
     }
 
-    private type AcceptAndSelect = (String, Boolean)
-
-    private def format2accept(format: String): Option[AcceptAndSelect] = {
-      format match {
-        case "rdf" | "owl" | "xml" => Some("application/rdf+xml",       false)
-        case "nquads"              => Some("text/x-nquads",             false)
-        case "trix"                => Some("application/trix",          false)
-        case "ttl"                 => Some("text/turtle",               false)
-        case "n3"                  => Some("text/rdf+n3",               false)
-        case "quints"              => Some("application/x-quints+json", false)
-        case "integer"             => Some("text/integer",              false)
-
-        case "json"                => Some("application/json",               true)
-        case "csv"                 => Some("application/processed-csv",      true)
-        case "tab" | "tsv"         => Some("text/tab-separated-values",      true)
-        case "table"               => Some("text/table",                     true)
-        //case "results+json"        => Some("application/sparql-results+json", true)
-        //case "results+xml"         => Some("application/sparql-results+xml", true)
-        //case "upis"                => Some("application/x-direct-upis", true)
-        //case "lisp"                => Some("application/x-lisp-structured-expression", true)
-        //case "csv1"                => Some("text/csv", true)
-        //case "csv2"                => Some("text/simple-csv", true)
-
-        case _                     => None
-      }
-    }
-
-    private def recognizedFileExtensionForTerm(iri: String): Option[(String, FileExt)] = iri match {
-      case ontUtil.iriWithFileExt(adjustedIri, x) if format2accept(x).isDefined ⇒ Some(adjustedIri, FileExt(x))
-      case _ ⇒ None
-    }
-
-
-    private def accept2AcceptAndSelect(acceptHeader: List[String]): AcceptAndSelect = {
+    private def accept2AcceptAndSelect(acceptHeader: List[String]): AcceptAndSelectForTerm = {
       if (acceptHeader.isEmpty || acceptHeader == List("*/*")) {
         (formats("json"), true)
       }

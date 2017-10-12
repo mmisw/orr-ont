@@ -16,6 +16,7 @@ import org.mmisw.orr.ont.vocabulary.{Omv, OmvMmi}
 
 import scala.collection.JavaConversions._
 import scala.util.control.NonFatal
+import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
 
 case class FileExt(fileExt: String) extends AnyVal
@@ -62,7 +63,39 @@ object ontUtil extends AnyRef with Logging {
     case _ ⇒ None
   }
 
-  val iriWithFileExt = """(.+)\.([A-Za-z0-9]+)""".r
+  type AcceptAndSelectForTerm = (String, Boolean)
+
+  def format2acceptForTerm(format: String): Option[AcceptAndSelectForTerm] = {
+    format match {
+      case "rdf" | "owl" | "xml" ⇒ Some("application/rdf+xml",       false)
+      case "nquads"              ⇒ Some("text/x-nquads",             false)
+      case "trix"                ⇒ Some("application/trix",          false)
+      case "ttl"                 ⇒ Some("text/turtle",               false)
+      case "n3"                  ⇒ Some("text/rdf+n3",               false)
+      case "quints"              ⇒ Some("application/x-quints+json", false)
+      case "integer"             ⇒ Some("text/integer",              false)
+
+      case "json"                ⇒ Some("application/json",               true)
+      case "csv"                 ⇒ Some("application/processed-csv",      true)
+      case "tab" | "tsv"         ⇒ Some("text/tab-separated-values",      true)
+      case "table"               ⇒ Some("text/table",                     true)
+      //case "results+json"        ⇒ Some("application/sparql-results+json", true)
+      //case "results+xml"         ⇒ Some("application/sparql-results+xml", true)
+      //case "upis"                ⇒ Some("application/x-direct-upis", true)
+      //case "lisp"                ⇒ Some("application/x-lisp-structured-expression", true)
+      //case "csv1"                ⇒ Some("text/csv", true)
+      //case "csv2"                ⇒ Some("text/simple-csv", true)
+
+      case _                     ⇒ None
+    }
+  }
+
+  def recognizedFileExtensionForTerm(iri: String): Option[(String, FileExt)] = iri match {
+    case ontUtil.iriWithFileExt(adjustedIri, x) if format2acceptForTerm(x).isDefined ⇒ Some(adjustedIri, FileExt(x))
+    case _ ⇒ None
+  }
+
+  val iriWithFileExt: Regex = """(.+)\.([A-Za-z0-9]+)""".r
 
 
   // preliminary
