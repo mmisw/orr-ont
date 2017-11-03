@@ -312,7 +312,20 @@ class UserController(implicit setup: Setup,
         val obj = db.User(userName, firstName, lastName, encPassword, email, ontUri, phone)
 
         Try(usersDAO.insert(obj, WriteConcern.Safe)) match {
-          case Success(r) => UserResult(userName, registered = Some(obj.registered))
+          case Success(_) ⇒
+            // TODO remove code duplication (see UserService.createUser)
+            setup.notifier.sendNotificationEmail("New user registered",
+              s"""
+                 |The following user has been registered:
+                 |
+                 | Username: $userName
+                 | Name: $firstName $lastName
+                 | Email: $email
+                 | Phone: ${phone.getOrElse("")}
+                 | registered: ${obj.registered}
+              """.stripMargin
+            )
+            UserResult(userName, registered = Some(obj.registered))
 
           case Failure(exc)  => error500(exc)
           // TODO note that it might be a duplicate key in concurrent registration
