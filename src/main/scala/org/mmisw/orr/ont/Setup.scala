@@ -1,7 +1,8 @@
 package org.mmisw.orr.ont
 
-import com.typesafe.scalalogging.{StrictLogging => Logging}
+import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import org.mmisw.orr.ont.db.Db
+import org.mmisw.orr.ont.service.Notifier
 import org.mmisw.orr.ont.util.IEmailer
 
 
@@ -62,10 +63,13 @@ class Setup(val cfg: Cfg,
 
   dbOpt = Some(db)
 
+  val notifier = new Notifier(cfg, emailer)
+
   val recaptchaPrivateKey: Option[String] = cfg.recaptcha.privateKey
 
   def destroy() {
     logger.debug(s"destroying application setup")
     dbOpt foreach { _.destroy() }
+    notifier.destroy()
   }
 }

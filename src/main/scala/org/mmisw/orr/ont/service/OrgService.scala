@@ -46,7 +46,7 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
         Try(orgsDAO.insert(org, WriteConcern.Safe)) match {
           case Success(_) =>
-            sendNotificationEmail("New organization registered",
+            notifier.sendNotificationEmail("New organization registered",
               s"""
                  |The following organization has been registered:
                  |
@@ -101,7 +101,7 @@ class OrgService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(orgsDAO.update(MongoDBObject("_id" -> orgName), update, upsert = false, multi = false, WriteConcern.Safe)) match {
       case Success(_) =>
-        sendNotificationEmail("Organization updated",
+        notifier.sendNotificationEmail("Organization updated",
           s"""
              |The following organization has been updated:
              |

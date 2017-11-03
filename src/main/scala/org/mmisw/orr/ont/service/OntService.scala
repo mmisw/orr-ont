@@ -327,7 +327,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(ontDAO.insert(ont, WriteConcern.Safe)) match {
       case Success(_) =>
-        sendNotificationEmail("New ontology registered",
+        notifier.sendNotificationEmail("New ontology registered",
           s"""
             |The following ontology has been registered:
             |
@@ -401,7 +401,7 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
 
     Try(ontDAO.update(MongoDBObject("_id" -> uri), update, upsert = false, multi = false, WriteConcern.Safe)) match {
       case Success(result) =>
-        sendNotificationEmail("New ontology version registered",
+        notifier.sendNotificationEmail("New ontology version registered",
           s"""
              |A new ontology version has been registered:
              |
