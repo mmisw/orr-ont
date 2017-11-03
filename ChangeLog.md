@@ -1,6 +1,8 @@
 ## change log ##
 
 * 2017-11-03:  3.6.8
+  - if any, admin email notifications now queued and dispatched every 5min.
+    (note that regular user-specific emails continue to be sent right away.)
   - refactor notification logic as preparation for better handling
   
 * 2017-10-12:  3.6.7

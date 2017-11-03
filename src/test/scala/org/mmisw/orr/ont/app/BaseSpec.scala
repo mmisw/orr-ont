@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.jena.system.JenaSystem
 import org.mmisw.orr.ont.{Cfg, Setup}
 import org.mmisw.orr.ont.auth.authUtil
-import org.mmisw.orr.ont.service.JwtUtil
+import org.mmisw.orr.ont.service.{INotifier, JwtUtil}
 import org.mmisw.orr.ont.util.IEmailer
 import org.specs2.mock.Mockito
 
@@ -86,8 +86,9 @@ trait BaseSpec extends Mockito {
 
   // use collection names composed from the name of the test class
   private val testing = Some(getClass.getSimpleName)
-  implicit val setup = new Setup(cfg,
+  implicit val setup: Setup = new Setup(cfg,
     emailer = mock[IEmailer],
+    notifier = mock[INotifier],
     testing = testing)
 
   val jwtUtil = new JwtUtil(config.getString("auth.secret"))

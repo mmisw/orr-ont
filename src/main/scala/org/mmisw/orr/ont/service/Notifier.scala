@@ -1,38 +1,75 @@
 package org.mmisw.orr.ont.service
 
 import org.mmisw.orr.ont.Cfg
-import org.mmisw.orr.ont.util.IEmailer
 import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
+import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.util.control.NonFatal
+import java.util.{Timer, TimerTask}
 
-class Notifier(cfg: Cfg, emailer: IEmailer) extends Logging {
+import org.mmisw.orr.ont.util.IEmailer
 
-  // TODO use queue to control frequency of notifications,
-  // especially desirable to better handle rapid bulk registrations/events.
-  // For now, this is just a refactor of the old code.
+trait INotifier {
+  def sendNotificationEmail(subject: String, msg: String): Unit
+  def destroy(): Unit
+}
+
+private case class Item(subject: String, msg: String)
+
+class Notifier(cfg: Cfg, emailer: IEmailer) extends INotifier with Logging {
 
   def sendNotificationEmail(subject: String, msg: String): Unit = {
-    new Thread(new Runnable {
-      def run() {
-        doIt()
-      }
-    }).start()
+    queue.add(Item(subject, msg))
+  }
 
-    def doIt(): Unit = {
-      for {
-        filename ← recipientsFilename
-        emails ← getEmails(filename)
-        if emails.nonEmpty
-      } {
-        val body = msg + "\n\n" +
-          s"(You have received this email because your address is included in $filename)"
-        emailer.sendEmail(emails.mkString(","), subject, body)
+  def destroy(): Unit = {
+    dispatcher.cancel()
+  }
+
+  private val SendPeriod = 5*60*1000 // 5 minutes
+  private val CheckPeriod = 30*1000  // 30 secs
+  private val queue = new ConcurrentLinkedQueue[Item]
+  private var latestSendTime: Long = 0
+
+  private val timer = new Timer()
+  private val dispatcher = new TimerTask {
+    def run(): Unit = {
+      import scala.collection.JavaConverters._
+      Option(queue.peek()) foreach { _ ⇒
+        if (System.currentTimeMillis - latestSendTime >= SendPeriod) {
+          latestSendTime = System.currentTimeMillis
+          dispatchItems(queue.synchronized {
+            val items = queue.asScala.toSeq
+            queue.clear()
+            items
+          })
+        }
       }
     }
   }
 
-  def destroy(): Unit = ()
+  timer.schedule(dispatcher, CheckPeriod, CheckPeriod)
+
+  private def dispatchItems(items: Seq[Item]): Unit = {
+    logger.debug(s"dispatchItems: ${items.size}")
+    for {
+      filename ← cfg.notifications.recipientsFilename
+      emails ← getEmails(filename)
+      if emails.nonEmpty
+    } {
+      val (subject, msg) = if (items.size == 1) {
+        val item = items.head
+        (item.subject, item.msg)
+      }
+      else {
+        ("Notifications", items.map(_.msg).mkString("\n\n"))
+      }
+      emailer.sendEmail(emails.mkString(","), subject,
+        msg + "\n\n" +
+        s"(You have received this email because your address is included in $filename)"
+      )
+    }
+  }
 
   private def getEmails(filename: String): Option[Seq[String]] = {
     try {
@@ -51,6 +88,4 @@ class Notifier(cfg: Cfg, emailer: IEmailer) extends Logging {
         None
     }
   }
-
-  private val recipientsFilename = cfg.notifications.recipientsFilename
 }
