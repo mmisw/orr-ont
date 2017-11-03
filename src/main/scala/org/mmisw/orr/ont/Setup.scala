@@ -2,7 +2,7 @@ package org.mmisw.orr.ont
 
 import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import org.mmisw.orr.ont.db.Db
-import org.mmisw.orr.ont.service.Notifier
+import org.mmisw.orr.ont.service.INotifier
 import org.mmisw.orr.ont.util.IEmailer
 
 
@@ -11,10 +11,12 @@ import org.mmisw.orr.ont.util.IEmailer
  *
  * @param cfg   Base configuration
  * @param emailer  emailer
+ * @param notifier notifier
  * @param testing  optional string for testing purposes
  */
 class Setup(val cfg: Cfg,
             val emailer: IEmailer,
+            val notifier: INotifier,
             val testing: Option[String] = None
             ) extends AnyRef with Logging {
 
@@ -62,8 +64,6 @@ class Setup(val cfg: Cfg,
   val db: Db = new Db(mongoConfig)
 
   dbOpt = Some(db)
-
-  val notifier = new Notifier(cfg, emailer)
 
   val recaptchaPrivateKey: Option[String] = cfg.recaptcha.privateKey
 

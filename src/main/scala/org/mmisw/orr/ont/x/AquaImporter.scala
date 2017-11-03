@@ -4,11 +4,11 @@ import java.io.{File, PrintWriter}
 import java.util.ServiceConfigurationError
 
 import com.typesafe.config.ConfigFactory
-import com.typesafe.scalalogging.{StrictLogging => Logging}
+import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
 import org.joda.time.DateTime
 import org.mmisw.orr.ont.{Cfg, Setup}
 import org.mmisw.orr.ont.db.{OntVisibility, Organization}
-import org.mmisw.orr.ont.service.{OntFileWriter, OntService, OrgService, UserService}
+import org.mmisw.orr.ont.service._
 import org.mmisw.orr.ont.swld.ontUtil
 import org.mmisw.orr.ont.util.Emailer
 
@@ -34,7 +34,11 @@ object AquaImporter extends App with Logging {
   }
   val cfg = Cfg(config)
 
-  implicit val setup = new Setup(cfg, emailer = new Emailer(cfg.email))
+  implicit val setup: Setup = {
+    val emailer = new Emailer(cfg.email)
+    val notifier = new Notifier(cfg, emailer)
+    new Setup(cfg, emailer, notifier)
+  }
 
   val userService = new UserService
   val orgService = new OrgService
