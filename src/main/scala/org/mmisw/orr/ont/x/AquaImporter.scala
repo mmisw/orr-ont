@@ -23,10 +23,10 @@ import scala.xml.{Node, NodeSeq, XML}
 object AquaImporter extends App with Logging {
   private val TESTING_AUTHORITIES_REGEX = "mmitest|test(ing)?(_.*)?|.*_test(ing)?"
 
+  val configDir = new File("/etc/orront")
   val config = {
-    val configFilename = "/etc/orront.conf"
-    logger.info(s"Loading configuration from $configFilename")
-    val configFile = new File(configFilename)
+    val configFile = new File(configDir, "orront.conf")
+    logger.info(s"Loading configuration from $configFile")
     if (!configFile.canRead) {
       throw new ServiceConfigurationError("Could not read configuration file " + configFile)
     }
@@ -36,7 +36,7 @@ object AquaImporter extends App with Logging {
 
   implicit val setup: Setup = {
     val emailer = new Emailer(cfg.email)
-    val notifier = new Notifier(cfg, emailer)
+    val notifier = new Notifier(configDir, emailer)
     new Setup(cfg, emailer, notifier)
   }
 

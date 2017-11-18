@@ -8,7 +8,7 @@ package org.mmisw.orr.ont
    3) build with:
       $ sbt assembly
    4) run with:
-      $ configFile=/etc/mmiorr.conf PORT=8081 java -jar target/scala-2.11/orr-ont-assembly-0.1.0.jar
+      $ configDir=/etc/orront PORT=8081 java -jar target/scala-2.11/orr-ont-assembly-0.1.0.jar
 */
 
 /**
@@ -22,12 +22,12 @@ object JettyLauncher {
 //  import org.scalatra.servlet.ScalatraListener
 //
 //  def main(args: Array[String]) {
-//    val configFile   = sys.env.getOrElse("configFile", throw new RuntimeException("configFile undefined"))
+//    val configDir    = sys.env.getOrElse("configDir", throw new RuntimeException("configDir undefined"))
 //    val port         = sys.env.getOrElse("PORT", "8080").toInt
 //    val resourceBase = sys.env.getOrElse("resourceBase", "src/main/webapp")
 //
 //    val context = new WebAppContext()
-//    context.setInitParameter("configFile", configFile)
+//    context.setInitParameter("configDir", configDir)
 //    val server = new Server(port)
 //    context setContextPath "/"
 //    context.setResourceBase(resourceBase)

@@ -1,5 +1,16 @@
 ## change log ##
 
+* 2017-11-17:  3.7.0
+  - configuration files (`orront.conf` and `notifyemails`) now expected to be under 
+    a common base directory `/etc/orront/`.
+    This base directory specified via "configDir" parameter in `application.conf`.
+    The names `orront.conf` and `notifyemails` are now hard-coded.
+    The common base directory simplifies things, in particular, it facilitates 
+    Docker volume mapping while also fixing issue of actually loading any runtime
+    changes to `notifyemails` whenever admin notifications are to be sent (as 
+    originally intended).
+    TODO documentation about the files under `/etc/orront/`. 
+
 * 2017-11-03:  3.6.8
   - if any, admin email notifications now queued and dispatched every 5min.
     (note that regular user-specific emails continue to be sent right away.)

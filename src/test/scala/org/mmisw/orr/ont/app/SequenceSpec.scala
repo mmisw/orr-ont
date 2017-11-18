@@ -19,7 +19,7 @@ import org.specs2.mock.Mockito
 class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with Logging {
   import org.json4s.JsonDSL._
 
-  implicit val ontService = new OntService
+  implicit val ontService: OntService = new OntService
 
   implicit val tsService: TripleStoreService = mock[TripleStoreService]
   // NOTE because mock seems to have stopped working completely well upon change in

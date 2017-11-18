@@ -2,6 +2,9 @@ Dockerfile
 docker/bochica/
 orr-ont-base-directory-test/
 
+# symblink from /etc/orront for local testing
+configDir/
+
 # orr-portal "installed"
 src/main/webapp/css/
 src/main/webapp/img/
