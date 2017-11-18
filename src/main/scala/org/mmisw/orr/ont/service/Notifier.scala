@@ -1,9 +1,9 @@
 package org.mmisw.orr.ont.service
 
+import java.io.File
 import java.util.{Timer, TimerTask}
 
 import com.typesafe.scalalogging.{StrictLogging ⇒ Logging}
-import org.mmisw.orr.ont.Cfg
 import org.mmisw.orr.ont.util.IEmailer
 
 import scala.collection.mutable.ListBuffer
@@ -16,7 +16,7 @@ trait INotifier {
 
 private case class Item(subject: String, msg: String)
 
-class Notifier(cfg: Cfg, emailer: IEmailer) extends INotifier with Logging {
+class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Logging {
 
   def sendNotificationEmail(subject: String, msg: String): Unit = {
     logger.debug(s"sendNotificationEmail: adding to queue item subject=$subject")
@@ -52,9 +52,9 @@ class Notifier(cfg: Cfg, emailer: IEmailer) extends INotifier with Logging {
 
   private def dispatchItems(items: List[Item]): Unit = {
     logger.debug(s"dispatchItems: ${items.size}")
+    val file = new File(configDir, "notifyemails")
     for {
-      filename ← cfg.notifications.recipientsFilename
-      emails ← getEmails(filename)
+      emails ← getEmails(file)
       if emails.nonEmpty
     } {
       val (subject, msg) = if (items.size == 1) {
@@ -66,14 +66,15 @@ class Notifier(cfg: Cfg, emailer: IEmailer) extends INotifier with Logging {
       }
       emailer.sendEmail(emails.mkString(","), subject,
         msg + "\n\n" +
-        s"(You have received this email because your address is included in $filename)"
+          "(You have received this email because your address is" +
+          " included in " +file.getAbsolutePath + ")"
       )
     }
   }
 
-  private def getEmails(filename: String): Option[Seq[String]] = {
+  private def getEmails(file: File): Option[Seq[String]] = {
     try {
-      val source = io.Source.fromFile(filename)
+      val source = io.Source.fromFile(file)
       val emails = source.getLines.map(_.trim).filterNot { line ⇒
         line.isEmpty || line.startsWith("#")
       }
@@ -81,10 +82,10 @@ class Notifier(cfg: Cfg, emailer: IEmailer) extends INotifier with Logging {
     }
     catch {
       case _:java.io.FileNotFoundException ⇒
-        logger.warn(s"sendNotificationEmail: file not found: $filename")
+        logger.warn(s"sendNotificationEmail: file not found: $file")
         None
       case NonFatal(e) ⇒
-        logger.error("error sending email", e)
+        logger.error("error getting emails", e)
         None
     }
   }

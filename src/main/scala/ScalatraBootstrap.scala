@@ -23,15 +23,18 @@ class ScalatraBootstrap extends LifeCycle with StrictLogging {
 
     logger.info(s"contextPath = '${context.getContextPath}'")
 
-    val baseAppConfig: Config = ConfigFactory.load
-    val configFilename: String = baseAppConfig.getString("configFile")
-    if (configFilename == null) {
-      throw new ServiceConfigurationError("Could not retrieve configuration parameter: configFile.  Check application.conf")
+    val configDir: File = {
+      val baseAppConfig: Config = ConfigFactory.load
+      val dir = new File(baseAppConfig.getString("configDir"))
+      if (!dir.isDirectory) {
+        throw new ServiceConfigurationError(s"$dir: is not a directory.")
+      }
+      dir
     }
 
     val config = {
-      logger.info(s"Loading configuration from $configFilename")
-      val configFile = new File(configFilename)
+      val configFile = new File(configDir, "orront.conf")
+      logger.info(s"Loading configuration from $configFile")
       if (!configFile.canRead) {
         throw new ServiceConfigurationError("Could not read configuration file " + configFile)
       }
@@ -41,10 +44,10 @@ class ScalatraBootstrap extends LifeCycle with StrictLogging {
 
     implicit val setup: Setup = {
       val emailer = new Emailer(cfg.email)
-      val notifier = new Notifier(cfg, emailer)
+      val notifier = new Notifier(configDir, emailer)
       new Setup(cfg, emailer, notifier)
     }
-    implicit val ontService = new OntService
+    implicit val ontService: OntService = new OntService
     implicit val tsService: TripleStoreService = new TripleStoreServiceAgRest
 
     context.mount(new OrgController,           "/api/v0/org/*")
