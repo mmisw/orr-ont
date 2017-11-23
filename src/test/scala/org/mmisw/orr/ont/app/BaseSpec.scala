@@ -25,6 +25,7 @@ trait BaseSpec extends Mockito {
       |
       |deployment {
       |  url = "http://example.net/ont"
+      |  sparqlEndpoint = "http://example.net/sparql"
       |}
       |
       |branding {
@@ -63,18 +64,6 @@ trait BaseSpec extends Mockito {
       |  from    = "orr-ont <orr-ont@example.org>"
       |  replyTo = "orr-ont@example.org"
       |  mailer  = "orr-ont"
-      |}
-      |
-      |recaptcha {
-      |  #privateKey
-      |}
-      |
-      |googleAnalytics {
-      |  #propertyId
-      |}
-      |
-      |import {
-      |  #aquaUploadsDir
       |}
       |""".stripMargin
   )

@@ -65,7 +65,7 @@ class Setup(val cfg: Cfg,
 
   dbOpt = Some(db)
 
-  val recaptchaPrivateKey: Option[String] = cfg.recaptcha.privateKey
+  val recaptchaPrivateKey: Option[String] = cfg.recaptcha.map(_.privateKey)
 
   def destroy() {
     logger.debug(s"destroying application setup")
