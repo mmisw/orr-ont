@@ -1,5 +1,12 @@
 ## change log ##
 
+* 2017-11-22:  3.7.0
+  - simplify configurability for the front-end, mainly when such front-end
+    is incorporated as part of the installable ORR package. 
+    The strategy is to capture UI relevant config parameters in `orront.conf`, 
+    and from there automatically generate `local.config.js` (only when it's no
+    already included to allow external adjustments there for some reason).
+    
 * 2017-11-17:  3.7.0
   - configuration files (`orront.conf` and `notifyemails`) now expected to be under 
     a common base directory `/etc/orront/`.
