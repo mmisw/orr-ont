@@ -7,8 +7,10 @@ configDir/
 
 # orr-portal "installed"
 src/main/webapp/css/
+src/main/webapp/fonts/
 src/main/webapp/img/
 src/main/webapp/index.html
+src/main/webapp/indexdev.html
 src/main/webapp/js/
 src/main/webapp/sparql/
 src/main/webapp/vendor/
