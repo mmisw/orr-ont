@@ -2,6 +2,8 @@ Dockerfile
 docker/bochica/
 orr-ont-base-directory-test/
 
+src/test/resources/tooLargeFile.ttl
+
 # symblink from /etc/orront for local testing
 configDir/
 

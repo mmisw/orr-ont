@@ -42,6 +42,7 @@ trait BaseSpec extends Mockito {
       |}
       |files {
       |    baseDirectory = ./orr-ont-base-directory
+      |    maxUploadFileSize = 50K
       |}
       |agraph {
       |  userName = dummy

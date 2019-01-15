@@ -1,7 +1,6 @@
 package org.mmisw.orr.ont.app
 
 import java.io.File
-import javax.servlet.annotation.MultipartConfig
 
 import com.mongodb.casbah.Imports._
 import com.novus.salat._
@@ -15,23 +14,24 @@ import org.mmisw.orr.ont.db.{OntVisibility, Ontology, OntologyVersion}
 import org.mmisw.orr.ont.service._
 import org.mmisw.orr.ont.swld._
 import org.scalatra.Created
-import org.scalatra.servlet.{FileItem, FileUploadSupport, SizeConstraintExceededException}
+import org.scalatra.servlet.{FileItem, FileUploadSupport, MultipartConfig, SizeConstraintExceededException}
 
 import scala.util.{Failure, Success, Try}
 
 
-@MultipartConfig(maxFileSize = 10*1024*1024)
 class OntController(implicit setup: Setup,
                     ontService: OntService,
                     tsService: TripleStoreService
                    ) extends BaseOntController
       with FileUploadSupport with Logging {
 
-  //configureMultipartHandling(MultipartConfig(maxFileSize = Some(5 * 1024 * 1024)))
+  private val maxUploadFileSize = setup.cfg.files.maxUploadFileSize
+
+  configureMultipartHandling(MultipartConfig(maxFileSize = Some(maxUploadFileSize)))
 
   error {
-    case e: SizeConstraintExceededException =>
-      error(413, "The file you uploaded exceeds the 10MB limit.")
+    case _: SizeConstraintExceededException =>
+      error(413, s"The file you uploaded exceeds the size limit ($maxUploadFileSize)")
   }
 
   /*

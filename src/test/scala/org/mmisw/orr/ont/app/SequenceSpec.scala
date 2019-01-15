@@ -450,6 +450,50 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     }
   }
 
+  "Upload too large file (POST /ont/upload)" should {
+    "fail with 413" in {
+      // NOTE: `files.maxUploadFileSize` in `BaseSpec.config` should be set to
+      // something slightly larger than any of the regular uploads being tested.
+
+      def generateTooLargeFile(): File = {
+        var s =
+          """@prefix :        <http://toolarge/ont/> .
+            |@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+            |@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+            |
+            |:SomeClass
+            |      a       owl:Class ;
+            |      rdfs:label "SomeClass" .
+            |""".stripMargin
+        var i = 1
+        while (s.length <= cfg.files.maxUploadFileSize) {
+          s +=
+            s"""
+               |:instance_$i
+               |      a          :SomeClass ;
+               |      rdfs:label "instance_$i ${"." * 1000}" ;
+               |""".stripMargin
+          i += 1
+        }
+
+        import java.nio.file.{Paths, Files}
+        import java.nio.charset.StandardCharsets
+        val tooLarge = Paths.get("src/test/resources/tooLargeFile.ttl")
+        Files.write(tooLarge, s.getBytes(StandardCharsets.UTF_8))
+        tooLarge.toFile
+      }
+
+      val tooLargeFile = generateTooLargeFile()
+      post("/ont/upload", Map("format" -> "ttl", "visibility" -> "public"),
+        Map("file" -> tooLargeFile), headers = userHeaders
+      ) {
+        val b = body
+        println(s"Upload too large file: response body=$b")
+        status must_== 413
+      }
+    }
+  }
+
   "Upload OWL/XML file (POST /ont/upload)" should {
     val owxFile = new File("src/test/resources/ice-of-land-origin.owl")
     "succeed with user credentials and return expected info" in {
