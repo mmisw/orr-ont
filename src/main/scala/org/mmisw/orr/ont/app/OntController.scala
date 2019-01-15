@@ -14,6 +14,7 @@ import org.mmisw.orr.ont.db.{OntVisibility, Ontology, OntologyVersion}
 import org.mmisw.orr.ont.service._
 import org.mmisw.orr.ont.swld._
 import org.scalatra.Created
+import org.scalatra.GZipSupport
 import org.scalatra.servlet.{FileItem, FileUploadSupport, MultipartConfig, SizeConstraintExceededException}
 
 import scala.util.{Failure, Success, Try}
@@ -23,7 +24,7 @@ class OntController(implicit setup: Setup,
                     ontService: OntService,
                     tsService: TripleStoreService
                    ) extends BaseOntController
-      with FileUploadSupport with Logging {
+      with FileUploadSupport with GZipSupport with Logging {
 
   private val maxUploadFileSize = setup.cfg.files.maxUploadFileSize
 

@@ -1,5 +1,13 @@
 ## change log ##
 
+* 2019-01-15:  3.8.1
+
+  - resolve #28 "Compressed responses".
+    Actually scalatra 2.3.0 does seem to support gzip
+    http://scalatra.org//guides/2.3/http/gzip.html
+    (btw, upgrading scalatra will certainly require significant effort;
+    I just gave it a quick try and many compile errors arise)
+
 * 2019-01-15:  3.8.0
   - resolve https://github.com/mmisw/orr-portal/issues/126
     - capture size limit in new config entry `files.maxUploadFileSize`
