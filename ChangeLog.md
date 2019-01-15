@@ -2,6 +2,8 @@
 
 * 2019-01-15:  3.8.1
 
+  - TODO expose relevant configuration to client
+
   - resolve #28 "Compressed responses".
     Actually scalatra 2.3.0 does seem to support gzip
     http://scalatra.org//guides/2.3/http/gzip.html
