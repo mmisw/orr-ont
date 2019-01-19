@@ -2,10 +2,11 @@
 
 * 2019-01-18:  3.8.2
 
-  - dispatch with redirection to portal any "ont" or "term" API request
-    for "html" (`?format=html` or `Accept: *text/html*`)
+  - resolve #69 "Redirect to portal if HTML is requested"
     - minor refact: move `getRequestedFormat` up to BaseOntController
       from SelfHostedOntController for eventual reuse by OntController
+    - OntController: do redirection to portal if `format=html` given or
+      `Accept: *text/html*` header included
 
 * 2019-01-15:  3.8.1
 

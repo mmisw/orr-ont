@@ -846,6 +846,35 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     }
   }
 
+  "Get an ont with given iri and format=html (GET /ont)" should {
+    "redirect to portal" in {
+      val map = Map("iri" -> ont1Uri, "format" -> "html")
+      logger.info(s"for redirect get: $map")
+      get("/ont", map) {
+        status must_== 302
+        val location = header("Location")
+        logger.info(s"for redirect reply: $body  location=$location")
+        val redirection = s"${cfg.deployment.url}?iri=$ont1Uri"
+        location.split(";").head must_== redirection
+      }
+    }
+  }
+
+  "Get an ont with given iri and 'Accept: text/html' header (GET /ont)" should {
+    "redirect to portal" in {
+      val map = Map("iri" -> ont1Uri)
+      val headers = Map("Accept" -> "text/html")
+      logger.info(s"for redirect get: $map  headers=$headers")
+      get("/ont", map, headers = headers) {
+        status must_== 302
+        val location = header("Location")
+        logger.info(s"for redirect reply: $body  location=$location")
+        val expectedLocation = s"${cfg.deployment.url}?iri=$ont1Uri"
+        location.split(";").head must_== expectedLocation
+      }
+    }
+  }
+
   "Get an ont with changed http scheme in iri (GET /ont)" should {
     "succeed" in {
       val map = Map("iri" -> ont1UriHttps, "format" -> "!md")

@@ -40,7 +40,14 @@ class OntController(implicit setup: Setup,
    */
   get("/") {
     getIriOrUri(params) match {
-      case Some(uri) => resolveOntOrTermUri(uri)
+      case Some(uri) =>
+        getRequestedFormat match {
+          case Some("html") ⇒
+            redirect(s"${setup.cfg.deployment.url}?iri=$uri")
+
+          case reqFormatOpt ⇒
+            resolveOntOrTermUri(uri, reqFormatOpt)
+        }
 
       case None => params.get("oiri") orElse params.get("ouri") match {
         case Some(uri) =>
