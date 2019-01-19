@@ -57,23 +57,6 @@ class SelfHostedOntController(implicit setup: Setup,
     }
   }
 
-  private def getRequestedFormat: Option[String] = {
-    def getAcceptHeader = {
-      val ah = acceptHeader
-      if (logger.underlying.isDebugEnabled) {
-        logger.debug(s"raw Accept: ${request.headers.get("Accept")}")
-        logger.debug(s"acceptHeader: $acceptHeader")
-      }
-      ah
-    }
-    getFormatParameter orElse (getAcceptHeader match {
-      case Nil | List("*/*")                      ⇒ None
-      case list if list contains "text/html"      ⇒ Some("html")
-      case list if mimeTypes.contains(list.head)  ⇒ Some(mimeTypes(list.head))
-      case _ ⇒ None
-    })
-  }
-
   ///////////////////////////////////////////////////////////////////////////
 
   /** returns true only if the dispatch is completed here */

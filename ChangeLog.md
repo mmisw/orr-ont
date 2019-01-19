@@ -1,5 +1,12 @@
 ## change log ##
 
+* 2019-01-18:  3.8.2
+
+  - dispatch with redirection to portal any "ont" or "term" API request
+    for "html" (`?format=html` or `Accept: *text/html*`)
+    - minor refact: move `getRequestedFormat` up to BaseOntController
+      from SelfHostedOntController for eventual reuse by OntController
+
 * 2019-01-15:  3.8.1
 
   - TODO expose relevant configuration to client
