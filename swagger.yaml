@@ -1,62 +1,59 @@
-swagger: '2.0'
+openapi: '3.0.2'
 info:
-  version: v0
-  title: ORR Ont API Documentation
+  title: ORR API Documentation
   description: >
-    The main ORR documentation is located at: http://mmisw.org/orrdoc/
+    The main ORR documentation is located at: https://mmisw.org/orrdoc/
 
-    ```
-    ######################################################
-    # NOTE
-    #   OUT-OF-DATE for the time being.
-    # Currently the swagger spec is maintained in the
-    # https://github.com/mmisw/mmiorr-docs repo, which
-    # is served at http://mmisw.org/orrdoc/api/
-    ######################################################
-    ```
 
-    __Note__:
+    __Please note__:
 
-    - We are in the process of writing this API documentation.
+    - The ORR API is approaching a stable version but is still work in progress.
       Please [let us know](https://github.com/mmisw/mmiorr-docs/issues) if you have any
       questions or suggestions.
 
-    - Besides the documentation itself, this page also allows to directly exercise the API.
+    - Besides the documentation itself, this page lets you directly exercise and test the API.
+      Click on any operation header below to learn more details about it, and see a "Try it out" button.
 
-    - Actual requests from this page are against the endpoint at
-      `http://cor.esipfed.org/sparql`. This may change in a future version in
-      particular regarding a more general way of exercising the API (regardless
-      of concrete endpoint), or by allowing the selection of the particular endpoint.
+    - You can click on the "Authorize" button at the top right of this page
+      (or the `!` icon under the particular operation)
+      to retrieve an authentication token corresponding to your ORR instance credentials (username and password).
+      Once authorized, the authentication token will be automatically included in the corresponding request.
+      You will be able to not only perform the basic `GET` operations,
+      but also see expanded responses according to your access privileges
+      as well as perform other operations.
 
-    - You can use the "Authorize" button above and enter your COR credentials to login
-      in this API interface. In this way you will be able to perform not only the basic
-      `GET` operations, but see expanded responses according to your access priviliges
-      and ontology visibility settings, as well as perform other operations as listed below.
+    - The "Try it out" button will also show the corresponding API call that you can submit
+      from the command line using [`curl`](https://curl.haxx.se/).
+
+    - This API includes administrative operations related with the triple store.
+      The SPARQL endpoint itself
+      (located at `http://cor.esipfed.org/sparql` for the MMI ORR instance)
+      is not described here.
+      (General SPARQL information can be found [here](https://en.wikipedia.org/wiki/SPARQL),
+      and regarding the current service used by the ORR to support the SPARQL interface
+      [here](http://franz.com/agraph/support/documentation/current/http-protocol.html).)
+
+    - Actual requests from this page are against the specific endpoint at
+      `http://cor.esipfed.org/ont`.
 
   termsOfService: 'https://marinemetadata.org/orr/tou'
+  contact: 
+    name: 'COR API Support'
+    url: 'http://cor.esipfed.org'
+    email: 'esip-cor@lists.esipfed.org'
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
 
-host: cor.esipfed.org
-basePath: /ont/api/v0
-schemes:
-  - http
-
-consumes:
-  - application/json
-produces:
-  - application/json
-
-securityDefinitions:
-  basicAuth:
-    type: basic
-    description: HTTP Basic Authentication.
+servers:
+- url: http://cor.esipfed.org/v1
 
 paths:
-  #
+
+  ######################################################################
   # Ontology
-  #
+  ######################################################################
   /ont/upload:
     post:
       tags: [ontology]
@@ -67,35 +64,74 @@ paths:
 
 
         Before having to provide other required information for registration,
-        this separated step helps not only in determining that the file is a valid ontology,
+        this separated step helps not only in determining that the file corresponds to an
+        ontology in a recognized format,
         but also in terms of the returned associated information that the user or
         client application can use for actual registration, for example, regarding possible
-        ontology URIs found in the file.
+        ontology IRIs found in the file.
 
       operationId: uploadOnt
       parameters:
-        - in: formData
-          name: file
+        - name: file
+          in: query
           description: The file to be uploaded.
           required: true
-          type: file
-        - in: formData
-          name: format
+          schema:
+            type: string
+            format: binary
+        - name: format
+          in: query
           description: |
-            Format of the file. The special value `"guess"` can be given to let the ORR
-            automatically determine the format.
-            (A future version of this API may allow this parameter to be skipped, in such
-            case with the "guess format" behavior implied.)
+            Format of the file.
+            The supported formats are described in [this section](https://mmisw.org/orrdoc/ontology/new/#supported-ontology-formats) of the documentation.
+            The special value `"_guess"` (without quotes)
+            can be given to let the ORR automatically determine the format.
+            (A future version of this API may allow this parameter to be omitted, in such
+            case implying the guess-format behavior.)
           required: true
-          type: string
+          schema:
+            type: string
+            format: base64
       responses:
         '200':
           description: |
-            Information about the uploaded file. The `userName` and `filename` attributes of
-            this object are to be used in the subsequent registration to property refer to
+            Information about the uploaded file.
+            The `possibleOntologyIris` object will indicate the possible ontology IRI (or IRIs)
+            of the uploaded file. For each IRI, it will indicate some explanation for the
+            extraction of such IRI, and the associated metadata, if any.
+            On the other hand, the `userName` and `filename` attributes of
+            this object are to be used in the subsequent registration to properly refer to
             the uploaded file.
-          schema:
-            $ref: '#/definitions/UploadedFileInfo'
+
+            An example of an actual response:
+
+            ```
+            {
+              "userName": "carueda",
+              "filename": "1477537138555._guess",
+              "format": "rdf",
+              "possibleOntologyIris": {
+                "https://www.w3.org/ns/ssn": {
+                  "explanations": [
+                    "Resource of type http://www.w3.org/2002/07/owl#Ontology"
+                  ],
+                  "metadata": {
+                    "http://purl.org/dc/elements/1.1/title": [
+                      "Semantic Sensor Network Ontology"
+                    ],
+                    "http://www.w3.org/2000/01/rdf-schema#comment": [
+                      "This ontology describes sensors and observations, and related concepts. It does not describe domain concepts, time, locations, etc. as these are intended to be included from other ontologies via OWL imports.",
+                      "This ontology is based on the SSN Ontology by the W3C Semantic Sensor Networks Incubator Group (SSN-XG).",
+                      "New modular version of the SSN ontology independent of DUL."
+                    ],
+                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": [
+                      "http://www.w3.org/2002/07/owl#Ontology"
+                    ]
+                  }
+                }
+              }
+            }
+            ```
       security:
        - basicAuth: []
 
@@ -110,10 +146,10 @@ paths:
         All parameters are optional.
 
 
-        Any given `uri`, `ouri`, or `turi` parameter indicates a request for a
+        Any given `iri`, `oiri`, or `tiri` parameter indicates a request for a
         particular ontology or term.
 
-        If none of the `uri`, `ouri`, and `turi` parameters is given,
+        If none of the `iri`, `oiri`, and `tiri` parameters is given,
         this will indicate a query for a list of ontologies. In this case, only
         a metadata summary is provided for each reported ontology (in particular,
         no ontology contents per se is reported). Also, other supplied
@@ -123,61 +159,66 @@ paths:
 
 
       parameters:
-        - name: uri
+        - name: iri
           in: query
-          type: string
           required: false
           description: |
             With this parameter the backend will first try an "ontology
-            request." If no ontlogy is registered by the given URI, then it
+            request." If no ontlogy is registered by the given IRI, then it
             will try a "term request."
+          schema:
+            type: string
+            format: base64
 
-        - name: ouri
+        - name: oiri
           in: query
-          type: string
           required: false
           description: |
             Use this parameter to exclusively make a "ontology request."
+          schema:
+            type: string
+            format: base64
 
         - name: version
           in: query
-          type: string
           required: false
           description: |
             Desired version in the case of an "ontology request."
+          schema:
+            type: string
+            format: base64
 
-        - name: turi
+        - name: tiri
           in: query
-          type: string
           required: false
           description: |
             Use this parameter to exclusively make a "term request."
+          schema:
+            type: string
+            format: base64
 
         - name: format
           in: query
-          type: string
           required: false
           description: |
-            Desired format for the response in the case of a single ontology
-            or term request.
+            Desired format for the response in the case of a single ontology or term request.
+          schema:
+            type: string
+            format: base64
 
       responses:
         '200':
           description: Successful response
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/Ont'
 
     post:
       tags: [ontology]
       summary: Registers a brand new ontology
       description: |
         Performs the registration of a brand new ontology in the registry by
-        the URI given in the `uri` attribute of the object in the body.
+        the IRI given in the `iri` attribute of the object in the body.
       operationId: addOnt
       parameters:
-        - in: body
+        - in: query
           name: body
           description: |
             Object with information for the ontology to be registered.
@@ -194,7 +235,7 @@ paths:
             See the `PostOnt` object description for more details.
 
           schema:
-            $ref: "#/definitions/PostOnt"
+            $ref: "#/components/schemas/PostOnt"
           required: true
       responses:
         "405":
@@ -211,11 +252,17 @@ paths:
 
       operationId: updateOnt
       parameters:
-        - in: body
+        - in: query
           name: body
-          description: Ontology object that needs to be registered
+          description: |
+            Ontology object that needs to be registered.
+            Provide the `metadata` attribute to create a new version of
+            an existing ontology solely based on changes on the metadata.
+            For full contents, use `contents`/`format`, or
+            `uploadedFilename`/`uploadedFormat` as described in the `POST /ont`
+            operation.
           schema:
-            $ref: "#/definitions/PutOnt"
+            $ref: "#/components/schemas/PutOnt"
       responses:
         "405":
           description: Invalid input
@@ -225,25 +272,36 @@ paths:
     delete:
       tags: [ontology]
       summary: Deletes a particular version or a whole ontology entry
+      description: |
+        This operation allows to unregister a particular version (if the
+        `version` object attribute is given) or a whole ontoloy entry.
+        Besides admins, only an owner of the ontology can perform this
+        operation.
       operationId: deleteOnt
       parameters:
         - in: query
-          name: uri
-          description: Ontology URI
-          type: string
+          name: iri
+          description: Ontology IRI
           required: true
+          schema:
+            type: string
+            format: base64
         - in: query
           name: version
           description: |
             Particular version to be deleted.
-            If omitted, the whole entry by the given URI will be unregistered.
-          type: string
+            If omitted, the whole entry by the given IRI will be unregistered.
+          schema:
+            type: string
+            format: base64
         - in: query
           name: userName
-          type: string
           required: true
           description: |
             Registered user making the request. Must be an owner of the ontology.
+          schema:
+            type: string
+            format: base64
 
       responses:
         "405":
@@ -251,9 +309,32 @@ paths:
       security:
        - basicAuth: []
 
-  #
+  /ont/term:
+    post:
+      tags: [ontology, term]
+      summary: Adds a term to an existing ORR vocabulary
+      description: |
+        This operation allows to add a new term to an ORR vocabulary.
+        This addition does not generate a new version of the vocabulary.
+      operationId: addTerm
+      parameters:
+        - in: query
+          name: body
+          description: |
+            Object with information for the term to be added.
+            See the `PostOnt` object description for more details.
+          schema:
+            $ref: "#/components/schemas/PostTerm"
+          required: true
+      responses:
+        "405":
+          description: Invalid input
+      security:
+       - basicAuth: []
+
+  ######################################################################
   # Organization
-  #
+  ######################################################################
   /org:
     get:
       tags: [organization]
@@ -264,23 +345,22 @@ paths:
       responses:
         '200':
           description: Successful response
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/Org'
 
     post:
       tags: [organization]
       summary: Registers an organization
-      description: ""
+      description: |
+        Only admins can perform this operation.
       operationId: addOrg
       parameters:
-        - in: body
+        - in: query
           name: body
           description: Organization object that needs to be registered
           schema:
-            $ref: "#/definitions/PostOrg"
+            $ref: "#/components/schemas/PostOrg"
       responses:
+        "201":
+          description: Successful registration
         "405":
           description: Invalid input
       security:
@@ -293,14 +373,14 @@ paths:
       parameters:
         - name: orgName
           in: path
-          type: string
           required: true
           description: The code (short name) of the organization.
+          schema:
+            type: string
+            format: base64
       responses:
         '200':
           description: Successful response
-          schema:
-            $ref: '#/definitions/Org'
 
     put:
       tags: [organization]
@@ -309,15 +389,19 @@ paths:
       parameters:
         - name: orgName
           in: path
-          type: string
           required: true
           description: The code (short name) of the organization to be updated.
-        - in: body
+          schema:
+            type: string
+            format: base64
+        - in: query
           name: body
           description: Object with information for the organization to be updated.
           schema:
-            $ref: "#/definitions/PutOrg"
+            $ref: "#/components/schemas/PutOrg"
       responses:
+        "200":
+          description: Successful update
         "405":
           description: Invalid input
       security:
@@ -333,8 +417,10 @@ paths:
         - in: path
           name: orgName
           description: Identifier of the organization
-          type: string
           required: true
+          schema:
+            type: string
+            format: base64
 
       responses:
         "200":
@@ -344,9 +430,9 @@ paths:
       security:
        - basicAuth: []
 
-  #
+  ######################################################################
   # User
-  #
+  ######################################################################
   /user:
     get:
       tags: [user]
@@ -357,27 +443,32 @@ paths:
       responses:
         '200':
           description: Successful response
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/User'
 
     post:
       tags: [user]
       summary: Registers a user
-      description: ""
+      description: |
+        This operation allows to register a new user in the system.
+
+        **NOTE**: This operation cannot be completed here if the endpoint is configured to
+        required a ReCAPTCHA code, which is currently not captured in this interface.
+        Please use the ORR Portal interface associated with the endpoint to register
+        the new user.
+
       operationId: addUser
       parameters:
-        - in: body
+        - in: query
           name: body
           description: User object that needs to be registered
           schema:
-            $ref: "#/definitions/PostUser"
+            $ref: "#/components/schemas/PostUser"
       responses:
+        "400":
+          description: |
+            If the endpoint is configured to require a ReCAPTCHA code,
+            which is not captured in this API interface.
         "405":
           description: Invalid input
-      security:
-       - basicAuth: []
 
   '/user/{userName}':
     get:
@@ -386,14 +477,14 @@ paths:
       parameters:
         - name: userName
           in: path
-          type: string
           required: true
           description: The login (short name) of the user.
+          schema:
+            type: string
+            format: base64
       responses:
         '200':
           description: Successful response
-          schema:
-            $ref: '#/definitions/User'
 
     put:
       tags: [user]
@@ -404,14 +495,16 @@ paths:
       parameters:
         - name: userName
           in: path
-          type: string
           required: true
           description: The identifier of the user to be updated.
-        - in: body
+          schema:
+            type: string
+            format: base64
+        - in: query
           name: body
           description: Object with information for the user to be updated.
           schema:
-            $ref: "#/definitions/PutUser"
+            $ref: "#/components/schemas/PutUser"
       responses:
         "405":
           description: Invalid input
@@ -428,9 +521,10 @@ paths:
         - in: path
           name: userName
           description: Identifier of the user
-          type: string
           required: true
-
+          schema:
+            type: string
+            format: base64
       responses:
         "200":
           description: Successful unregistration
@@ -439,278 +533,577 @@ paths:
       security:
        - basicAuth: []
 
-#####################################################################################
-definitions:
-  #
-  # Ontology
-  #
-  UploadedFileInfo:
-    type: object
-    properties:
-      userName:
-        type: string
-        description: The user that requested the upload.
-      filename:
-        type: string
-        description: The name associated with the file.
-      format:
-        type: string
-        description: The format of the file.
-      possibleOntologyUris:
-        type: object
-        description: The format of the file.
-        additionalProperties:
-          $ref: '#/definitions/PossibleOntologyInfo'
 
-  PossibleOntologyInfo:
-    type: object
-    properties:
-      explanations:
-        type: array
-        items:
-          type: string
-        description: |
-          Explanations for the extraction of the given possible ontology URI.
-      metadata:
-        type: object
-        description: Metadata associated to the ontology URI.
-        additionalProperties:
-          type: array
-          items:
+  ######################################################################
+  # Term search
+  ######################################################################
+  /term:
+    get:
+      tags: [term]
+      summary: Simplified semantic search queries against the triple store
+      description: |
+        This endpoint route is intended to provide some common semantic search
+        operations against the triple store.
+
+        **NOTE**: This is an experimental operation.
+        The SPARQL interface remains the most complete and powerful semantic search mechanism.
+
+        Provide one of `containing` or `predicate` as main parameter, along with associated
+        auxiliary and optional parameters as described.
+
+      parameters:
+        - name: containing
+          in: query
+          required: false
+          description: |
+            Searches the given string in the indicated parts of the triples as
+            determined by the `in` parameter.
+          schema:
             type: string
+            format: base64
+
+        - name: in
+          in: query
+          required: false
+          description: |
+            Only used in combination with the `containing` parameter, the `in` parameter
+            determines where to perform the search: subject, predicate, and/or object.
+            Use the 1-character abbreviations: `s` for subject, `p` for predicate, `o` for object.
+            Any combination of these characters can be used as value for the `in` parameter.
+            For example, to search the given `containing` string in all parts of the triple use `spo`.
+            The default value is `s`, meaning the search will only be on the subject.
+          schema:
+            type: string
+            format: base64
+
+        - name: predicate
+          in: query
+          required: false
+          description: |
+            Desired predicate to retrieve entities related with a given subject or object.
+            The following common namespace prefixes are recognized:
+            `skos:`, `owl:`, `rdfs:`, `rdf:`.
+            So possible values of this parameter include `skos:relatedMatch` and `owl:sameAs`.
+            If the value does not start with any of the recognized prefixes, then it is assumed
+            to be a full IRI, e.g., `http://purl.org/dc/terms/description`.
+
+            This parameter is to be used in combination with one of the `subject` or `object` parameters.
+            If `subject` is given, the underlying SPARQL query is basically
+            `<subject> <predicate> ?object` and the resulting list of objects is returned.
+            Otherwise the underlying SPARQL query is basically
+            `?subject <predicate> <object>` and the resulting list of subjects is returned.
+          schema:
+            type: string
+            format: base64
+
+        - name: subject
+          in: query
+          required: false
+          description: |
+            IRI of the subject for underlying SPARQL query.
+            Required when any of the _predicate_ parameters is given and **no** object parameter is given.
+          schema:
+            type: string
+            format: base64
+
+        - name: object
+          in: query
+          required: false
+          description: |
+            IRI of the object for underlying SPARQL query.
+            Required when any of the _predicate_ parameters is given and **no** subject parameter is given.
+          schema:
+            type: string
+            format: base64
+
+        - name: limit
+          in: query
+          required: false
+          description: |
+            Maximum number of solutions to be returned.
+            The default value is 30.
+            A non-positive value means no limit, so all solutions will be returned.
+          schema:
+            type: integer
+            format: int32
+
+        - name: offset
+          in: query
+          required: false
+          description: |
+            Solutions returned will start after the specified number of solutions.
+            Ignored if the value is non-positive.
+            By default, no offset.
+          schema:
+            type: integer
+            format: int32
+
+      responses:
+        '200':
+          description: Successful response
 
 
-  PostOnt:
-    type: object
-    properties:
-      uri:
-        type: string
-        description: |
-          The URI of the ontology.
+  ######################################################################
+  # Triplestore
+  ######################################################################
+  /ts:
+    get:
+      tags: [triplestore]
+      summary: Gets the size of the store or the size of a particular named graph
+      description: |
+        Provide one of the `iri` or `context` parameters to get the size of a particular graph.
+        If none of these parameters is provided, the size of the whole triplestore will be responded.
+        Only admins can perform this operation.
+      operationId: getTriplestoreSize
+      parameters:
+        - name: iri
+          in: query
+          required: false
+          description: |
+            IRI of particular context
+          schema:
+            type: string
+            format: base64
 
-      originalUri:
-        type: string
-        description: |
-          In case of a fully-hosted registration, enter this field to indicate
-          the original URI in the provided contents to be used for the "migration"
-          of corresponding entities to the new URI.
+        - name: context
+          in: query
+          required: false
+          description: |
+            IRI of particular context
+          schema:
+            type: string
+            format: base64
 
-      name:
-        type: string
-        description: |
-          The name for the ontology. If omitted, the ORR will try to get this
-          information from standard metadata in the submitted ontology contents.
+      responses:
+        '200':
+          description: Successful response
 
-      orgName:
-        type: string
-        description: |
-          ID of the organization that will own the ontology registration.
-          If omitted, the owner will be the submitting user.
+    post:
+      tags: [triplestore]
+      summary: Loads an ontology in the triplestore
+      description: |
+        Only admins can perform this operation.
+      operationId: loadOntInTriplestore
+      parameters:
+        - name: iri
+          in: query
+          required: true
+          description: |
+            IRI of the ontology to be loaded
+          schema:
+            type: string
+            format: base64
 
-      visibility:
-        type: string
-        description: |
-          One of: `owner` or `public`. The default visibility is `owner`.
+      responses:
+        "200":
+          description: Successful operation
+        "405":
+          description: Invalid input
+      security:
+       - basicAuth: []
 
-      status:
-        type: string
-        description: |
-          One of: `draft`, `unstable`, `testing`, `stable`,  `deprecated`, `archaic`.
-          There's no default value.
+    put:
+      tags: [triplestore]
+      summary: Reloads an ontology or all ontologies in the triplestore
+      description: |
+        Provide the `iri` parameter to reload a particular ontology.
+        Otherwise all registered ontologies will be reloaded in the triplestore.
+        Only admins can perform this operation.
+      operationId: reloadOntsInTriplestore
+      parameters:
+        - name: iri
+          in: query
+          required: false
+          description: |
+            IRI of the ontology to be reloaded
+          schema:
+            type: string
+            format: base64
 
-      userName:
-        type: string
-        description: |
-          Registered user making the request.
+      responses:
+        "200":
+          description: Successful operation
+        "405":
+          description: Invalid input
+      security:
+       - basicAuth: []
 
-      uploadedFilename:
-        type: string
-        description: |
-          Name of file previously uploaded via prior `POST /ont/upload` request.
-      uploadedFormat:
-        type: string
-        description: |
-          Format of the file previously uploaded via prior `POST /ont/upload` request.
+    delete:
+      tags: [triplestore]
+      summary: Unloads an ontology or all ontologies from the triplestore
+      description: |
+        Provide the `iri` parameter to unload a particular ontology.
+        Otherwise all registered ontologies will be unloaded from the triplestore.
+        Only admins can perform this operation.
+      operationId: unloadOntsInTriplestore
+      parameters:
+        - name: iri
+          in: query
+          required: false
+          description: |
+            IRI of the ontology to be unloaded
+          schema:
+            type: string
+            format: base64
 
-      contents:
-        type: string
-        description: |
-          Direct contents of the ontology.
-      format:
-        type: string
-        description: |
-          Format of the `contents`.
+      responses:
+        "200":
+          description: Successful operation
+        "405":
+          description: Invalid input
+      security:
+       - basicAuth: []
 
-  PutOnt:
-    type: object
-    properties:
-      uri:
-        type: string
-        description: The URI of the ontology to be updated.
 
-      version:
-        type: string
-        description: |
-          If given, this particular version will be updated.
-          Otherwise, a new version (which is generated by the ORR) is created.
+components:
+    schemas:
+    ######################################################################
+    # Ontology
+    ######################################################################
+      UploadedFileInfo:
+        type: object
+        properties:
+          userName:
+            type: string
+            description: The user that requested the upload.
+          filename:
+            type: string
+            description: The name associated with the file.
+          format:
+            type: string
+            description: The format of the file.
+          possibleOntologyIris:
+            type: object
+            description: The format of the file.
 
-      originalUri:
-        type: string
-        description: |
-          In case a fully-hosted registration and ontology contents are provided for this update, enter this field to indicate
-          the original URI to be used for the "migration" of corresponding entities to the URI used for registration.
+      PossibleOntologyInfo:
+        type: object
+        properties:
+          explanations:
+            type: array
+            items:
+              type: string
+            description: |
+              Explanations for the extraction of the given possible ontology IRI.
+          metadata:
+            type: object
+            description: Metadata associated to the ontology IRI.
+            additionalProperties:
+              type: array
+              items:
+                type: string
 
-      name:
-        type: string
-        description: |
-          If given, this will be the new name for the ontology.
 
-      visibility:
-        type: string
-        description: |
-          One of: `owner` or `public`.
-
-      status:
-        type: string
-        description: |
-          One of: `draft`, `unstable`, `testing`, `stable`,  `deprecated`, `archaic`.
-
-      metadata:
-        type: string
-        description: |
-          Ontology metadata as a JSON formatted object.
-          This parameter allows to perform the update solely based on changes
-          to the metadata.
-
-      uploadedFilename:
-        type: string
-        description: |
-          Name of file previously uploaded via prior `POST /ont/upload` request.
-      uploadedFormat:
-        type: string
-        description: |
-          Format of the file previously uploaded via prior `POST /ont/upload` request.
-
-      contents:
-        type: string
-        description: |
-          Direct contents of the ontology.
-      format:
-        type: string
-        description: |
-          Format of the `contents`.
-
-      userName:
-        type: string
-        description: |
-          Registered user making the request.
-
-  Ont:
-    type: object
-    properties:
-      uri:
-        type: string
-      name:
-        type: string
-      version:
-        type: string
-      ownerName:
-        type: string
-      status:
-        type: string
-      format:
-        type: string
-      visibility:
-        type: string
-
-  #
-  # Organization
-  #
-  PostOrg:
-    type: object
-    properties:
-      name:
-        type: string
-      orgName:
-        type: string
-      members:
-        type: array
-        items:
-          type: string
-        description: Members of this organization
-      url:
-        type: string
-        description: Website URL of the organization
-
-  PutOrg:
-    type: object
-    properties:
-      name:
-        type: string
-      orgName:
-        type: string
-      members:
-        type: array
-        items:
-          type: string
-        description: Members of this organization
-      url:
-        type: string
-        description: Website URL of the organization
-
-  Org:
-    type: object
-    properties:
-      name:
-        type: string
-      orgName:
-        type: string
-      members:
-        type: array
-        items:
-          type: string
-
-  #
-  # User
-  #
-  PostUser:
-    type: object
-    properties:
-      userName:
-        type: string
-      email:
-        type: string
-      firstName:
-        type: string
-      lastName:
-        type: string
-      password:
-        type: string
-        format: password
-      phone:
-        type: string
-
-  PutUser:
-    type: object
-    properties:
-      email:
-        type: string
-      firstName:
-        type: string
-      lastName:
-        type: string
-      password:
-        type: string
-        format: password
-      phone:
-        type: string
-
-  User:
-    type: object
-    properties:
-      userName:
-        type: string
-      firstName:
-        type: string
-      lastName:
-        type: string
+      PostOnt:
+        type: object
+        properties:
+          iri:
+            type: string
+            description: |
+              The IRI of the ontology.
+    
+          originalIri:
+            type: string
+            description: |
+              In case of a fully-hosted registration, enter this field to indicate
+              the original IRI in the provided contents to be used for the "migration"
+              of corresponding entities to the new IRI.
+    
+          name:
+            type: string
+            description: |
+              The name for the ontology. If omitted, the ORR will try to get this
+              information from standard metadata in the submitted ontology contents.
+    
+          orgName:
+            type: string
+            description: |
+              ID of the organization that will own the ontology registration.
+              If omitted, the owner will be the submitting user.
+    
+          visibility:
+            type: string
+            description: |
+              One of: `owner` or `public`. The default visibility is `owner`.
+    
+          status:
+            type: string
+            description: |
+              One of: `draft`, `unstable`, `testing`, `stable`,  `deprecated`, `archaic`.
+              There's no default value.
+    
+          userName:
+            type: string
+            description: |
+              Registered user making the request.
+    
+          uploadedFilename:
+            type: string
+            description: |
+              Name of file previously uploaded via prior `POST /ont/upload` request.
+          uploadedFormat:
+            type: string
+            description: |
+              Format of the file previously uploaded via prior `POST /ont/upload` request.
+    
+          contents:
+            type: string
+            description: |
+              Direct contents of the ontology.
+          format:
+            type: string
+            description: |
+              Format of the `contents`.
+    
+      PutOnt:
+        type: object
+        properties:
+          iri:
+            type: string
+            description: The IRI of the ontology to be updated.
+    
+          version:
+            type: string
+            description: |
+              If given, this particular version will be updated.
+              Otherwise, a new version (which is generated by the ORR) is created.
+    
+          originalIri:
+            type: string
+            description: |
+              In case a fully-hosted registration and ontology contents are provided for this update, enter this field to indicate
+              the original IRI to be used for the "migration" of corresponding entities to the IRI used for registration.
+    
+          name:
+            type: string
+            description: |
+              If given, this will be the new name for the ontology.
+    
+          visibility:
+            type: string
+            description: |
+              One of: `owner` or `public`.
+    
+          status:
+            type: string
+            description: |
+              One of: `draft`, `unstable`, `testing`, `stable`,  `deprecated`, `archaic`.
+    
+          metadata:
+            type: string
+            description: |
+              Ontology metadata as a JSON formatted object.
+              This parameter allows to perform the update solely based on changes
+              to the metadata.
+    
+          uploadedFilename:
+            type: string
+            description: |
+              Name of file previously uploaded via prior `POST /ont/upload` request.
+          uploadedFormat:
+            type: string
+            description: |
+              Format of the file previously uploaded via prior `POST /ont/upload` request.
+    
+          contents:
+            type: string
+            description: |
+              Direct contents of the ontology.
+          format:
+            type: string
+            description: |
+              Format of the `contents`.
+    
+          userName:
+            type: string
+            description: |
+              Registered user making the request.
+    
+      PostTerm:
+        type: object
+        properties:
+          vocIri:
+            type: string
+            description: |
+              The IRI of the affected ORR vocabulary.
+    
+          version:
+            type: string
+            description: |
+              The version to be affected. By default, latest version.
+    
+          classIri:
+            type: string
+            description: |
+              IRI of the specific class to be affected within the vocabulary.
+              Can be ommitted if the vocabulary only contains one class (which
+              will be the one affected).
+    
+          termName:
+            type: string
+            description: |
+              Simple name of the new term.
+    
+          termIri:
+            type: string
+            description: |
+              Full IRI of the new term.
+    
+          attributes:
+            type: array
+            items:
+              type: array
+              items:
+                type: string
+            description: |
+              Values for the properties defined for the vocabulary class.
+    
+      Ont:
+        type: object
+        properties:
+          iri:
+            type: string
+          name:
+            type: string
+          version:
+            type: string
+          ownerName:
+            type: string
+          status:
+            type: string
+          format:
+            type: string
+          visibility:
+            type: string
+    
+      ######################################################################
+      # Organization
+      ######################################################################
+      PostOrg:
+        type: object
+        properties:
+          name:
+            type: string
+          orgName:
+            type: string
+          members:
+            type: array
+            items:
+              type: string
+            description: Members of this organization
+          url:
+            type: string
+            description: Website URL of the organization
+    
+      PutOrg:
+        type: object
+        properties:
+          name:
+            type: string
+          orgName:
+            type: string
+          members:
+            type: array
+            items:
+              type: string
+            description: Members of this organization
+          url:
+            type: string
+            description: Website URL of the organization
+    
+      Org:
+        type: object
+        properties:
+          orgName:
+            type: string
+          name:
+            type: string
+          members:
+            type: array
+            items:
+              type: string
+    
+      OrgNew:
+        type: object
+        properties:
+          orgName:
+            type: string
+          name:
+            type: string
+          url:
+            type: string
+          members:
+            type: array
+            items:
+              type: string
+          registeredBy:
+            type: string
+    
+      OrgUpdated:
+        type: object
+        properties:
+          orgName:
+            type: string
+          name:
+            type: string
+          url:
+            type: string
+          members:
+            type: array
+            items:
+              type: string
+          updated:
+            type: string  # why dateTime fails?
+          updatedBy:
+            type: string
+    
+      ######################################################################
+      # User
+      ######################################################################
+      PostUser:
+        type: object
+        properties:
+          userName:
+            type: string
+          email:
+            type: string
+          firstName:
+            type: string
+          lastName:
+            type: string
+          password:
+            type: string
+            format: password
+          phone:
+            type: string
+          recaptchaResponse:
+            type: string
+            description: |
+              Response provided by a [ReCAPCTHA](https://www.google.com/recaptcha)
+              client library. Only required if the ORR Ont endpoint has been configured
+              to validate the registration of users in this manner.
+    
+      PutUser:
+        type: object
+        properties:
+          email:
+            type: string
+          firstName:
+            type: string
+          lastName:
+            type: string
+          password:
+            type: string
+            format: password
+          phone:
+            type: string
+    
+      User:
+        type: object
+        properties:
+          userName:
+            type: string
+          firstName:
+            type: string
+          lastName:
+            type: string
