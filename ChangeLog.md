@@ -1,5 +1,11 @@
 ## change log ##
 
+* 2019-08-27:  3.8.3
+
+- set `User-Agent:ORR-Ont/x.y.z` in requests to triple-store
+  as an attempt to avoid/alleviate the issue of middleware (like Cloudflare)
+  complaining about the `User-Agent:Java/1.8..`
+
 * 2019-01-18:  3.8.2
 
   - resolve #69 "Redirect to portal if HTML is requested"

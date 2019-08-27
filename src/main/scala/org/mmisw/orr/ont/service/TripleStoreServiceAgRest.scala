@@ -19,6 +19,9 @@ import scala.util.{Failure, Success, Try}
 class TripleStoreServiceAgRest(implicit setup: Setup, ontService: OntService) extends BaseService(setup)
 with TripleStoreService with Logging {
 
+  // TODO get version piece in some dynamic way (eg, buildInfo-like)
+  private val userAgent = "User-Agent:ORR-Ont/3.8.2"
+
   import scala.concurrent.ExecutionContext.Implicits.global
 
   var formats: Map[String,String] = Map()
@@ -129,6 +132,7 @@ with TripleStoreService with Logging {
       .setHeader("Content-Type", contentType)
       .setHeader("Accept", formats("json"))
       .setHeader("Authorization", authUtil.basicCredentials(userName, password))
+      .setHeader("User-Agent", userAgent)
 
     val method = if (reload) req.PUT else req.POST
 
@@ -247,6 +251,7 @@ with TripleStoreService with Logging {
     val req = sparqlEndpoint
       .setHeader("Accept", formats("json"))
       .setHeader("Authorization", authUtil.basicCredentials(userName, password))
+      .setHeader("User-Agent", userAgent)
 
     dispatch.Http(req.PUT OK as.String) onComplete {
       case Success(content) =>
@@ -270,6 +275,7 @@ with TripleStoreService with Logging {
     val usersReq = (host(agEndpoint) / "users")
       .setHeader("Accept", formats("json"))
       .setHeader("Authorization", authUtil.basicCredentials(userName, password))
+      .setHeader("User-Agent", userAgent)
     logger.debug(s"getUsers: $usersReq")
     dispatch.Http(usersReq OK as.String) onComplete {
       case Success(content)   =>
@@ -288,6 +294,7 @@ with TripleStoreService with Logging {
     val req = (host(agEndpoint) / "users" / "anonymous")
       .setHeader("Accept", formats("json"))
       .setHeader("Authorization", authUtil.basicCredentials(userName, password))
+      .setHeader("User-Agent", userAgent)
     logger.debug(s"createAnonymousUser: $req")
     dispatch.Http(req.PUT OK as.String) onComplete {
       case Success(content)   =>
@@ -306,6 +313,7 @@ with TripleStoreService with Logging {
       .addQueryParameter("repository", repoName)
       .setHeader("Accept", formats("json"))
       .setHeader("Authorization", authUtil.basicCredentials(userName, password))
+      .setHeader("User-Agent", userAgent)
     logger.debug(s"setAccessForAnonymousUser: $req")
     dispatch.Http(req.PUT OK as.String) onComplete {
       case Success(content)   =>
@@ -324,6 +332,7 @@ with TripleStoreService with Logging {
     val baseReq = (svc / "statements")
       .setHeader("Authorization", authUtil.basicCredentials(userName, password))
       .setHeader("Accept", formats("json"))
+      .setHeader("User-Agent", userAgent)
 
     val req = uriOpt match {
       case Some(uri) => baseReq.addQueryParameter("context", "\"" + uri + "\"")
@@ -357,7 +366,7 @@ with TripleStoreService with Logging {
   private val agEndpoint  = s"$agHost:$agPort"
   private val orrEndpoint = s"$agEndpoint/repositories/$repoName"
 
-  private val svc = host(orrEndpoint)
+  private val svc = host(orrEndpoint).setHeader("User-Agent", userAgent)
 
   private val sparqlEndpoint = url(agConfig.sparqlEndpoint)
 
@@ -416,6 +425,7 @@ with TripleStoreService with Logging {
       val req = sparqlEndpoint
         .setHeader("Content-Type", "application/x-www-form-urlencoded")
         .setHeader("Accept", accept)
+        .setHeader("User-Agent", userAgent)
         .addParameter("query", query)
 
       if (false) debugReqResponse(req.POST, s"resolveTermUri: $uri")
