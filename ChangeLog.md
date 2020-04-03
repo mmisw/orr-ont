@@ -1,5 +1,12 @@
 ## change log ##
 
+**2020-04: 3.9.0**
+
+- 3.9.0 release
+- simplify build.sh as everything is built in Dockerfile
+- also, preference now only on the generated docker image
+  (not on the WAR as a release per se).
+
 * 2019-08-27:  3.8.3
 
 - set `User-Agent:ORR-Ont/x.y.z` in requests to triple-store
