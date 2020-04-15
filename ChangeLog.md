@@ -1,12 +1,11 @@
 ## change log ##
 
-* 2020-04-15:  3.8.4
+**2020-04: 3.9.0**
 
-- resolve #63 "remove requirement for format parameter".
-  In general, the `format` parameter will still be required if the format
-  cannot be determined from other submitted information, for example, from
-  the file extension in an upload.
-  NOTE: The swagger spec for the API Doc to be updated (separate repo).
+- 3.9.0 release
+- simplify build.sh as everything is built in Dockerfile
+- also, preference now only on the generated docker image
+  (not on the WAR as a release per se).
 
 * 2019-08-27:  3.8.3
 
