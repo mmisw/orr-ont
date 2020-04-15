@@ -20,7 +20,7 @@ class TripleStoreServiceAgRest(implicit setup: Setup, ontService: OntService) ex
 with TripleStoreService with Logging {
 
   // TODO get version piece in some dynamic way (eg, buildInfo-like)
-  private val userAgent = "ORR-Ont/3.8.3"
+  private val userAgent = "ORR-Ont/3.8.4"
 
   import scala.concurrent.ExecutionContext.Implicits.global
 

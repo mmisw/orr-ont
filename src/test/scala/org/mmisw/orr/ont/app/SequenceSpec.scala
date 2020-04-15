@@ -424,19 +424,25 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   val ont1File = new File("src/test/resources/ont1.rdf")
   val ont1Uri      = "http://example.org/ont1"
   val ont1UriHttps = "https://example.org/ont1"
-  val format = "rdf"
-  val map0 = Map("format" -> format, "visibility" -> "public")
+  val ont1FileFormat = "rdf"
+
   var uploadedFileInfoOpt: Option[UploadedFileInfo] = None
 
   "Upload RDF file (POST /ont/upload)" should {
     "fail with no credentials" in {
-      post("/ont/upload", map0, Map("file" -> ont1File)) {
+      post("/ont/upload",
+        Map("visibility" -> "public"),
+        Map("file" -> ont1File))
+      {
         status must_== 401
       }
     }
 
     "succeed with user credentials and return expected info" in {
-      post("/ont/upload", map0, Map("file" -> ont1File), headers = userHeaders) {
+      post("/ont/upload",
+        Map("visibility" -> "public"),
+        Map("file" -> ont1File), headers = userHeaders
+      ) {
         status must_== 200
         val uploadedFileInfo = parse(body).extract[UploadedFileInfo]
         println(s"uploadedFileInfo=$uploadedFileInfo")
@@ -593,7 +599,6 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
     "name" -> "some ont name",
     "orgName" -> orgName,
     "userName" -> userName,
-    "format" -> format,
     "visibility" -> "public",
     "status" -> "draft"
   )
@@ -636,7 +641,6 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         "name" -> "some ont name",
         "orgName" -> orgName,
         "userName" -> userName,
-        "format" -> format,
         "visibility" -> "public",
         "status" -> "stable"
       )
@@ -652,7 +656,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
   }
 
   "Register a new ont (POST /ont) with embedded ontology contents" should {
-    "succeed (with appropriate parameters)" in {
+    "succeed (with appropriate parameters, incl required format in this case)" in {
       import scala.collection.JavaConversions._
       val contents: String = {
         java.nio.file.Files.readAllLines(ont1File.toPath,
@@ -663,7 +667,7 @@ class SequenceSpec extends MutableScalatraSpec with BaseSpec with Mockito with L
         "name"     -> "some ont name",
         "orgName"  -> orgName,
         "userName" -> userName,
-        "format"   -> format,
+        "format"   -> ont1FileFormat,
         "contents" -> contents,
         "visibility" -> "public"
       )

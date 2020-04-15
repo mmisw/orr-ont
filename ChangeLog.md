@@ -1,5 +1,13 @@
 ## change log ##
 
+* 2020-04-15:  3.8.4
+
+- resolve #63 "remove requirement for format parameter".
+  In general, the `format` parameter will still be required if the format
+  cannot be determined from other submitted information, for example, from
+  the file extension in an upload.
+  NOTE: The swagger spec for the API Doc to be updated (separate repo).
+
 * 2019-08-27:  3.8.3
 
 - set `User-Agent:ORR-Ont/x.y.z` in requests to triple-store

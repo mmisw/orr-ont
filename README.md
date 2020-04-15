@@ -28,3 +28,15 @@ This is the repository for the **orr-ont** component.
 
 Interested in having an ORR instance on your server? See
 [http://mmisw.org/orrdoc/install/](http://mmisw.org/orrdoc/install/).
+
+# Development
+
+## Testing
+
+Have a mongo service running on your machine, for example, on a separate terminal session:
+
+    docker run -it --rm -p 27017:27017 mongo
+
+Run the tests:
+
+    sbt test

@@ -498,9 +498,15 @@ class OntController(implicit setup: Setup,
   private def getOntFileWriterForJustUploadedFile: OntFileWriter = {
     val fileItem = fileParams.getOrElse("file", missing("file"))
 
-    val format = getFormatParam.getOrElse("_guess")
+    val fileName = fileItem.getName
 
-    logger.debug(s"uploaded file=${fileItem.getName} size=${fileItem.getSize} format=$format")
+    val format = getFormatParam.getOrElse {
+      // get it from the file extension if any:
+      val ext = if (fileName.lastIndexOf('.') > 0) fileName.split("\\.", Int.MaxValue).last else ""
+      if (ext.nonEmpty) ext else  "_guess"
+    }
+
+    logger.debug(s"uploaded file=$fileName size=${fileItem.getSize} format=$format")
     //val fileContents = new String(fileItem.get(), fileItem.charset.getOrElse("utf8"))
     //val contentType = file.contentType.getOrElse("application/octet-stream")
 
