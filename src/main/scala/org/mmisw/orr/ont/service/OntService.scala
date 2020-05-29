@@ -336,6 +336,8 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
             | Name: ${ontVersion.name}
             | Version: $version
             | Registered: ${ontVersion.date}
+            | Status: ${ontVersion.status.getOrElse("(undefined)")}
+            | Visibility: ${ontVersion.visibility.getOrElse("(undefined)")}
             | Owner: $ownerName
             | Submitter: $userName
           """.stripMargin
@@ -412,6 +414,8 @@ class OntService(implicit setup: Setup) extends BaseService(setup) with Logging 
              | Owner: ${ont.ownerName}
              | Submitter: $userName
              | Updated: ${ontVersion.date}
+             | Status: ${ontVersion.status.getOrElse("(undefined)")}
+             | Visibility: ${ontVersion.visibility.getOrElse("(undefined)")}
              | Log: ${ontVersion.log.getOrElse("(not given)")}
           """.stripMargin
         )

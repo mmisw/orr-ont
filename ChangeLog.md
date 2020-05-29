@@ -1,5 +1,9 @@
 ## change log ##
 
+* 2020-05-29:  3.8.5
+
+- include status and visibility in email notification about ontology registration
+
 * 2020-04-15:  3.8.4
 
 - resolve #63 "remove requirement for format parameter".
