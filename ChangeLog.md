@@ -1,5 +1,11 @@
 ## change log ##
 
+* 2020-07-02:  3.8.6
+
+- for more flexible webapp configuration:
+  if available, concatenate `/etc/orront/orrportal.config.js` contents into
+  generated `js/local.config.js` for the webapp.
+
 * 2020-05-29:  3.8.5
 
 - include status and visibility in email notification about ontology registration
