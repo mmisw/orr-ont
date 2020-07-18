@@ -11,7 +11,10 @@ before_script:
   - sleep 15
 
 notifications:
-  slack: mmisw:yEUK01ro6HVvhRbkq9a2Y3df
+  slack:
+    rooms:
+      - mmisw:yEUK01ro6HVvhRbkq9a2Y3df
+      - esip-all:I3mBBBC9PChg913QUU5OUMlf
 
 script: "sbt clean coverage test"
 after_success: "sbt coverageReport coveralls"
