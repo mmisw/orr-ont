@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# An ad hoc script to may help admins with some registry maintenance, for example,
+# An ad hoc script to help admins with some registry maintenance, for example,
 # to adjust the visibility and status of testing or irrelevant registrations.
 # Just basic testing of this script has been performed upon putting it together,
 # but it should functional in general.
