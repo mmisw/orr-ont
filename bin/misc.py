@@ -19,7 +19,7 @@
 # The particular ORR API endpoint:
 ORR_API = "https://mmisw.org/ont/api/v0"
 
-# For regular processing commands, have your your credentials
+# For regular processing commands, have your credentials
 # captured in these env vars:
 #     export ORR_USERNAME=myusername
 #     export ORR_TOKEN=mytoken
