@@ -15,16 +15,23 @@
 # NOTE If you are an admin, REMEMBER: with great power comes great responsibility!
 # You could mess up things in the registry if you are not careful enough with the
 # target IRIs/versions that you want to modify or remove.
+#
+# The "typical" use of this script:
+# - Login to get your token:
+#       ./misc.py login <myusername> '<mypw>'
+#       <mytoken>    # printed out here
+# - Capture credentials in env vars:
+#       export ORR_USERNAME=<myusername>
+#       export ORR_TOKEN=<mytoken>
+# - Edit function `select` to adjust the selection condition as needed
+# - Have a look a the selected ontologies to verify the intended targets:
+#       ./misc.py show-selected
+# - Run the actual modification as indicated in `process_ont`:
+#       ./misc.py process-selected
+#
 
 # The particular ORR API endpoint:
 ORR_API = "https://mmisw.org/ont/api/v0"
-
-# For regular processing commands, have your credentials
-# captured in these env vars:
-#     export ORR_USERNAME=myusername
-#     export ORR_TOKEN=mytoken
-# If you don't know your token, run:
-#    ./misc.py login myusername 'mypasswd'
 
 # For convenience, you can do some testing of the ontology update/removal
 # functionality against some appropriate entry for that purpose. Example:
@@ -167,7 +174,7 @@ def main():
     if len(sys.argv) < 2:
         print(usage)
     elif sys.argv[1] == "login":
-        if len(sys.argv) < 4:
+        if len(sys.argv) < 5:
             login(*sys.argv[2:4])
         else:
             print("missing arguments")
