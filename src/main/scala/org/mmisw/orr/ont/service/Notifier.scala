@@ -19,8 +19,11 @@ private case class Item(subject: String, msg: String)
 class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Logging {
 
   def sendNotificationEmail(subject: String, msg: String): Unit = {
-    logger.debug(s"sendNotificationEmail: adding to queue item subject=$subject")
-    queue.synchronized { queue += Item(subject, msg) }
+    logger.debug(s"Notifier: adding to queue item subject=$subject")
+    queue.synchronized {
+      queue += Item(subject, msg)
+      logger.debug(s"Notifier: queue size now=${queue.size}")
+    }
   }
 
   def destroy(): Unit = {
@@ -36,6 +39,7 @@ class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Loggin
   private val dispatcher = new TimerTask {
     def run(): Unit = {
       val itemsOpt = queue.synchronized {
+        logger.debug(s"Notifier: checking for queue items to dispatch: ${queue.size}")
         if (queue.nonEmpty && System.currentTimeMillis - latestSendTime >= SendPeriod) {
           latestSendTime = System.currentTimeMillis
           val items = queue.toList
@@ -51,7 +55,7 @@ class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Loggin
   timer.schedule(dispatcher, CheckPeriod, CheckPeriod)
 
   private def dispatchItems(items: List[Item]): Unit = {
-    logger.debug(s"dispatchItems: ${items.size}")
+    logger.debug(s"Notifier: dispatchItems: ${items.size}")
     val file = new File(configDir, "notifyemails")
     for {
       emails ← getEmails(file)
@@ -78,6 +82,7 @@ class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Loggin
       val emails = source.getLines.map(_.trim).filterNot { line ⇒
         line.isEmpty || line.startsWith("#")
       }
+      logger.debug(s"Notifier: getEmails: ${emails.size} (file: $file)")
       Some(emails.toSeq)
     }
     catch {

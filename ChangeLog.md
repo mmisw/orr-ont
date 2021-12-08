@@ -1,5 +1,9 @@
 ## change log ##
 
+* 2021-12-07:  3.8.7
+
+- add debug logging related with email notifications
+
 * 2020-07-02:  3.8.6
 
 - for more flexible webapp configuration:
