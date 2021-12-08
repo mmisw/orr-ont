@@ -85,10 +85,16 @@ class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Loggin
     try {
       val source = io.Source.fromFile(file)
       val emails = source.getLines
+        .toList
         .map(_.trim)
         .filterNot(line => line.isEmpty || line.startsWith("#"))
-        .toSeq
-      source.close()
+
+      try source.close()
+      catch {
+        case e: Exception =>
+          logger.warn(s"exception closing source", e)
+      }
+
       emails
     }
     catch {
