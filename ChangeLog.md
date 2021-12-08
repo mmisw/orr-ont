@@ -1,7 +1,8 @@
 ## change log ##
 
-* 2021-12-07:  3.8.7
+* 2021-12-07:  3.8.8
 
+- move sendMessage to facilitate debugging
 - add debug logging related with email notifications
 
 * 2020-07-02:  3.8.6

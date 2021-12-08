@@ -22,6 +22,10 @@
     <priority value="DEBUG" />
   </category>
 
+  <category name="org.mmisw.orr.ont.util">
+    <priority value="DEBUG" />
+  </category>
+
   <category name="org.mmisw.orr.ont.service">
     <priority value="DEBUG" />
   </category>
