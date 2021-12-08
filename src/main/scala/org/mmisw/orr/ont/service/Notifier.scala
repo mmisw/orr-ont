@@ -31,7 +31,7 @@ class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Loggin
   }
 
   private val SendPeriod = 5*60*1000 // 5 minutes
-  private val CheckPeriod = 30*1000  // 30 secs
+  private val CheckPeriod = 60*1000  // 1 min
   private val queue = new ListBuffer[Item]
   private var latestSendTime: Long = 0
 
