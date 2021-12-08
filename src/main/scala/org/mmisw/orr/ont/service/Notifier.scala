@@ -58,10 +58,8 @@ class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Loggin
   private def dispatchItems(items: List[Item]): Unit = {
     logger.debug(s"Notifier: dispatchItems: ${items.size}")
     val file = new File(configDir, "notifyemails")
-    for {
-      emails ← getEmails(file)
-      if emails.nonEmpty
-    } {
+    val emails = getEmails(file)
+    if (emails.nonEmpty) {
       val (subject, msg) = if (items.size == 1) {
         val item = items.head
         (item.subject, item.msg)
@@ -78,22 +76,22 @@ class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Loggin
     }
   }
 
-  private def getEmails(file: File): Option[Seq[String]] = {
+  private def getEmails(file: File): Seq[String] = {
     try {
       val source = io.Source.fromFile(file)
       val emails = source.getLines.map(_.trim).filterNot { line ⇒
         line.isEmpty || line.startsWith("#")
       }
       logger.debug(s"Notifier: getEmails: ${emails.size} (file: $file)")
-      Some(emails.toSeq)
+      emails.toSeq
     }
     catch {
       case _:java.io.FileNotFoundException ⇒
         logger.warn(s"sendNotificationEmail: file not found: $file")
-        None
+        Seq.empty
       case NonFatal(e) ⇒
         logger.error("error getting emails", e)
-        None
+        Seq.empty
     }
   }
 }
