@@ -19,10 +19,10 @@ private case class Item(subject: String, msg: String)
 class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Logging {
 
   def sendNotificationEmail(subject: String, msg: String): Unit = {
-    logger.debug(s"Notifier: adding to queue item subject=$subject")
+    logger.debug(s"adding to queue item subject=$subject")
     queue.synchronized {
       queue += Item(subject, msg)
-      logger.debug(s"Notifier: queue size now=${queue.size}")
+      logger.debug(s"queue size now=${queue.size}")
     }
   }
 
@@ -39,7 +39,7 @@ class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Loggin
   private val dispatcher = new TimerTask {
     def run(): Unit = {
       val itemsOpt = queue.synchronized {
-        logger.debug(s"Notifier: checking for queue items to dispatch: ${queue.size}")
+        logger.debug(s"checking for queue items to dispatch: ${queue.size}")
         val currTime = System.currentTimeMillis
         if (queue.nonEmpty && (currTime - latestSendTime) >= SendPeriod) {
           latestSendTime = currTime
@@ -56,9 +56,10 @@ class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Loggin
   timer.schedule(dispatcher, CheckPeriod, CheckPeriod)
 
   private def dispatchItems(items: List[Item]): Unit = {
-    logger.debug(s"Notifier: dispatchItems: ${items.size}")
+    logger.debug(s"dispatchItems: ${items.size}")
     val file = new File(configDir, "notifyemails")
     val emails = getEmails(file)
+    logger.debug(s"getEmails: ${emails.size} (file: $file)")
     if (emails.nonEmpty) {
       val (subject, msg) = if (items.size == 1) {
         val item = items.head
@@ -67,13 +68,16 @@ class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Loggin
       else {
         ("Notifications", items.map(_.msg).mkString("\n\n"))
       }
-      logger.debug(s"Notifier: sending email: subject='$subject' to ${emails.size} emails")
+      logger.debug(s"sending email: subject='$subject' to ${emails.size} emails")
       emailer.sendEmail(emails.mkString(","), subject, text =
         s"""$msg
            |
            |(You have received this email because your address is included in ${file.getAbsolutePath}")"
            |""".stripMargin
       )
+    }
+    else {
+      logger.debug(s"no emails to send notifications")
     }
   }
 
@@ -83,9 +87,9 @@ class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Loggin
       val emails = source.getLines
         .map(_.trim)
         .filterNot(line => line.isEmpty || line.startsWith("#"))
+        .toSeq
       source.close()
-      logger.debug(s"Notifier: getEmails: ${emails.size} (file: $file)")
-      emails.toSeq
+      emails
     }
     catch {
       case _:java.io.FileNotFoundException ⇒
