@@ -12,9 +12,9 @@ class Emailer(emailConfig: Cfg.Email) extends IEmailer with Logging {
   private[this] val username = emailConfig.account.username
   private[this] val password = emailConfig.account.password
 
-  private[this] val mailhost = emailConfig.server.host
-  private[this] val mailport = emailConfig.server.port.toString
-  private[this] val prot = emailConfig.server.prot
+  private[this] val mailHost = emailConfig.server.host
+  private[this] val mailPort = emailConfig.server.port.toString
+  private[this] val protocol = emailConfig.server.prot
   private[this] val debug = emailConfig.server.debug
 
   private[this] val from = emailConfig.from
@@ -24,8 +24,7 @@ class Emailer(emailConfig: Cfg.Email) extends IEmailer with Logging {
 
   def sendEmail(to: String, subject: String, text: String): Unit = {
     logger.debug(s"sendMail: to='$to' subject='$subject'")
-    sendMessage(mailer, mailhost, mailport, prot, username, password, debug,
-      from, to, replyTo, subject, text)
+    sendMessage(to, subject, text)
   }
 
   import scala.util.control.NonFatal
@@ -43,19 +42,7 @@ class Emailer(emailConfig: Cfg.Email) extends IEmailer with Logging {
     .split("\\s*,\\s*")
     .map(new InternetAddress(_))
 
-  private def sendMessage(mailer: String,
-                          mailHost: String,
-                          mailPort: String,
-                          protocol: String,
-                          user: String,
-                          password: String,
-                          debug: Boolean,
-                          from: String,
-                          to: String,
-                          replyTo: String,
-                          subject: String,
-                          text: String
-                         ): Unit = {
+  private def sendMessage(to: String, subject: String, text: String): Unit = {
     val props = System.getProperties
     props.put("mail." + protocol + ".host", mailHost)
     props.put("mail." + protocol + ".auth", "true")
@@ -63,7 +50,7 @@ class Emailer(emailConfig: Cfg.Email) extends IEmailer with Logging {
       props.put("mail." + protocol + ".port", mailPort)
     }
     val session = Session.getInstance(props, new Authenticator() {
-      override protected def getPasswordAuthentication = new PasswordAuthentication(user, password)
+      override protected def getPasswordAuthentication = new PasswordAuthentication(username, password)
     })
     if (debug) session.setDebug(true)
     val msg = new MimeMessage(session)
@@ -81,7 +68,7 @@ class Emailer(emailConfig: Cfg.Email) extends IEmailer with Logging {
     msg.setSentDate(new Date)
     val t = session.getTransport(protocol).asInstanceOf[SMTPTransport]
     try {
-      t.connect(mailHost, user, password)
+      t.connect(mailHost, username, password)
       t.sendMessage(msg, msg.getAllRecipients)
       logger.debug("Response: " + t.getLastServerResponse)
     }

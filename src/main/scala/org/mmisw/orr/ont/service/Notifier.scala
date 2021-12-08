@@ -30,9 +30,9 @@ class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Loggin
     dispatcher.cancel()
   }
 
-  private val SendPeriod = 5*60*1000 // 5 minutes
-  private val CheckPeriod = 60*1000  // 1 min
-  private val queue = new ListBuffer[Item]
+  private val SendPeriod: Long = 5*60*1000L // 5 minutes
+  private val CheckPeriod: Long = 60*1000L // 1 min
+  private val queue = new ListBuffer[Item]()
   private var latestSendTime: Long = 0
 
   private val timer = new Timer()
@@ -40,8 +40,9 @@ class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Loggin
     def run(): Unit = {
       val itemsOpt = queue.synchronized {
         logger.debug(s"Notifier: checking for queue items to dispatch: ${queue.size}")
-        if (queue.nonEmpty && System.currentTimeMillis - latestSendTime >= SendPeriod) {
-          latestSendTime = System.currentTimeMillis
+        val currTime = System.currentTimeMillis
+        if (queue.nonEmpty && (currTime - latestSendTime) >= SendPeriod) {
+          latestSendTime = currTime
           val items = queue.toList
           queue.clear()
           Some(items)
@@ -68,6 +69,7 @@ class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Loggin
       else {
         ("Notifications", items.map(_.msg).mkString("\n\n"))
       }
+      logger.debug(s"Notifier: sending email: subject='$subject' to ${emails.size} emails")
       emailer.sendEmail(emails.mkString(","), subject,
         msg + "\n\n" +
           "(You have received this email because your address is" +
