@@ -68,10 +68,11 @@ class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Loggin
         ("Notifications", items.map(_.msg).mkString("\n\n"))
       }
       logger.debug(s"Notifier: sending email: subject='$subject' to ${emails.size} emails")
-      emailer.sendEmail(emails.mkString(","), subject,
-        msg + "\n\n" +
-          "(You have received this email because your address is" +
-          " included in " +file.getAbsolutePath + ")"
+      emailer.sendEmail(emails.mkString(","), subject, text =
+        s"""$msg
+           |
+           |(You have received this email because your address is included in ${file.getAbsolutePath}")"
+           |""".stripMargin
       )
     }
   }
@@ -79,9 +80,10 @@ class Notifier(configDir: File, emailer: IEmailer) extends INotifier with Loggin
   private def getEmails(file: File): Seq[String] = {
     try {
       val source = io.Source.fromFile(file)
-      val emails = source.getLines.map(_.trim).filterNot { line ⇒
-        line.isEmpty || line.startsWith("#")
-      }
+      val emails = source.getLines
+        .map(_.trim)
+        .filterNot(line => line.isEmpty || line.startsWith("#"))
+      source.close()
       logger.debug(s"Notifier: getEmails: ${emails.size} (file: $file)")
       emails.toSeq
     }
